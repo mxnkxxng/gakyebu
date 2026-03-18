@@ -225,11 +225,11 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
     <button class="ftab" onclick="setFilter('이동',this)">이동</button>
   </div>
   <div style="display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;padding-bottom:2px">
-    <button class="ftab" onclick="setFilter('card:롯카',this)">롯카</button>
-    <button class="ftab" onclick="setFilter('card:삼카',this)">삼카</button>
-    <button class="ftab" onclick="setFilter('card:신카',this)">신카</button>
-    <button class="ftab" onclick="setFilter('card:국카k',this)">국카k</button>
-    <button class="ftab" onclick="setFilter('card:국카1',this)">국카1</button>
+    <button class="ftab" id="cf-롯카" onclick="setCardFilter('롯카',this)">롯카</button>
+    <button class="ftab" id="cf-삼카" onclick="setCardFilter('삼카',this)">삼카</button>
+    <button class="ftab" id="cf-신카" onclick="setCardFilter('신카',this)">신카</button>
+    <button class="ftab" id="cf-국카k" onclick="setCardFilter('국카k',this)">국카k</button>
+    <button class="ftab" id="cf-국카1" onclick="setCardFilter('국카1',this)">국카1</button>
   </div>
   <!-- 검색 -->
   <div style="margin-bottom:10px">
@@ -377,7 +377,7 @@ const ACCOUNTS=['KB뱅크','NH뱅크','케이-덕질','케이-비상금','케이
 const CMAP=[{k:['롯카!실미'],v:'롯카!실미'},{k:['롯카!'],v:'롯카!'},{k:['롯카-'],v:'롯카-'},{k:['롯데카드','로카','롯카'],v:'롯카'},{k:['신카!실미'],v:'신카!실미'},{k:['신카!'],v:'신카!'},{k:['신한카드','신카','FBS'],v:'신카'},{k:['삼카!'],v:'삼카!'},{k:['삼성카드','삼카'],v:'삼카'},{k:['국카k!실미'],v:'국카k!실미'},{k:['국카k!'],v:'국카k!'},{k:['국카k-'],v:'국카k-'},{k:['국카k'],v:'국카k'},{k:['국카1'],v:'국카1'},{k:['국민카드','KB카드','KB Pay','KB국민'],v:'국카k'},{k:['농카!실미'],v:'농카!실미'},{k:['농카!'],v:'농카!'},{k:['농카-'],v:'농카-'},{k:['농협카드','NH카드','농카'],v:'농카'},{k:['케이뱅크'],v:'케이뱅크'},{k:['KB뱅크','KB은행'],v:'KB뱅크'},{k:['NH뱅크','농협은행'],v:'NH뱅크'},{k:['하나은행','하나카드'],v:'하나은행'},{k:['신한은행'],v:'신한은행'}];
 
 let cType='지출',selMaj='',selSub='',entries=[];
-const _now=new Date();let curMon=_now.getFullYear()+'-'+String(_now.getMonth()+1).padStart(2,'0');let histFilter='전체';
+const _now=new Date();let curMon=_now.getFullYear()+'-'+String(_now.getMonth()+1).padStart(2,'0');let histFilter='전체';let histCardFilter='';
 try{
   const s=localStorage.getItem('gb_v3');
   if(s) entries=JSON.parse(s);
@@ -611,17 +611,28 @@ function delEntry(id){entries=entries.filter(e=>e.id!==id);try{localStorage.setI
 
 // 카드 그룹 키 매핑
 const CARD_GROUP_KEYS={
-  'card:롯카':['롯카','롯카!','롯카!실미','롯카-'],
-  'card:삼카':['삼카','삼카!','삼카!실미'],
-  'card:신카':['신카','신카!','신카!실미'],
-  'card:국카k':['국카k','국카k!','국카k!실미','국카k-'],
-  'card:국카1':['국카1'],
+  '롯카':['롯카','롯카!','롯카!실미','롯카-'],
+  '삼카':['삼카','삼카!','삼카!실미'],
+  '신카':['신카','신카!','신카!실미'],
+  '국카k':['국카k','국카k!','국카k!실미','국카k-'],
+  '국카1':['국카1'],
 };
 
 function setFilter(f,btn){
   histFilter=f;
-  document.querySelectorAll('.ftab').forEach(b=>b.classList.remove('on'));
+  document.querySelectorAll('.ftab:not([id^="cf-"])').forEach(b=>b.classList.remove('on'));
   btn.classList.add('on');
+  renderHist();
+}
+function setCardFilter(f,btn){
+  if(histCardFilter===f){
+    histCardFilter='';
+    btn.classList.remove('on');
+  } else {
+    histCardFilter=f;
+    document.querySelectorAll('[id^="cf-"]').forEach(b=>b.classList.remove('on'));
+    btn.classList.add('on');
+  }
   renderHist();
 }
 function renderHist(){
@@ -629,12 +640,12 @@ function renderHist(){
   const searchEl=document.getElementById('hist-search');
   const q=(searchEl?searchEl.value.trim().toLowerCase():'');
   let es=me();
-  // 필터
-  if(histFilter.startsWith('card:')){
-    const keys=CARD_GROUP_KEYS[histFilter]||[];
+  // 타입 필터 (AND)
+  if(histFilter!=='전체') es=es.filter(e=>e.type===histFilter);
+  // 카드 필터 (AND)
+  if(histCardFilter){
+    const keys=CARD_GROUP_KEYS[histCardFilter]||[];
     es=es.filter(e=>keys.includes(e.outAcct)||keys.includes(e.inAcct));
-  } else if(histFilter!=='전체'){
-    es=es.filter(e=>e.type===histFilter);
   }
   // 검색
   if(q)es=es.filter(e=>
