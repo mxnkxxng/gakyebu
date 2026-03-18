@@ -133,8 +133,8 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
     <div class="sc"><div class="sl">지출</div><div class="sv" style="color:var(--red)" id="h-out">₩0</div></div>
     <div class="sc"><div class="sl">잔액</div><div class="sv" id="h-bal">₩0</div></div>
   </div>
-  <div class="card"><div class="ct">📊 카테고리 예산</div><div id="budget-list"></div></div>
-  <div class="card"><div class="ct">💳 카드 현황</div><div id="card-list"></div></div>
+  <div class="card"><div class="ct" style="display:flex;justify-content:space-between;align-items:center">📊 카테고리 예산<div style="display:flex;gap:6px"><button onclick="expandAll('budget')" style="font-size:10px;padding:3px 8px;border:.5px solid var(--border-md);border-radius:99px;background:transparent;color:var(--sub);cursor:pointer">전체 펴기</button><button onclick="collapseAll('budget')" style="font-size:10px;padding:3px 8px;border:.5px solid var(--border-md);border-radius:99px;background:transparent;color:var(--sub);cursor:pointer">전체 접기</button></div></div><div id="budget-list"></div></div>
+  <div class="card"><div class="ct" style="display:flex;justify-content:space-between;align-items:center">💳 카드 현황<div style="display:flex;gap:6px"><button onclick="expandAll('card')" style="font-size:10px;padding:3px 8px;border:.5px solid var(--border-md);border-radius:99px;background:transparent;color:var(--sub);cursor:pointer">전체 펴기</button><button onclick="collapseAll('card')" style="font-size:10px;padding:3px 8px;border:.5px solid var(--border-md);border-radius:99px;background:transparent;color:var(--sub);cursor:pointer">전체 접기</button></div></div><div id="card-list"></div></div>
 </div>
 
 <div class="page" id="page-input">
@@ -208,13 +208,14 @@ const CAT={
   '이동':{'예적금':['주택청약저축','자유적금','전세대출원금'],'연금':['개인연금'],'주식':['ISA'],'목적':['집계약용'],'목적2':['비상금','덕질']}
 };
 const BUDGET={'🏠 주거비':904890,'🗃️ 보험':393130,'📞 통신비':48300,'🍀 곗돈':100000,'☀️ 엄마':772187,'🍽️ 식비':300000,'🛒 생활용품':30000,'👗 꾸밈비':30000,'👩‍🎓 자기계발':50000,'😷 건강':50000,'🚌 교통비':60000,'🎁 경조사':0,'📺 문화생활':0,'✔️ 기타':50000};
+const SUB_BUDGET={"🏠 주거비": {"전세대출이자": 640000, "관리비": 120000, "전기세": 60000, "도시가스": 50000, "상수도비": 15000, "기타세금": 12000, "구독비": 7890, "TV수신료": 0}, "🗃️ 보험": {"우체국보험": 74220, "메리츠화재": 87160, "메리츠화재2": 102940, "삼성화재": 128810}, "📞 통신비": {"LGU+": 40800, "삼케": 7500, "LG알뜰(우릉교)": 0}, "🍀 곗돈": {"가족곗돈": 50000, "대딩곗돈": 50000, "친척곗돈": 20000}, "☀️ 엄마": {"엄마대출원금": 0, "엄마대출이자": 0, "엄마생활비": 350000, "엄마보험(삼성생명)": 201157, "엄마보험(DB 손해)": 30250, "엄마보험(보람상조)": 8000, "엄마보험(라이나)": 42280, "엄마핸드폰(LGU+)": 13000, "엄마핸드폰(삼케)": 7500, "엄마건강": 120000}, "🍽️ 식비": {"식자재": 50000, "배달식비": 0, "외식": 100000, "카페류": 50000, "가족식비": 100000}, "🛒 생활용품": {"생활소모품": 30000, "가전/가구": 0, "침구/인테리어": 0}, "👗 꾸밈비": {"의류/잡화": 30000, "미용/헤어": 0, "세탁/수선": 0}, "👩\u200d🎓 자기계발": {"스터디/수강": 50000, "운동": 0, "도서": 0}, "😷 건강": {"병원/약국": 50000, "건강보조": 0, "예방/검진": 0, "목욕": 0}, "🚌 교통비": {"대중교통": 60000, "택시비": 0, "기차": 0}, "🎁 경조사": {"가족/친척": 0, "지인/동료": 0}, "📺 문화생활": {"공연/전시": 0, "OTT": 0, "기타 입장료": 0, "덕질": 0}, "✔️ 기타": {"회비": 0, "기타2": 50000, "집 관련 지출": 0}};
 const CARD_BUDGET={'롯카':318910,'롯카!':0,'롯카-':13000,'삼카':284237,'삼카!':0,'신카':60000,'신카!':240000,'국카1':161140,'국카k':111140,'국카k!':188860,'국카k!실미':60000,'국카k-':15000};
 const SAVE_GOALS=[{name:'주택청약저축',goal:0},{name:'자유적금',goal:0},{name:'전세대출원금',goal:600000},{name:'개인연금',goal:400000},{name:'ISA',goal:500000},{name:'집계약용',goal:1000000},{name:'비상금',goal:200000},{name:'덕질',goal:50000}];
 const ACCOUNTS=['KB뱅크','NH뱅크','케이-덕질','케이-비상금','케이-임시','케이뱅크','하나은행','KB 펀드','케이-집계약용','신한은행','전세 보증금','토스증권','미래에셋','삼성증권','우리IRP','농카','농카!','농카!실미','농카-','롯카','롯카!','롯카!실미','롯카-','신카','신카!','신카!실미','삼카','삼카!','국카1','국카k','국카k!','국카k!실미','국카k-','전세자금대출 원금(국민)','전세자금대출 원금(농협)','엄마신용대출 원금'];
 const CMAP=[{k:['롯카!실미'],v:'롯카!실미'},{k:['롯카!'],v:'롯카!'},{k:['롯카-'],v:'롯카-'},{k:['롯데카드','로카','롯카'],v:'롯카'},{k:['신카!실미'],v:'신카!실미'},{k:['신카!'],v:'신카!'},{k:['신한카드','신카','FBS'],v:'신카'},{k:['삼카!'],v:'삼카!'},{k:['삼성카드','삼카'],v:'삼카'},{k:['국카k!실미'],v:'국카k!실미'},{k:['국카k!'],v:'국카k!'},{k:['국카k-'],v:'국카k-'},{k:['국카k'],v:'국카k'},{k:['국카1'],v:'국카1'},{k:['국민카드','KB카드','KB Pay','KB국민'],v:'국카k'},{k:['농카!실미'],v:'농카!실미'},{k:['농카!'],v:'농카!'},{k:['농카-'],v:'농카-'},{k:['농협카드','NH카드','농카'],v:'농카'},{k:['케이뱅크'],v:'케이뱅크'},{k:['KB뱅크','KB은행'],v:'KB뱅크'},{k:['NH뱅크','농협은행'],v:'NH뱅크'},{k:['하나은행','하나카드'],v:'하나은행'},{k:['신한은행'],v:'신한은행'}];
 
 let cType='지출',selMaj='',selSub='',entries=[];
-let curMon=new Date().toISOString().slice(0,7);
+const _now=new Date();let curMon=_now.getFullYear()+'-'+String(_now.getMonth()+1).padStart(2,'0');
 try{
   const s=localStorage.getItem('gb_v3');
   if(s) entries=JSON.parse(s);
@@ -239,7 +240,8 @@ function goPage(n,btn){
 }
 function changeMonth(d){
   const[y,m]=curMon.split('-').map(Number);
-  const nd=new Date(y,m-1+d,1);curMon=nd.toISOString().slice(0,7);
+  const nd=new Date(y,m-1+d,1);
+  curMon=nd.getFullYear()+'-'+String(nd.getMonth()+1).padStart(2,'0');
   renderHome();renderHist();
 }
 function me(){return entries.filter(e=>e.date&&e.date.startsWith(curMon));}
@@ -273,60 +275,116 @@ function renderHome(){
   const mamaFixed=es.filter(e=>e.type==='지출'&&e.major==='☀️ 엄마'&&MAMA_FIXED_SUBS.includes(e.sub)).reduce((s,e)=>s+e.amount,0);
   const mamaVar=es.filter(e=>e.type==='지출'&&e.major==='☀️ 엄마'&&e.sub==='엄마건강').reduce((s,e)=>s+e.amount,0);
 
-  function budgetRow(catKey, displayName, budget, spent, subs, id){
-    if(budget===0&&spent===0)return'';
+  function budgetRow(catKey, displayName, budget, spent, subsWithBudget, id){
     const p=budget>0?Math.min((spent/budget)*100,100):0;
     const ov=budget>0&&spent>budget,wn=budget>0&&spent>budget*.8;
     const gc=ov?'gr':wn?'gw':'go';
     const tagHtml=ov?'<span class="tag to">초과</span>':wn?'<span class="tag tw">주의</span>':'';
     const amtColor=ov?'var(--red)':wn?'var(--amber)':'var(--text)';
-    const subHtml=subs&&subs.length>0?subs.filter(([,v])=>v>0).map(([nm,v])=>`<div class="srow2"><span class="sl3">${nm}</span><span class="sv2">${fmtK(v)}</span></div>`).join(''):'';
-    const hasDetail=subHtml.length>0;
-    return`<div class="brow-wrap">
+    const remain=budget-spent;
+    const remainTxt=remain>=0?'잔액 '+fmtK(remain):'초과 '+fmtK(-remain);
+    const remainColor=remain>=0?'var(--green)':'var(--red)';
+    // 소분류: [이름, 실제금액, 예산] 형태로 전부 표시
+    const subHtml=subsWithBudget&&subsWithBudget.length>0?subsWithBudget.map(([nm,sv,sb])=>{
+      const sp2=sb>0?Math.min((sv/sb)*100,100):0;
+      const so=sb>0&&sv>sb;
+      const sc2=so?'var(--red)':sv>0?'var(--text)':'var(--hint)';
+      return`<div class="srow2" style="align-items:center">
+        <span class="sl3" style="flex:1">${nm}</span>
+        <span style="font-size:11px;font-weight:600;color:${sc2};margin-right:4px">${sv>0?fmtK(sv):'0'}</span>
+        ${sb>0?`<span style="font-size:10px;color:var(--hint)">/ ${fmtK(sb)}</span>`:``}
+        ${sb>0?`<div class="gb" style="width:24px;margin-left:4px;flex-shrink:0"><div class="gf ${so?'gr':'go'}" style="width:${sp2}%"></div></div>`:''}
+      </div>`;
+    }).join(''):'';
+    return`<div class="brow-wrap" data-group="budget">
       <div class="brow-hd" onclick="toggleBrow('${id}')">
         <span class="bn" style="flex:1;min-width:0">${displayName}${tagHtml}</span>
-        <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
-          <span style="font-size:10px;color:var(--sub);white-space:nowrap">${fmtK(spent)}/${fmtK(budget)}</span>
-          <span style="font-size:10px;font-weight:700;min-width:26px;text-align:right;color:${amtColor}">${Math.round(p)}%</span>
-          <div class="gb" style="width:36px;flex-shrink:0"><div class="gf ${gc}" style="width:${p}%"></div></div>
+        <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
+          <span style="font-size:10px;color:${amtColor};white-space:nowrap;font-weight:600">${fmtK(spent)}/${fmtK(budget)}</span>
+          <span style="font-size:10px;font-weight:700;min-width:24px;text-align:right;color:${amtColor}">${Math.round(p)}%</span>
+          <div class="gb" style="width:32px;flex-shrink:0"><div class="gf ${gc}" style="width:${p}%"></div></div>
+          <span style="font-size:10px;font-weight:600;color:${remainColor};white-space:nowrap;min-width:44px;text-align:right">${remainTxt}</span>
         </div>
-        ${hasDetail?`<span class="barr" id="arr-${id}">▾</span>`:''}
+        <span class="barr" id="arr-${id}">▾</span>
       </div>
-      ${hasDetail?`<div class="brow-detail" id="det-${id}">${subHtml}</div>`:''}
+      <div class="brow-detail" id="det-${id}">${subHtml}</div>
     </div>`;
   }
 
+  function subList(cat,keys){
+    return (keys||CAT['지출'][cat]||[]).map(s=>[s,(subT[cat+'__'+s]||0),(SUB_BUDGET[cat]&&SUB_BUDGET[cat][s])||0]);
+  }
+
   let fixedHtml='<div class="sec-div"><span>고정비</span></div>';
-  fixedHtml+=budgetRow('주거비','🏠 주거비',BUDGET['🏠 주거비'],majT['🏠 주거비']||0,
-    (CAT['지출']['🏠 주거비']||[]).map(s=>[s,(subT['🏠 주거비__'+s]||0)]),'주거비');
-  fixedHtml+=budgetRow('보험','🗃️ 보험',BUDGET['🗃️ 보험'],majT['🗃️ 보험']||0,
-    (CAT['지출']['🗃️ 보험']||[]).map(s=>[s,(subT['🗃️ 보험__'+s]||0)]),'보험');
-  fixedHtml+=budgetRow('통신','📞 통신비',BUDGET['📞 통신비'],majT['📞 통신비']||0,
-    (CAT['지출']['📞 통신비']||[]).map(s=>[s,(subT['📞 통신비__'+s]||0)]),'통신');
-  fixedHtml+=budgetRow('곗돈','🍀 곗돈',BUDGET['🍀 곗돈'],majT['🍀 곗돈']||0,
-    (CAT['지출']['🍀 곗돈']||[]).map(s=>[s,(subT['🍀 곗돈__'+s]||0)]),'곗돈');
+  fixedHtml+=budgetRow('주거비','🏠 주거비',BUDGET['🏠 주거비'],majT['🏠 주거비']||0,subList('🏠 주거비'),'주거비');
+  fixedHtml+=budgetRow('보험','🗃️ 보험',BUDGET['🗃️ 보험'],majT['🗃️ 보험']||0,subList('🗃️ 보험'),'보험');
+  fixedHtml+=budgetRow('통신','📞 통신비',BUDGET['📞 통신비'],majT['📞 통신비']||0,subList('📞 통신비'),'통신');
+  fixedHtml+=budgetRow('곗돈','🍀 곗돈',BUDGET['🍀 곗돈'],majT['🍀 곗돈']||0,subList('🍀 곗돈'),'곗돈');
   fixedHtml+=budgetRow('엄마고정','☀️ 엄마 (고정)',652187,mamaFixed,
-    MAMA_FIXED_SUBS.map(s=>[s,(subT['☀️ 엄마__'+s]||0)]),'엄마고정');
+    MAMA_FIXED_SUBS.map(s=>[s,(subT['☀️ 엄마__'+s]||0),(SUB_BUDGET['☀️ 엄마']&&SUB_BUDGET['☀️ 엄마'][s])||0]),'엄마고정');
 
   let varHtml='<div class="sec-div"><span>비고정비</span></div>';
-  varHtml+=budgetRow('엄마건강','☀️ 엄마건강',BUDGET['☀️ 엄마']-652187,mamaVar,
-    [['엄마건강',mamaVar]],'엄마건강');
+  varHtml+=budgetRow('엄마건강','☀️ 엄마건강',120000,mamaVar,
+    [['엄마건강',mamaVar,120000]],'엄마건강');
   ['🍽️ 식비','🛒 생활용품','👗 꾸밈비','👩‍🎓 자기계발','😷 건강','🚌 교통비','🎁 경조사','📺 문화생활','✔️ 기타'].forEach(c=>{
     const id=c.replace(/[^가-힣a-zA-Z]/g,'');
-    varHtml+=budgetRow(id,c,BUDGET[c],majT[c]||0,
-      (CAT['지출'][c]||[]).map(s=>[s,(subT[c+'__'+s]||0)]),id);
+    varHtml+=budgetRow(id,c,BUDGET[c],majT[c]||0,subList(c),id);
   });
 
   document.getElementById('budget-list').innerHTML=fixedHtml+varHtml;
 
   const cdT={};
   es.filter(e=>e.type==='지출'&&e.outAcct).forEach(e=>{cdT[e.outAcct]=(cdT[e.outAcct]||0)+e.amount;});
-  document.getElementById('card-list').innerHTML=Object.entries(CARD_BUDGET).map(([c,l])=>{
-    const s=cdT[c]||0;if(l===0&&s===0)return'';
+
+  // 카드 그룹 정의
+  const CARD_GROUPS=[
+    {label:'롯카 합산', keys:['롯카','롯카!','롯카!실미','롯카-'], budget:318910},
+    {label:'삼카 합산', keys:['삼카','삼카!','삼카!실미'], budget:284237},
+    {label:'신카 합산', keys:['신카','신카!','신카!실미'], budget:300000},
+    {label:'국카k 합산', keys:['국카k','국카k!','국카k!실미','국카k-'], budget:300000},
+    {label:'국카1', keys:['국카1'], budget:161140},
+  ];
+
+  document.getElementById('card-list').innerHTML=CARD_GROUPS.map((g,gi)=>{
+    const s=g.keys.reduce((sum,k)=>sum+(cdT[k]||0),0);
+    const l=g.budget;
     const p=l>0?Math.min((s/l)*100,100):0;
     const ov=l>0&&s>l,wn=l>0&&s>l*.8;
     const gc=ov?'gr':wn?'gw':'go';
-    return`<div class="cr"><div class="cn">${c}</div><div class="cb"><div class="gb"><div class="gf ${gc}" style="width:${p}%"></div></div></div><div class="cv"><b>${fmtK(s)}</b>/${fmtK(l)}</div></div>`;
+    const remain=l-s;
+    const remainColor=remain>=0?'var(--green)':'var(--red)';
+    const pct=Math.round(p);
+    const amtColor=ov?'var(--red)':wn?'var(--amber)':'var(--sub)';
+    const cid='card-'+gi;
+    // 세부 카드 — 실적 있거나 예산 있는 것만
+    const detailRows=g.keys.map(k=>{
+      const kv=cdT[k]||0;
+      const kb=CARD_BUDGET[k]||0;
+      // 모든 카드 표시
+      const kp=kb>0?Math.min((kv/kb)*100,100):0;
+      const kov=kb>0&&kv>kb;
+      const remain2=kb-kv;
+      return`<div style="display:flex;align-items:center;gap:4px;padding:3px 0;border-bottom:.5px solid var(--border)">
+        <span style="font-size:11px;min-width:58px;color:var(--sub)">${k}</span>
+        <span style="font-size:11px;font-weight:600;color:${kov?'var(--red)':'var(--text)'}">${fmt(kv)}</span>
+        ${kb>0?`<span style="font-size:10px;color:var(--hint)">/ ${fmt(kb)}</span>`:''}
+        ${kb>0?`<div class="gb" style="width:24px;flex-shrink:0"><div class="gf ${kov?'gr':'go'}" style="width:${kp}%"></div></div>`:''}
+        ${kb>0?`<span style="font-size:10px;color:${remain2>=0?'var(--green)':'var(--red)'};margin-left:auto">${remain2>=0?'잔액 '+fmt(remain2):'초과 '+fmt(-remain2)}</span>`:''}
+      </div>`;
+    }).join('');
+    return`<div class="brow-wrap" data-group="card">
+      <div class="brow-hd" onclick="toggleBrow('${cid}')">
+        <span class="bn" style="flex:1;min-width:0">${g.label}</span>
+        <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
+          <span style="font-size:10px;color:${amtColor};white-space:nowrap">${fmtK(s)}/${fmtK(l)}</span>
+          <span style="font-size:10px;font-weight:700;min-width:24px;text-align:right;color:${amtColor}">${pct}%</span>
+          <div class="gb" style="width:32px;flex-shrink:0"><div class="gf ${gc}" style="width:${p}%"></div></div>
+        </div>
+        <div style="font-size:10px;font-weight:600;color:${remainColor};white-space:nowrap;min-width:56px;text-align:right">${remain>=0?'잔액 '+fmtK(remain):'초과 '+fmtK(-remain)}</div>
+        <span class="barr" id="arr-${cid}">▾</span>
+      </div>
+      <div class="brow-detail" id="det-${cid}" style="padding:4px 0">${detailRows}</div>
+    </div>`;
   }).join('');
 }
 
@@ -443,6 +501,22 @@ function toggleBrow(id){
   if(!det)return;
   det.classList.toggle('open');
   if(arr)arr.classList.toggle('open');
+}
+function expandAll(group){
+  document.querySelectorAll('.brow-wrap[data-group="'+group+'"]').forEach(w=>{
+    const det=w.querySelector('.brow-detail');
+    const arr=w.querySelector('.barr');
+    if(det)det.classList.add('open');
+    if(arr)arr.classList.add('open');
+  });
+}
+function collapseAll(group){
+  document.querySelectorAll('.brow-wrap[data-group="'+group+'"]').forEach(w=>{
+    const det=w.querySelector('.brow-detail');
+    const arr=w.querySelector('.barr');
+    if(det)det.classList.remove('open');
+    if(arr)arr.classList.remove('open');
+  });
 }
 function fmt(n){return'₩'+Math.abs(n).toLocaleString('ko-KR');}
 function fmtK(n){return n>=10000?(n/10000).toFixed(n%10000===0?0:1)+'만':n.toLocaleString();}
