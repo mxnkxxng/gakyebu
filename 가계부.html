@@ -554,6 +554,7 @@ function goPage(n,btn){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
   document.getElementById('page-'+n).classList.add('active');btn.classList.add('active');
+  try{localStorage.setItem('lastTab',n);}catch(e){}
   if(n==='home')renderHome();if(n==='history')renderHist();if(n==='balance')renderBalance();if(n==='asset')renderAsset();if(n==='setup')renderSetup();
 }
 function changeMonth(d){
@@ -1483,7 +1484,13 @@ function fmtK(n){return n>=10000?(n/10000).toFixed(n%10000===0?0:1)+'만':n.toLo
 let tt;
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),2000);}
 
-setType('지출');renderHome();updateSheetStatus();initMemo();
+setType('지출');
+const _lastTab=localStorage.getItem('lastTab')||'home';
+const _allNbs=document.querySelectorAll('.nb');
+let _lastBtn=null;
+_allNbs.forEach(b=>{if(b.getAttribute('onclick')&&b.getAttribute('onclick').includes("'"+_lastTab+"'"))_lastBtn=b;});
+if(_lastBtn){goPage(_lastTab,_lastBtn);}else{renderHome();}
+updateSheetStatus();initMemo();
 
 </script>
 </body>
