@@ -509,12 +509,36 @@ function pickAcct(key,val){
 }
 // 계좌 자동완성 초기화 완료
 
+function isConfigured(){
+  return Object.keys(BUDGET).length>0||entries.length>0;
+}
+function showNotConfigured(pageId){
+  const el=document.getElementById(pageId);
+  if(el)el.innerHTML=`<div style="text-align:center;padding:40px 20px;color:var(--sub)">
+    <div style="font-size:40px;margin-bottom:12px">⚙️</div>
+    <div style="font-size:15px;font-weight:700;margin-bottom:8px">설정을 먼저 완료해주세요</div>
+    <div style="font-size:13px;line-height:1.7">⚙️ 설정 탭에서<br>파일을 올려주세요</div>
+  </div>`;
+}
 function goPage(n,btn){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
   document.getElementById('page-'+n).classList.add('active');btn.classList.add('active');
   try{localStorage.setItem('lastTab',n);}catch(e){}
-  if(n==='home')renderHome();if(n==='history')renderHist();if(n==='balance')renderBalance();if(n==='asset')renderAsset();if(n==='setup')renderSetup();
+  if(n==='home')renderHome();
+  else if(n==='history'){if(isConfigured())renderHist();else showNotConfigured('entry-list');}
+  else if(n==='balance'){if(isConfigured())renderBalance();else showNotConfigured('page-balance');}
+  else if(n==='asset'){if(isConfigured())renderAsset();else showNotConfigured('page-asset');}
+  else if(n==='input'){
+    if(!isConfigured()){
+      document.getElementById('page-input').innerHTML=`<div style="text-align:center;padding:60px 20px;color:var(--sub)">
+        <div style="font-size:40px;margin-bottom:12px">⚙️</div>
+        <div style="font-size:15px;font-weight:700;margin-bottom:8px">설정을 먼저 완료해주세요</div>
+        <div style="font-size:13px;line-height:1.7">⚙️ 설정 탭에서<br>파일을 올려주세요</div>
+      </div>`;
+    }
+  }
+  else if(n==='setup')renderSetup();
 }
 function changeMonth(d){
   const[y,m]=curMon.split('-').map(Number);
@@ -528,6 +552,15 @@ function renderHome(){
   const[y,m]=curMon.split('-');
   document.getElementById('month-label').textContent=`${y}년 ${parseInt(m)}월`;
   document.getElementById('hist-month').textContent=`${y}년 ${parseInt(m)}월 내역`;
+  // 설정 전이면 안내 표시
+  if(!isConfigured()){
+    document.getElementById('budget-list').innerHTML=`<div style="text-align:center;padding:20px;color:var(--hint);font-size:13px">⚙️ 설정 탭에서 파일을 올려주세요</div>`;
+    document.getElementById('card-list').innerHTML=`<div style="text-align:center;padding:20px;color:var(--hint);font-size:13px">⚙️ 설정 탭에서 파일을 올려주세요</div>`;
+    document.getElementById('h-in').textContent='₩0';
+    document.getElementById('h-out').textContent='₩0';
+    document.getElementById('h-bal').textContent='₩0';
+    return;
+  }
   const es=me();
   const inc=es.filter(e=>e.type==='수입').reduce((s,e)=>s+e.amount,0);
   const exp=es.filter(e=>e.type==='지출').reduce((s,e)=>s+e.amount,0);
