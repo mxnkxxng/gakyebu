@@ -248,9 +248,14 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
   </div>
 </div>
 <div class="page" id="page-asset">
+  <!-- 순자산 요약 -->
   <div class="sgrid" style="margin-bottom:12px">
-    <div class="sc" style="grid-column:span 2"><div class="sl">투자/저축 합계</div><div class="sv" style="color:var(--blue)" id="ast-invest-total">&#8361;0</div></div>
-    <div class="sc"><div class="sl">부동산</div><div class="sv" style="color:var(--blue)" id="ast-estate-total">&#8361;0</div></div>
+    <div class="sc" style="grid-column:span 3"><div class="sl">순자산</div><div class="sv" id="ast-net">&#8361;0</div></div>
+  </div>
+  <div class="sgrid" style="margin-bottom:12px">
+    <div class="sc"><div class="sl">투자/저축</div><div class="sv" style="color:var(--blue)" id="ast-invest-total">&#8361;0</div></div>
+    <div class="sc"><div class="sl">실질부동산</div><div class="sv" style="color:var(--blue)" id="ast-estate-total">&#8361;0</div></div>
+    <div class="sc"><div class="sl">현금</div><div class="sv" style="color:var(--blue)" id="ast-cash-total">&#8361;0</div></div>
   </div>
   <div class="card">
     <div class="ct" style="display:flex;justify-content:space-between;align-items:center">
@@ -264,7 +269,9 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
     <div class="trow" style="margin-bottom:8px"><span class="tlbl">전체 저축률</span><span class="tval" id="ast-sav-rate">0%</span></div>
     <div id="ast-trend"></div>
   </div>
-  <div class="card"><div class="ct">투자/저축 계좌</div><div id="ast-invest"></div></div>
+  <div class="card"><div class="ct">노후 자금</div><div id="ast-pension"></div></div>
+  <div class="card"><div class="ct">목적 저축</div><div id="ast-save"></div></div>
+  <div class="card"><div class="ct">주식 · 기타</div><div id="ast-stock"></div></div>
   <div class="card"><div class="ct">부동산</div><div id="ast-estate"></div></div>
 </div>
 <div class="page" id="page-setup">
@@ -372,26 +379,26 @@ var CARD_GROUP_KEYS = {'\uB86F\uCE74':['\uB86F\uCE74','\uB86F\uCE74!','\uB86F\uC
 var CARD_GROUPS = [{label:'\uB86F\uCE74 \uD569\uC0B0',keys:['\uB86F\uCE74','\uB86F\uCE74!','\uB86F\uCE74!\uC2E4\uBBF8','\uB86F\uCE74-']},{label:'\uC0BC\uCE74 \uD569\uC0B0',keys:['\uC0BC\uCE74','\uC0BC\uCE74!','\uC0BC\uCE74!\uC2E4\uBBF8']},{label:'\uC2E0\uCE74 \uD569\uC0B0',keys:['\uC2E0\uCE74','\uC2E0\uCE74!','\uC2E0\uCE74!\uC2E4\uBBF8']},{label:'\uAD6D\uCE74k \uD569\uC0B0',keys:['\uAD6D\uCE74k','\uAD6D\uCE74k!','\uAD6D\uCE74k!\uC2E4\uBBF8','\uAD6D\uCE74k-']},{label:'\uAD6D\uCE741',keys:['\uAD6D\uCE741']}];
 var ACCTS = ['KB\uBC45\uD06C','NH\uBC45\uD06C','\uCF00\uC774-\uB36D\uC9C8','\uCF00\uC774-\uBE44\uC0C1\uAE08','\uCF00\uC774-\uC784\uC2DC','\uCF00\uC774\uBC45\uD06C','\uD558\uB098\uC740\uD589','\uCF00\uC774-\uC9D1\uACC4\uC57D\uC6A9','\uC2E0\uD55C\uC740\uD589','\uC804\uC138 \uBCF4\uC99D\uAE08','\uD1A0\uC2A4\uC99D\uAD8C','\uBBF8\uB798\uC5D0\uC14B','\uC0BC\uC131\uC99D\uAD8C','\uC6B0\uB9AEIRP','\uB18D\uCE74','\uB18D\uCE74!','\uB18D\uCE74!\uC2E4\uBBF8','\uB18D\uCE74-','\uB86F\uCE74','\uB86F\uCE74!','\uB86F\uCE74!\uC2E4\uBBF8','\uB86F\uCE74-','\uC2E0\uCE74','\uC2E0\uCE74!','\uC2E0\uCE74!\uC2E4\uBBF8','\uC0BC\uCE74','\uC0BC\uCE74!','\uAD6D\uCE741','\uAD6D\uCE74k','\uAD6D\uCE74k!','\uAD6D\uCE74k!\uC2E4\uBBF8','\uAD6D\uCE74k-','\uC804\uC138\uC790\uAE08\uB300\uCD9C \uC6D0\uAE08(\uAD6D\uBBFC)','\uC804\uC138\uC790\uAE08\uB300\uCD9C \uC6D0\uAE08(\uB18D\uD611)','\uC5C4\uB9C8\uC2E0\uC6A9\uB300\uCD9C \uC6D0\uAE08'];
 var ACCTS_DEF = [
-  {key:'KB\uBC45\uD06C',label:'KB\uBC45\uD06C',group:'cash'},
-  {key:'NH\uBC45\uD06C',label:'NH\uBC45\uD06C',group:'cash'},
-  {key:'\uCF00\uC774-\uC784\uC2DC',label:'\uCF00\uC774-\uC784\uC2DC',group:'cash'},
-  {key:'\uCF00\uC774\uBC45\uD06C',label:'\uCF00\uC774\uBC45\uD06C',group:'cash'},
-  {key:'\uCF00\uC774-\uBE44\uC0C1\uAE08',label:'\uCF00\uC774-\uBE44\uC0C1\uAE08',group:'cash'},
-  {key:'\uCF00\uC774-\uB36D\uC9C8',label:'\uCF00\uC774-\uB36D\uC9C8',group:'cash'},
-  {key:'\uD558\uB098\uC740\uD589',label:'\uD558\uB098\uC740\uD589',group:'cash'},
-  {key:'\uCF00\uC774-\uC9D1\uACC4\uC57D\uC6A9',label:'\uC9D1\uACC4\uC57D\uC6A9',group:'invest',goal:1000000},
-  {key:'\uC2E0\uD55C\uC740\uD589',label:'\uC8FC\uD0DD\uCCAD\uC57D(\uC2E0\uD55C)',group:'invest'},
-  {key:'\uBBF8\uB798\uC5D0\uC14B',label:'\uAC1C\uC778\uC5F0\uAE08(\uBBF8\uB798\uC5D0\uC14B)',group:'invest',goal:400000},
-  {key:'\uC6B0\uB9AEIRP',label:'\uC6B0\uB9AEIRP',group:'invest'},
-  {key:'\uD1A0\uC2A4\uC99D\uAD8C',label:'ISA(\uD1A0\uC2A4)',group:'invest',goal:500000},
-  {key:'\uC0BC\uC131\uC99D\uAD8C',label:'\uC0BC\uC131\uC99D\uAD8C',group:'invest'},
-  {key:'\uC804\uC138 \uBCF4\uC99D\uAE08',label:'\uC804\uC138 \uBCF4\uC99D\uAE08',group:'estate'},
-  {key:'\uB86F\uCE74',label:'\uB86F\uCE74',group:'debt'},{key:'\uB86F\uCE74-',label:'\uB86F\uCE74-',group:'debt'},
-  {key:'\uC0BC\uCE74',label:'\uC0BC\uCE74',group:'debt'},{key:'\uC2E0\uCE74!',label:'\uC2E0\uCE74!',group:'debt'},
-  {key:'\uAD6D\uCE741',label:'\uAD6D\uCE741',group:'debt'},{key:'\uAD6D\uCE74k',label:'\uAD6D\uCE74k',group:'debt'},
-  {key:'\uAD6D\uCE74k!',label:'\uAD6D\uCE74k!',group:'debt'},{key:'\uAD6D\uCE74k!\uC2E4\uBBF8',label:'\uAD6D\uCE74k!\uC2E4\uBBF8',group:'debt'},
-  {key:'\uAD6D\uCE74k-',label:'\uAD6D\uCE74k-',group:'debt'},
-  {key:'\uC804\uC138\uC790\uAE08\uB300\uCD9C \uC6D0\uAE08(\uAD6D\uBBFC)',label:'\uC804\uC138\uB300\uCD9C(\uAD6D\uBBFC)',group:'longdebt'}
+  {key:'KB뱅크',label:'KB뱅크',group:'cash'},
+  {key:'NH뱅크',label:'NH뱅크',group:'cash'},
+  {key:'케이-임시',label:'케이-임시',group:'cash'},
+  {key:'케이뱅크',label:'케이뱅크',group:'cash'},
+  {key:'케이-비상금',label:'케이-비상금',group:'cash'},
+  {key:'케이-덕질',label:'케이-덕질',group:'cash'},
+  {key:'하나은행',label:'하나은행',group:'cash'},
+  {key:'케이-집계약용',label:'집계약용',group:'save',goal:1000000},
+  {key:'신한은행',label:'주택청약',group:'save'},
+  {key:'우릮IRP',label:'IRP (우리)',group:'pension'},
+  {key:'미래에셋',label:'개인연금 (미래)',group:'pension',goal:400000},
+  {key:'삼성증권',label:'개인연금 (삼성)',group:'pension'},
+  {key:'토스증권',label:'ISA',group:'stock',goal:500000},
+  {key:'전세 보증금',label:'전세 보증금',group:'estate'},
+  {key:'롯카',label:'롯카',group:'debt'},{key:'롯카-',label:'롯카-',group:'debt'},
+  {key:'삼카',label:'삼카',group:'debt'},{key:'신카!',label:'신카!',group:'debt'},
+  {key:'국카1',label:'국카1',group:'debt'},{key:'국카k',label:'국카k',group:'debt'},
+  {key:'국카k!',label:'국카k!',group:'debt'},{key:'국카k!실미',label:'국카k!실미',group:'debt'},
+  {key:'국카k-',label:'국카k-',group:'debt'},
+  {key:'전세자금대출 원금(국민)',label:'전세대출(국민)',group:'longdebt'}
 ];
 var CMAP = [
   {k:['\uB86F\uCE74!\uC2E4\uBBF8'],v:'\uB86F\uCE74!\uC2E4\uBBF8'},{k:['\uB86F\uCE74!'],v:'\uB86F\uCE74!'},{k:['\uB86F\uCE74-'],v:'\uB86F\uCE74-'},{k:['\uB86F\uB370\uCE74\uB4DC','\uB85C\uCE74','\uB86F\uCE74'],v:'\uB86F\uCE74'},
@@ -761,31 +768,76 @@ function renderBalance(){
 // ── 자산 ──
 function renderAsset(){
   var cb=calcBalances().curBal;
-  var invA=ACCTS_DEF.filter(function(a){return a.group==='invest';}),estA=ACCTS_DEF.filter(function(a){return a.group==='estate';});
-  var invT=invA.reduce(function(s,a){return s+cb(a.key);},0),estT=estA.reduce(function(s,a){return s+cb(a.key);},0);
+  var cashA=ACCTS_DEF.filter(function(a){return a.group==='cash';});
+  var saveA=ACCTS_DEF.filter(function(a){return a.group==='save';});
+  var pensA=ACCTS_DEF.filter(function(a){return a.group==='pension';});
+  var stockA=ACCTS_DEF.filter(function(a){return a.group==='stock';});
+  var estA=ACCTS_DEF.filter(function(a){return a.group==='estate';});
+  var debtA=ACCTS_DEF.filter(function(a){return a.group==='debt';});
+  var ldA=ACCTS_DEF.filter(function(a){return a.group==='longdebt';});
+
+  var cashT=cashA.reduce(function(s,a){return s+cb(a.key);},0);
+  var invT=[].concat(saveA,pensA,stockA).reduce(function(s,a){return s+cb(a.key);},0);
+  var estT=estA.reduce(function(s,a){return s+cb(a.key);},0);
+  var ldT=ldA.reduce(function(s,a){return s+cb(a.key);},0);
+  var debtT=debtA.reduce(function(s,a){return s+Math.min(0,cb(a.key));},0);
+  // 실질 부동산 = 보증금 - 전세대출
+  var estNet=estT+ldT; // ldT는 음수
+  // 순자산 = 현금 + 투자저축 + 실질부동산 + 카드미결제
+  var netWorth=cashT+invT+estNet+debtT;
+
   document.getElementById('ast-invest-total').textContent=fmt(invT);
-  document.getElementById('ast-estate-total').textContent=fmt(estT);
-  var allInc=entries.filter(function(e){return e.type==='\uC218\uC785';}).reduce(function(s,e){return s+e.amount;},0);
-  var allSav=entries.filter(function(e){return e.type==='\uC774\uB3D9'&&invA.some(function(a){return a.key===e.inAcct;});}).reduce(function(s,e){return s+e.amount;},0);
+  document.getElementById('ast-estate-total').textContent=fmt(estNet);
+  document.getElementById('ast-cash-total').textContent=fmt(cashT);
+  var netEl=document.getElementById('ast-net');
+  netEl.textContent=(netWorth<0?'-':'')+fmt(netWorth);
+  netEl.style.color=netWorth>=0?'var(--blue)':'var(--red)';
+
+  // 저축률
+  var allInc=entries.filter(function(e){return e.type==='수입';}).reduce(function(s,e){return s+e.amount;},0);
+  var invKeys=[].concat(saveA,pensA,stockA).map(function(a){return a.key;});
+  var allSav=entries.filter(function(e){return e.type==='이동'&&invKeys.indexOf(e.inAcct)>=0;}).reduce(function(s,e){return s+e.amount;},0);
   var sr=allInc>0?Math.round(allSav/allInc*100):0;
   var rEl=document.getElementById('ast-sav-rate');rEl.textContent=sr+'%';rEl.style.color=sr>=30?'var(--green)':'var(--amber)';
-  var ym=curMon.split('-');document.getElementById('ast-month-lbl').textContent=ym[0]+'\uB144 '+parseInt(ym[1])+'\uC6D4';
+
+  // 이달 저축 현황
+  var ym=curMon.split('-');document.getElementById('ast-month-lbl').textContent=ym[0]+'년 '+parseInt(ym[1])+'월';
   var mSS=0;
   document.getElementById('ast-monthly').innerHTML=SAVE_GOALS.map(function(g){
-    var mA=entries.filter(function(e){return e.date&&e.date.indexOf(curMon)===0&&e.type==='\uC774\uB3D9'&&e.memo&&e.memo.indexOf(g.mk)>=0;}).reduce(function(s,e){return s+e.amount;},0);
+    var mA=entries.filter(function(e){return e.date&&e.date.indexOf(curMon)===0&&e.type==='이동'&&e.memo&&e.memo.indexOf(g.mk)>=0;}).reduce(function(s,e){return s+e.amount;},0);
     mSS+=mA;var ok=g.g===0||mA>=g.g;var pct=g.g>0?Math.min(Math.round(mA/g.g*100),100):0;var gc=ok?'go':mA>0?'gw':'';
     return '<div style="display:flex;align-items:center;gap:4px;margin-bottom:6px"><span class="bn" style="flex:1">'+g.n+'</span><span style="font-size:10px;color:var(--sub);white-space:nowrap">'+fmt(mA)+(g.g>0?' / '+fmt(g.g):'')+'</span>'+(g.g>0?'<div class="gb" style="width:40px"><div class="gf '+gc+'" style="width:'+pct+'%"></div></div>':'')+'<span>'+(ok?'V':'·')+'</span></div>';
   }).join('');
   document.getElementById('ast-sav-sum').textContent=fmt(mSS);
+
+  // 추이
   var allMons=[].concat.apply([],entries.map(function(e){return e.date?[e.date.slice(0,7)]:[];})).filter(function(v,i,a){return a.indexOf(v)===i;}).sort();
   document.getElementById('ast-trend').innerHTML=allMons.map(function(mon){
-    var mI=entries.filter(function(e){return e.date&&e.date.indexOf(mon)===0&&e.type==='\uC218\uC785';}).reduce(function(s,e){return s+e.amount;},0);
-    var mS=entries.filter(function(e){return e.date&&e.date.indexOf(mon)===0&&e.type==='\uC774\uB3D9'&&invA.some(function(a){return a.key===e.inAcct;});}).reduce(function(s,e){return s+e.amount;},0);
+    var mI=entries.filter(function(e){return e.date&&e.date.indexOf(mon)===0&&e.type==='수입';}).reduce(function(s,e){return s+e.amount;},0);
+    var mS=entries.filter(function(e){return e.date&&e.date.indexOf(mon)===0&&e.type==='이동'&&invKeys.indexOf(e.inAcct)>=0;}).reduce(function(s,e){return s+e.amount;},0);
     var mR=mI>0?Math.round(mS/mI*100):0,mm=mon.split('-')[1],col=mR>=30?'var(--green)':mR>=15?'var(--amber)':'var(--red)';
-    return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:.5px solid var(--border)"><span style="font-size:12px;font-weight:600;min-width:28px">'+parseInt(mm)+'\uC6D4</span><div style="flex:1;height:8px;background:var(--bg);border-radius:99px;overflow:hidden"><div style="height:100%;width:'+Math.min(mR*2,100)+'%;background:'+col+';border-radius:99px"></div></div><span style="font-size:11px;font-weight:700;color:'+col+';min-width:32px">'+mR+'%</span><span style="font-size:11px;color:var(--sub);min-width:60px;text-align:right">'+fmtK(mS)+'</span></div>';
-  }).join('')||'<div class="empty">\uB370\uC774\uD130 \uC5C6\uC74C</div>';
-  document.getElementById('ast-invest').innerHTML=invA.map(function(a){var v=cb(a.key);return '<div class="srow"><div><div class="sname">'+a.label+'</div>'+(a.goal?'<div style="font-size:10px;color:var(--sub)">\uC6D4 \uBAA9\uD45C '+fmt(a.goal)+'</div>':'')+'</div><span class="samt" style="color:var(--blue)">'+fmt(v)+'</span></div>';}).join('')+'<div class="div"></div><div class="trow"><span class="tlbl">\uD22C\uC790 \uD569\uACC4</span><span class="tval" style="color:var(--blue)">'+fmt(invT)+'</span></div>';
-  document.getElementById('ast-estate').innerHTML=estA.map(function(a){var v=cb(a.key);return '<div class="srow"><span class="sname">'+a.label+'</span><span class="samt" style="color:var(--blue)">'+fmt(v)+'</span></div>';}).join('');
+    return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:.5px solid var(--border)"><span style="font-size:12px;font-weight:600;min-width:28px">'+parseInt(mm)+'월</span><div style="flex:1;height:8px;background:var(--bg);border-radius:99px;overflow:hidden"><div style="height:100%;width:'+Math.min(mR*2,100)+'%;background:'+col+';border-radius:99px"></div></div><span style="font-size:11px;font-weight:700;color:'+col+';min-width:32px">'+mR+'%</span><span style="font-size:11px;color:var(--sub);min-width:60px;text-align:right">'+fmtK(mS)+'</span></div>';
+  }).join('')||'<div class="empty">데이터 없음</div>';
+
+  // 노후 자금
+  var pensT=pensA.reduce(function(s,a){return s+cb(a.key);},0);
+  document.getElementById('ast-pension').innerHTML=pensA.map(function(a){var v=cb(a.key);return '<div class="srow"><div><div class="sname">'+a.label+'</div>'+(a.goal?'<div style="font-size:10px;color:var(--sub)">월 목표 '+fmt(a.goal)+'</div>':'')+'</div><span class="samt" style="color:var(--blue)">'+fmt(v)+'</span></div>';}).join('')
+    +'<div class="div"></div><div class="trow"><span class="tlbl">합계</span><span class="tval" style="color:var(--blue)">'+fmt(pensT)+'</span></div>';
+
+  // 목적 저축
+  var saveT=saveA.reduce(function(s,a){return s+cb(a.key);},0);
+  document.getElementById('ast-save').innerHTML=saveA.map(function(a){var v=cb(a.key);return '<div class="srow"><div><div class="sname">'+a.label+'</div>'+(a.goal?'<div style="font-size:10px;color:var(--sub)">월 목표 '+fmt(a.goal)+'</div>':'')+'</div><span class="samt" style="color:var(--blue)">'+fmt(v)+'</span></div>';}).join('')
+    +'<div class="div"></div><div class="trow"><span class="tlbl">합계</span><span class="tval" style="color:var(--blue)">'+fmt(saveT)+'</span></div>';
+
+  // 주식·기타
+  var stockT=stockA.reduce(function(s,a){return s+cb(a.key);},0);
+  document.getElementById('ast-stock').innerHTML=stockA.map(function(a){var v=cb(a.key);return '<div class="srow"><div><div class="sname">'+a.label+'</div>'+(a.goal?'<div style="font-size:10px;color:var(--sub)">월 목표 '+fmt(a.goal)+'</div>':'')+'</div><span class="samt" style="color:var(--blue)">'+fmt(v)+'</span></div>';}).join('')
+    +'<div class="div"></div><div class="trow"><span class="tlbl">합계</span><span class="tval" style="color:var(--blue)">'+fmt(stockT)+'</span></div>';
+
+  // 부동산
+  document.getElementById('ast-estate').innerHTML=estA.map(function(a){var v=cb(a.key);return '<div class="srow"><span class="sname">'+a.label+'</span><span class="samt" style="color:var(--blue)">'+fmt(v)+'</span></div>';}).join('')
+    +ldA.map(function(a){var v=cb(a.key);return '<div class="srow"><span class="sname" style="color:var(--red)">'+a.label+'</span><span class="samt" style="color:var(--red)">'+fmt(v)+'</span></div>';}).join('')
+    +'<div class="div"></div><div class="trow"><span class="tlbl">실질 부동산</span><span class="tval" style="color:'+(estNet>=0?'var(--blue)':'var(--red)')+'">'+fmt(estNet)+'</span></div>';
 }
 
 // ── 설정 ──
