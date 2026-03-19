@@ -1093,15 +1093,18 @@ function parseRows(rows){
   let maxId=entries.length?Math.max(...entries.map(x=>x.id)):0;
   for(let i=0;i<rows.length;i++){
     const r=rows[i];
-    const date=String(r[0]||'').trim().replace(/\//g,'-');
-    const type=String(r[1]||'').trim();
-    const major=String(r[2]||'').replace(//g,'').trim();
-    const sub=String(r[3]||'').replace(//g,'').trim();
-    const memo=String(r[4]||'').trim();
-    const amtRaw=String(r[5]||'0').replace(/[^0-9\-]/g,'');
+    // 첫 컬럼 빈칸이면 offset=1 (구글 시트 CSV 형식)
+    let o=0;
+    if(String(r[0]||'').trim()===''&&String(r[1]||'').trim().match(/^20\d\d/))o=1;
+    const date=String(r[o]||'').trim().replace(/\//g,'-');
+    const type=String(r[o+1]||'').trim();
+    const major=String(r[o+2]||'').replace(/[\x00-\x08]/g,'').trim();
+    const sub=String(r[o+3]||'').replace(/[\x00-\x08]/g,'').trim();
+    const memo=String(r[o+4]||'').trim();
+    const amtRaw=String(r[o+5]||'0').replace(/[^0-9\-]/g,'');
     const amt=Math.abs(parseInt(amtRaw)||0);
-    const inAcct=String(r[6]||'').trim();
-    const outAcct=String(r[7]||'').trim();
+    const inAcct=String(r[o+6]||'').trim();
+    const outAcct=String(r[o+7]||'').trim();
     if(!date.match(/^20\d\d-\d\d-\d\d/)||!['지출','수입','이동'].includes(type)||amt===0)continue;
     maxId++;
     imported.push({id:maxId,date:date.slice(0,10),type,major,sub,memo,amount:amt,inAcct,outAcct});
