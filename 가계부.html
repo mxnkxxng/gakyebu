@@ -822,9 +822,9 @@ function loadFromSheet(){
   var st=document.getElementById('sheet-load-status');st.textContent='\uBD88\uB7EC\uC624\uB294 \uC911...';
   fetch(url+'?action=entries').then(function(r){return r.json();}).then(function(data){
     if(!data.ok)throw new Error(data.error||'\uC624\uB958');
-    var imported=(data.entries||[]).map(function(e){return {id:e.id||Date.now()+Math.random(),date:e.date,type:e.type,major:e.major,sub:e.sub,memo:e.memo||'',amount:Math.abs(parseFloat(e.amount)||0),inAcct:e.inAcct||'',outAcct:e.outAcct||''};}).filter(function(e){return e.date&&['\uC9C0\uCD9C','\uC218\uC785','\uC774\uB3D9'].indexOf(e.type)>=0&&e.amount>0;});
-    var keys=new Set(entries.map(function(x){return x.date+'|'+x.type+'|'+x.major+'|'+x.sub+'|'+x.memo+'|'+x.amount;}));
-    var newOnes=imported.filter(function(x){return !keys.has(x.date+'|'+x.type+'|'+x.major+'|'+x.sub+'|'+x.memo+'|'+x.amount);});
+    var imported=(data.entries||[]).map(function(e){return {id:e.id||Date.now()+Math.random(),date:e.date,type:e.type,major:e.major||'',sub:e.sub||'',memo:e.memo||'',amount:Math.abs(parseFloat(e.amount)||0),inAcct:e.inAcct||'',outAcct:e.outAcct||''};}).filter(function(e){return e.date&&['\uC9C0\uCD9C','\uC218\uC785','\uC774\uB3D9'].indexOf(e.type)>=0&&e.amount>0;});
+    var keys=new Set(entries.map(function(x){return x.date+'|'+x.type+'|'+x.amount+'|'+(x.outAcct||'')+'|'+(x.inAcct||'');}));
+    var newOnes=imported.filter(function(x){return !keys.has(x.date+'|'+x.type+'|'+x.amount+'|'+(x.outAcct||'')+'|'+(x.inAcct||''));});
     entries=entries.concat(newOnes);entries.sort(function(a,b){return b.date.localeCompare(a.date);});saveEntries();
     st.textContent=newOnes.length+'\uAC74 \uC0C8\uB85C \uAC00\uC838\uC654\uC5B4\uC694 (\uCD1D '+entries.length+'\uAC74)';
     showToast(newOnes.length+'\uAC74 \uBD88\uB7EC\uC654\uC5B4\uC694!');renderHome();renderHist();
@@ -889,8 +889,8 @@ function parseEntryRows(rows){
 }
 function mergeImport(imported){
   if(!imported.length){showToast('\uAC00\uC838\uC62C \uB0B4\uC5ED\uC774 \uC5C6\uC5B4\uC694');return;}
-  var keys=new Set(entries.map(function(x){return x.date+'|'+x.type+'|'+x.major+'|'+x.sub+'|'+x.memo+'|'+x.amount;}));
-  var newOnes=imported.filter(function(x){return !keys.has(x.date+'|'+x.type+'|'+x.major+'|'+x.sub+'|'+x.memo+'|'+x.amount);});
+  var keys=new Set(entries.map(function(x){return x.date+'|'+x.type+'|'+x.amount+'|'+(x.outAcct||'')+'|'+(x.inAcct||'');}));
+  var newOnes=imported.filter(function(x){return !keys.has(x.date+'|'+x.type+'|'+x.amount+'|'+(x.outAcct||'')+'|'+(x.inAcct||''));});
   entries=entries.concat(newOnes);entries.sort(function(a,b){return b.date.localeCompare(a.date);});saveEntries();
   showToast(newOnes.length+'\uAC74 \uAC00\uC838\uC655\uC5B4\uC694!');
   var st=document.getElementById('setup-import-status');if(st)st.textContent='\uCD1D '+entries.length+'\uAC74 \uB85C\uB4DC\uB428';
