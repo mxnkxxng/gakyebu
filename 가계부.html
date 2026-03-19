@@ -307,9 +307,9 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
     <div id="setup-current-content"></div>
   </div>
   <div class="card">
-    <div class="ct">초기쟘고 리셋</div>
-    <div style="font-size:12px;color:var(--sub);margin-bottom:10px;line-height:1.7">시트에 25년말 쟘고가 이미 반영되어 있으면 앱 초기쟘고를 0으로 리셋해주세요</div>
-    <button onclick="resetInitBal()" style="width:100%;padding:11px;background:var(--amber-bg);color:var(--amber);border:.5px solid var(--amber-lt);border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer">초기쟘고 0으로 리셋</button>
+    <div class="ct">초기 잔고 리셋</div>
+    <div style="font-size:12px;color:var(--sub);margin-bottom:10px;line-height:1.7">시트에 25년말 잔고가 이미 반영되어 있으면 앱 초기 잔고를 0으로 리셋해주세요</div>
+    <button onclick="resetInitBal()" style="width:100%;padding:11px;background:var(--amber-bg);color:var(--amber);border:.5px solid var(--amber-lt);border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer">초기 잔고 0으로 리셋</button>
   </div>
   <div class="card" style="border-color:var(--red-lt)">
     <div class="ct" style="color:var(--red)">전체 초기화</div>
@@ -379,26 +379,37 @@ var CARD_GROUP_KEYS = {'\uB86F\uCE74':['\uB86F\uCE74','\uB86F\uCE74!','\uB86F\uC
 var CARD_GROUPS = [{label:'\uB86F\uCE74 \uD569\uC0B0',keys:['\uB86F\uCE74','\uB86F\uCE74!','\uB86F\uCE74!\uC2E4\uBBF8','\uB86F\uCE74-']},{label:'\uC0BC\uCE74 \uD569\uC0B0',keys:['\uC0BC\uCE74','\uC0BC\uCE74!','\uC0BC\uCE74!\uC2E4\uBBF8']},{label:'\uC2E0\uCE74 \uD569\uC0B0',keys:['\uC2E0\uCE74','\uC2E0\uCE74!','\uC2E0\uCE74!\uC2E4\uBBF8']},{label:'\uAD6D\uCE74k \uD569\uC0B0',keys:['\uAD6D\uCE74k','\uAD6D\uCE74k!','\uAD6D\uCE74k!\uC2E4\uBBF8','\uAD6D\uCE74k-']},{label:'\uAD6D\uCE741',keys:['\uAD6D\uCE741']}];
 var ACCTS = ['KB\uBC45\uD06C','NH\uBC45\uD06C','\uCF00\uC774-\uB36D\uC9C8','\uCF00\uC774-\uBE44\uC0C1\uAE08','\uCF00\uC774-\uC784\uC2DC','\uCF00\uC774\uBC45\uD06C','\uD558\uB098\uC740\uD589','\uCF00\uC774-\uC9D1\uACC4\uC57D\uC6A9','\uC2E0\uD55C\uC740\uD589','\uC804\uC138 \uBCF4\uC99D\uAE08','\uD1A0\uC2A4\uC99D\uAD8C','\uBBF8\uB798\uC5D0\uC14B','\uC0BC\uC131\uC99D\uAD8C','\uC6B0\uB9AEIRP','\uB18D\uCE74','\uB18D\uCE74!','\uB18D\uCE74!\uC2E4\uBBF8','\uB18D\uCE74-','\uB86F\uCE74','\uB86F\uCE74!','\uB86F\uCE74!\uC2E4\uBBF8','\uB86F\uCE74-','\uC2E0\uCE74','\uC2E0\uCE74!','\uC2E0\uCE74!\uC2E4\uBBF8','\uC0BC\uCE74','\uC0BC\uCE74!','\uAD6D\uCE741','\uAD6D\uCE74k','\uAD6D\uCE74k!','\uAD6D\uCE74k!\uC2E4\uBBF8','\uAD6D\uCE74k-','\uC804\uC138\uC790\uAE08\uB300\uCD9C \uC6D0\uAE08(\uAD6D\uBBFC)','\uC804\uC138\uC790\uAE08\uB300\uCD9C \uC6D0\uAE08(\uB18D\uD611)','\uC5C4\uB9C8\uC2E0\uC6A9\uB300\uCD9C \uC6D0\uAE08'];
 var ACCTS_DEF = [
+  // 현금·예금 (이름 순)
   {key:'KB뱅크',label:'KB뱅크',group:'cash'},
   {key:'NH뱅크',label:'NH뱅크',group:'cash'},
-  {key:'케이-임시',label:'케이-임시',group:'cash'},
   {key:'케이뱅크',label:'케이뱅크',group:'cash'},
+  {key:'케이-임시',label:'케이-임시',group:'cash'},
   {key:'케이-비상금',label:'케이-비상금',group:'cash'},
   {key:'케이-덕질',label:'케이-덕질',group:'cash'},
+  {key:'케이-집계약용',label:'케이-집계약용',group:'cash'},
   {key:'하나은행',label:'하나은행',group:'cash'},
-  {key:'케이-집계약용',label:'집계약용',group:'save',goal:1000000},
-  {key:'신한은행',label:'주택청약',group:'save'},
-  {key:'우릮IRP',label:'IRP (우리)',group:'pension'},
+  // 목적 저축
+  {key:'신한은행',label:'주택청약 (신한)',group:'save'},
+  // 노후 자금
+  {key:'우리IRP',label:'IRP (우리)',group:'pension'},
   {key:'미래에셋',label:'개인연금 (미래)',group:'pension',goal:400000},
   {key:'삼성증권',label:'개인연금 (삼성)',group:'pension'},
+  // 주식·기타
   {key:'토스증권',label:'ISA',group:'stock',goal:500000},
+  // 부동산
   {key:'전세 보증금',label:'전세 보증금',group:'estate'},
-  {key:'롯카',label:'롯카',group:'debt'},{key:'롯카-',label:'롯카-',group:'debt'},
-  {key:'삼카',label:'삼카',group:'debt'},{key:'신카!',label:'신카!',group:'debt'},
-  {key:'국카1',label:'국카1',group:'debt'},{key:'국카k',label:'국카k',group:'debt'},
-  {key:'국카k!',label:'국카k!',group:'debt'},{key:'국카k!실미',label:'국카k!실미',group:'debt'},
+  // 카드 미결제 (이름 순)
+  {key:'국카1',label:'국카1',group:'debt'},
+  {key:'국카k',label:'국카k',group:'debt'},
+  {key:'국카k!',label:'국카k!',group:'debt'},
+  {key:'국카k!실미',label:'국카k!실미',group:'debt'},
   {key:'국카k-',label:'국카k-',group:'debt'},
-  {key:'전세자금대출 원금(국민)',label:'전세대출(국민)',group:'longdebt'}
+  {key:'롯카',label:'롯카',group:'debt'},
+  {key:'롯카-',label:'롯카-',group:'debt'},
+  {key:'삼카',label:'삼카',group:'debt'},
+  {key:'신카!',label:'신카!',group:'debt'},
+  // 장기부채
+  {key:'전세자금대출 원금(국민)',label:'전세대출 (국민)',group:'longdebt'}
 ];
 var CMAP = [
   {k:['\uB86F\uCE74!\uC2E4\uBBF8'],v:'\uB86F\uCE74!\uC2E4\uBBF8'},{k:['\uB86F\uCE74!'],v:'\uB86F\uCE74!'},{k:['\uB86F\uCE74-'],v:'\uB86F\uCE74-'},{k:['\uB86F\uB370\uCE74\uB4DC','\uB85C\uCE74','\uB86F\uCE74'],v:'\uB86F\uCE74'},
@@ -718,7 +729,18 @@ function deleteAndClose(){
 }
 
 // ── 잔고 ──
-function getInitBal(){try{var s=localStorage.getItem('initBal');if(s)return JSON.parse(s);}catch(e){}var d={};ACCTS_DEF.forEach(function(a){d[a.key]=0;});return d;}
+function getInitBal(){
+  try{
+    var s=localStorage.getItem('initBal');
+    if(s){
+      var d=JSON.parse(s);
+      // 구 키 마이그레이션
+      if(d['케이-덭질']!==undefined&&d['케이-덕질']===undefined){d['케이-덕질']=d['케이-덭질'];delete d['케이-덭질'];localStorage.setItem('initBal',JSON.stringify(d));}
+      return d;
+    }
+  }catch(e){}
+  var d={};ACCTS_DEF.forEach(function(a){d[a.key]=0;});return d;
+}
 function saveInitBal(){
   var d={};ACCTS_DEF.forEach(function(a){var el=document.getElementById('ibal-'+a.key.replace(/[^a-zA-Z0-9]/g,'_'));if(el)d[a.key]=parseInt(el.value.replace(/,/g,''))||0;});
   try{localStorage.setItem('initBal',JSON.stringify(d));}catch(e){}
@@ -914,10 +936,10 @@ function renderCurrentConfig(){
   var hB=Object.keys(BUDGET).length>0,hC=Object.values(CARD_BUDGET).some(function(v){return v>0;}),hG=SAVE_GOALS.length>0,hI=Object.values(init).some(function(v){return v!==0;});
   if(!hB&&!hC&&!hG&&!hI){card.style.display='none';return;}
   card.style.display='block';var h='';
-  if(hB){h+='<div style="margin-bottom:14px"><div style="font-size:11px;font-weight:700;color:var(--sub);margin-bottom:6px">\uCE74\uD14C\uACE0\uB9AC \uC608\uC0B0</div>';Object.entries(BUDGET).forEach(function(kv){h+='<div class="srow"><span class="sname" style="font-size:12px">'+kv[0]+'</span><span class="samt" style="font-size:12px;color:'+(kv[1]>0?'var(--blue)':'var(--hint)')+'">'+( kv[1]>0?fmt(kv[1]):'\uBBF8\uC124\uC815')+'</span></div>';});h+='</div>';}
+  if(hB){h+='<div style="margin-bottom:14px"><div style="font-size:11px;font-weight:700;color:var(--sub);margin-bottom:6px">카테고리 예산</div>';Object.entries(BUDGET).forEach(function(kv){var lbl=getCatLabel('지출',kv[0])||kv[0];h+='<div class="srow"><span class="sname" style="font-size:12px">'+lbl+'</span><span class="samt" style="font-size:12px;color:'+(kv[1]>0?'var(--blue)':'var(--hint)')+'">'+(kv[1]>0?fmt(kv[1]):'미설정')+'</span></div>';});h+='</div>';}
   if(hC){h+='<div style="margin-bottom:14px"><div style="font-size:11px;font-weight:700;color:var(--sub);margin-bottom:6px">\uCE74\uB4DC \uC608\uC0B0</div>';Object.entries(CARD_BUDGET).filter(function(kv){return kv[1]>0;}).forEach(function(kv){h+='<div class="srow"><span class="sname" style="font-size:12px">'+kv[0]+'</span><span class="samt" style="font-size:12px;color:var(--blue)">'+fmt(kv[1])+'</span></div>';});h+='</div>';}
   if(hG){h+='<div style="margin-bottom:14px"><div style="font-size:11px;font-weight:700;color:var(--sub);margin-bottom:6px">\uC800\uCD95 \uBAA9\uD45C</div>';SAVE_GOALS.forEach(function(g){h+='<div class="srow"><span class="sname" style="font-size:12px">'+g.n+'</span><span class="samt" style="font-size:12px;color:var(--blue)">\uC6D4 '+fmt(g.g)+'</span></div>';});h+='</div>';}
-  if(hI){h+='<div><div style="font-size:11px;font-weight:700;color:var(--sub);margin-bottom:6px">\uCD08\uAE30 \uC7D8\uACE0</div>';Object.entries(init).filter(function(kv){return kv[1]!==0;}).forEach(function(kv){var def=ACCTS_DEF.find(function(a){return a.key===kv[0];});h+='<div class="srow"><span class="sname" style="font-size:12px">'+(def?def.label:kv[0])+'</span><span class="samt" style="font-size:12px;color:'+(kv[1]<0?'var(--red)':'var(--text)')+'">'+fmt(kv[1])+'</span></div>';});h+='</div>';}
+  if(hI){h+='<div><div style="font-size:11px;font-weight:700;color:var(--sub);margin-bottom:6px">초기 쟘고</div>';ACCTS_DEF.forEach(function(a){var v=init[a.key];if(v===undefined||v===0)return;h+='<div class="srow"><span class="sname" style="font-size:12px">'+a.label+'</span><span class="samt" style="font-size:12px;color:'+(v<0?'var(--red)':'var(--text)')+'">'+fmt(v)+'</span></div>';});h+='</div>';}
   content.innerHTML=h;
 }
 function resetAll(){localStorage.clear();entries=[];BUDGET={};CARD_BUDGET={};SAVE_GOALS=[];showToast('\uCD08\uAE30\uD654 \uC644\uB8CC! \uC0C8\uB85C\uACE0\uCE68 \uD569\uB2C8\uB2E4...');setTimeout(function(){location.reload();},1000);}
