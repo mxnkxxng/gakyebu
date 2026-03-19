@@ -193,9 +193,16 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
   </div>
 </div>
 <div class="page" id="page-history">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-    <div style="font-size:16px;font-weight:700" id="hist-month"></div>
-    <button onclick="exportXLSX()" style="padding:7px 14px;font-size:12px;border:.5px solid var(--border-md);border-radius:var(--rx);background:transparent;color:var(--sub);cursor:pointer">엑셀 저장</button>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+    <button class="mb" onclick="changeMonth(-1)">&#8249;</button>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+      <div style="font-size:17px;font-weight:700" id="hist-month"></div>
+      <div id="hist-month-summary" style="font-size:11px;color:var(--sub)"></div>
+    </div>
+    <button class="mb" onclick="changeMonth(1)">&#8250;</button>
+  </div>
+  <div style="text-align:right;margin-bottom:6px">
+    <button onclick="exportXLSX()" style="padding:5px 12px;font-size:11px;border:.5px solid var(--border-md);border-radius:var(--rx);background:transparent;color:var(--sub);cursor:pointer">엑셀 저장</button>
   </div>
   <div style="display:flex;gap:6px;margin-bottom:6px;overflow-x:auto;padding-bottom:2px">
     <button class="ftab on" onclick="setFilter('전체',this)">전체</button>
@@ -650,6 +657,15 @@ function setCardFilter(f,btn){
   renderHist();
 }
 function renderHist(){
+  // 월 레이블 업데이트
+  var _p=curMon.split('-'),_y=_p[0],_m=_p[1];
+  var hm=document.getElementById('hist-month');
+  if(hm)hm.textContent=_y+'\uB144 '+parseInt(_m)+'\uC6D4';
+  var _allEs=me();
+  var _inc=_allEs.filter(function(e){return e.type==='\uC218\uC785';}).reduce(function(s,e){return s+e.amount;},0);
+  var _exp=_allEs.filter(function(e){return e.type==='\uC9C0\uCD9C';}).reduce(function(s,e){return s+e.amount;},0);
+  var hms=document.getElementById('hist-month-summary');
+  if(hms)hms.textContent='\uC218\uC785 '+fmtK(_inc)+'  \uC9C0\uCD9C '+fmtK(_exp);
   var list=document.getElementById('entry-list');
   var q=(document.getElementById('hist-search')?document.getElementById('hist-search').value:'').trim().toLowerCase();
   var es=me();
@@ -916,72 +932,40 @@ function mergeImport(imported){
   renderHome();var lt=localStorage.getItem('lastTab')||'home';if(lt==='history')renderHist();else if(lt==='balance')renderBalance();else if(lt==='asset')renderAsset();
 }
 function applyConfigCSV(rows){
+  // CSV 이모지 레이블 -> 앱 내부 키 변환
+  var L2K={};
+  // 지출 카테고리
+  Object.keys(CAT_OUT_LABELS).forEach(function(k){L2K[CAT_OUT_LABELS[k]]=k;L2K[k]=k;});
+  // 엄마 특수 키
+  L2K['☀️ 엄마(고정)']='엄마고정';
+  L2K['☀️ 엄마(건강)']='엄마건강';
+  function toKey(s){return L2K[s]||s;}
+  function parseAmt(s){
+    var str=String(s||'0').trim();
+    var neg=str.charAt(0)==='-';
+    var num=parseInt(str.replace(/[^0-9]/g,''))||0;
+    return neg?-num:num;
+  }
   var cnt=0;
   rows.forEach(function(r){
     var type=String(r[0]||'').trim();
-    if(type==='\uC608\uC0B0'){var cat=String(r[1]||'').trim(),amt=parseInt(String(r[2]||'0').replace(/[^0-9-]/g,''))||0;if(cat){BUDGET[cat]=amt;cnt++;}}
-    else if(type==='\uCE74\uB4DC\uC608\uC0B0'){var card=String(r[1]||'').trim(),amt=parseInt(String(r[2]||'0').replace(/[^0-9-]/g,''))||0;if(card){CARD_BUDGET[card]=amt;cnt++;}}
-    else if(type==='\uC800\uCD95\uBAA9\uD45C'){var n=String(r[1]||'').trim(),g=parseInt(String(r[2]||'0').replace(/[^0-9-]/g,''))||0,mk=String(r[3]||n).trim();if(n){var idx=SAVE_GOALS.findIndex(function(x){return x.n===n;});if(idx>=0)SAVE_GOALS[idx]={n:n,g:g,mk:mk};else SAVE_GOALS.push({n:n,g:g,mk:mk});cnt++;}}
-    else if(type==='\uCD08\uAE30\uC7D8\uACE0'){var key=String(r[1]||'').trim(),amt=parseInt(String(r[2]||'0').replace(/[^0-9-]/g,''))||0;if(key){var d=getInitBal();d[key]=amt;try{localStorage.setItem('initBal',JSON.stringify(d));}catch(e){}cnt++;}}
+    if(type==='예산'){
+      var cat=String(r[1]||'').trim(),amt=parseAmt(r[2]);
+      if(cat){BUDGET[toKey(cat)]=amt;cnt++;}
+    } else if(type==='카드예산'){
+      var card=String(r[1]||'').trim(),amt=parseAmt(r[2]);
+      if(card){CARD_BUDGET[card]=amt;cnt++;}
+    } else if(type==='저축목표'){
+      var n=String(r[1]||'').trim(),g=parseAmt(r[2]),mk=String(r[3]||n).trim();
+      if(n){var idx=SAVE_GOALS.findIndex(function(x){return x.n===n;});if(idx>=0)SAVE_GOALS[idx]={n:n,g:g,mk:mk};else SAVE_GOALS.push({n:n,g:g,mk:mk});cnt++;}
+    } else if(type==='초기쟘고'){
+      var key=String(r[1]||'').trim(),amt=parseAmt(r[2]);
+      if(key){var d=getInitBal();d[key]=amt;try{localStorage.setItem('initBal',JSON.stringify(d));}catch(e){}cnt++;}
+    }
   });
   try{localStorage.setItem('gb_budget',JSON.stringify(BUDGET));localStorage.setItem('gb_card_budget',JSON.stringify(CARD_BUDGET));localStorage.setItem('gb_save_goals',JSON.stringify(SAVE_GOALS));}catch(e){}
   return cnt;
 }
-function importFile(input){
-  var file=input.files[0];if(!file)return;
-  var isCSV=file.name.toLowerCase().endsWith('.csv');
-  var reader=new FileReader();
-  if(isCSV){
-    reader.onload=function(ev){
-      try{
-        var text=new TextDecoder('utf-8').decode(new Uint8Array(ev.target.result));
-        if(text.indexOf('\uFFFD')>=0)text=new TextDecoder('euc-kr').decode(new Uint8Array(ev.target.result));
-        var lines=text.split('\n').map(function(l){return l.replace(/\r/g,'');}).filter(function(l){return l.trim();});
-        var allRows=lines.map(function(l){return parseCSVLine(l);}).filter(function(r){return r.length>1;});
-        var isConfig=allRows.some(function(r){return ['\uC608\uC0B0','\uCE74\uB4DC\uC608\uC0B0','\uC800\uCD95\uBAA9\uD45C','\uCD08\uAE30\uC7D8\uACE0'].indexOf(String(r[0]||'').trim())>=0;});
-        if(isConfig){var cnt=applyConfigCSV(allRows);showToast('\uC124\uC815 '+cnt+'\uAC1C \uC801\uC6A9\uB410\uC5B4\uC694!');renderSetup();location.reload();return;}
-        var rows=allRows.filter(function(r){var c0=String(r[0]||''),c1=String(r[1]||'');return c0.match(/^20[0-9][0-9][\/\-]/)||c1.match(/^20[0-9][0-9][\/\-]/);});
-        if(!rows.length){showToast('\uB0A0\uC9DC \uD615\uC2DD\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC5B4\uC694');return;}
-        mergeImport(parseEntryRows(rows));
-      }catch(err){showToast('CSV \uC624\uB958: '+err.message);}
-    };reader.readAsArrayBuffer(file);
-  }else{
-    reader.onload=function(ev){
-      try{
-        if(typeof XLSX==='undefined'){showToast('\uC7A0\uC2DC \uD6C4 \uB2E4\uC2DC \uC2DC\uB3C4\uD574\uC8FC\uC138\uC694');return;}
-        var wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array'});
-        var ws=wb.Sheets[wb.SheetNames[0]];
-        var rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false});
-        var dataRows=rows.filter(function(r){return String(r[0]||'').match(/^20[0-9][0-9][\/\-]/)||String(r[1]||'').match(/^20[0-9][0-9][\/\-]/);});
-        if(!dataRows.length){showToast('\uB0A0\uC9DC \uD615\uC2DD\uC744 \uCC3E\uC744 \uC218 \uC5C6\uC5B4\uC694');return;}
-        mergeImport(parseEntryRows(dataRows));
-      }catch(err){showToast('\uC5D1\uC140 \uC624\uB958: '+err.message);}
-    };reader.readAsArrayBuffer(file);
-  }
-}
-function exportXLSX(){
-  var es=me();if(!es.length){showToast('\uB0B4\uC5ED\uC774 \uC5C6\uC5B4\uC694');return;}
-  var rows=[['\uB0A0\uC9DC','\uAD6C\uBD84','\uB300\uBD84\uB958','\uC18C\uBD84\uB958','\uB0B4\uC6A9','\uAE08\uC561','\uC785\uAE08\uACC4\uC88C','\uCD9C\uAE08\uACC4\uC88C']].concat(es.map(function(e){return [e.date,e.type,e.major,e.sub,e.memo,e.type==='\uC9C0\uCD9C'?-e.amount:e.amount,e.inAcct,e.outAcct];}));
-  var ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=[{wch:12},{wch:5},{wch:14},{wch:16},{wch:20},{wch:12},{wch:18},{wch:18}];
-  var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'\uAC00\uACC4\uBD80');XLSX.writeFile(wb,'\uAC00\uACC4\uBD80_'+curMon+'.xlsx');
-}
-
-// ── 메모 ──
-var _mt;
-function initMemo(){
-  var ta=document.getElementById('quick-memo');if(!ta)return;
-  try{var sv=localStorage.getItem('quickMemo');if(sv)ta.value=sv;}catch(e){}
-  ta.addEventListener('input',function(){clearTimeout(_mt);document.getElementById('memo-saved').textContent='\uC800\uC7A5 \uC911...';_mt=setTimeout(function(){try{localStorage.setItem('quickMemo',ta.value);}catch(e){}document.getElementById('memo-saved').textContent='\uC800\uC7A5\uB428';setTimeout(function(){var s=document.getElementById('memo-saved');if(s)s.textContent='';},2000);},800);});
-}
-
-// ── 초기화 ──
-setType('\uC9C0\uCD9C');
-initMemo();
-var _lt=localStorage.getItem('lastTab')||'home';
-var _nbs=document.querySelectorAll('.nb'),_lb=null;
-_nbs.forEach(function(b){if(b.getAttribute('onclick')&&b.getAttribute('onclick').indexOf("'"+_lt+"'")>=0)_lb=b;});
-if(_lb)goPage(_lt,_lb);else renderHome();
-
 </script>
 </body>
 </html>
