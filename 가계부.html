@@ -464,7 +464,7 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
 </nav>
 <div class="toast" id="toast"></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" async></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 const CAT={
   '지출':{
@@ -1102,6 +1102,16 @@ function mergeImport(imported){
   if(st)st.textContent='총 '+entries.length+'건 로드됨';
   renderHome();renderHist();
 }
+function parseCSVLine(l){
+  const r=[];let cur='';let inQ=false;
+  for(let i=0;i<l.length;i++){
+    if(l[i]==='"'){inQ=!inQ;}
+    else if(l[i]===','&&!inQ){r.push(cur.trim());cur='';}
+    else{cur+=l[i];}
+  }
+  r.push(cur.trim());
+  return r;
+}
 function importXLSX(input){
   const file=input.files[0];if(!file)return;
   const isCSV=file.name.toLowerCase().endsWith('.csv');
@@ -1111,31 +1121,35 @@ function importXLSX(input){
       try{
         const text=e.target.result;
         const lines=text.split('\n').map(l=>l.replace(/\r/g,'')).filter(l=>l.trim());
-        // 헤더 행 스킵 (날짜로 시작 안하면)
-        const rows=lines.map(l=>{
-          // CSV 파싱 (따옴표 처리)
-          const r=[];let cur='';let inQ=false;
-          for(let i=0;i<l.length;i++){
-            if(l[i]==='"'){inQ=!inQ;}
-            else if(l[i]===','&&!inQ){r.push(cur.trim());cur='';}
-            else{cur+=l[i];}
-          }
-          r.push(cur.trim());
-          return r;
-        }).filter(r=>String(r[0]||'').match(/^20\d\d[\/\-]/));
+        // 2026 포함된 줄만 파싱 (헤더/빈줄 자동 스킵)
+        const rows=lines
+          .map(l=>parseCSVLine(l))
+          .filter(r=>{
+            // r[0] 또는 r[1]에 날짜가 있는 줄만
+            return String(r[0]||'').match(/^20\d\d[\/\-]/)||
+                   String(r[1]||'').match(/^20\d\d[\/\-]/);
+          });
+        if(rows.length===0){showToast('날짜 형식을 찾을 수 없어요');return;}
         mergeImport(parseRows(rows));
-      }catch(err){showToast('CSV 읽기 실패: '+err.message);}
+      }catch(err){showToast('CSV 오류: '+err.message);}
     };
     reader.readAsText(file,'UTF-8');
   } else {
     reader.onload=function(e){
       try{
+        if(typeof XLSX==='undefined'){showToast('잠시 후 다시 시도해주세요');return;}
         const data=new Uint8Array(e.target.result);
         const wb=XLSX.read(data,{type:'array'});
         const ws=wb.Sheets[wb.SheetNames[0]];
-        const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
-        mergeImport(parseRows(rows.slice(1)));
-      }catch(err){showToast('엑셀 읽기 실패: '+err.message);}
+        const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false});
+        // 날짜 포함된 행만
+        const dataRows=rows.filter(r=>{
+          return String(r[0]||'').match(/^20\d\d[\/\-]/)||
+                 String(r[1]||'').match(/^20\d\d[\/\-]/);
+        });
+        if(dataRows.length===0){showToast('날짜 형식을 찾을 수 없어요');return;}
+        mergeImport(parseRows(dataRows));
+      }catch(err){showToast('엑셀 오류: '+err.message);}
     };
     reader.readAsArrayBuffer(file);
   }
