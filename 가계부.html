@@ -1335,65 +1335,64 @@ function renderSetup(){
   updateSheetStatus();
 
   const initBal=getInitBal();
-  const hasData=isConfigured();
   const card=document.getElementById('setup-current');
   const content=document.getElementById('setup-current-content');
-  if(!hasData){card.style.display='none';return;}
+  const hasBudget=Object.keys(BUDGET).length>0;
+  const hasCard=Object.values(CARD_BUDGET).some(v=>v>0);
+  const hasGoals=SAVE_GOALS.length>0;
+  const hasInit=Object.values(initBal).some(v=>v!==0);
+
+  if(!hasBudget&&!hasCard&&!hasGoals&&!hasInit){card.style.display='none';return;}
   card.style.display='block';
 
   let h='';
 
-  // 내역 요약
-  if(entries.length>0){
-    const byM={};entries.forEach(e=>{if(!byM[e.date.slice(0,7)])byM[e.date.slice(0,7)]=0;if(e.type==='지출')byM[e.date.slice(0,7)]+=e.amount;});
-    h+=`<div style="margin-bottom:12px">
-      <div style="font-size:11px;font-weight:700;color:var(--sub);margin-bottom:6px">📋 내역 (${entries.length}건)</div>`;
-    Object.keys(byM).sort().forEach(m=>{
-      h+=`<div class="srow"><span class="sname">${m}</span><span class="samt" style="color:var(--text);font-size:12px">지출 ${fmt(byM[m])}</span></div>`;
-    });
-    h+='</div>';
-  }
-
   // 예산
-  if(Object.keys(BUDGET).length>0){
-    h+=`<div style="margin-bottom:12px">
-      <div style="font-size:11px;font-weight:700;color:var(--sub);margin-bottom:6px">📊 카테고리 예산</div>`;
+  if(hasBudget){
+    h+=`<div style="margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;color:var(--sub);margin-bottom:6px;letter-spacing:.3px">📊 카테고리 예산</div>`;
     Object.entries(BUDGET).forEach(([cat,amt])=>{
-      h+=`<div class="srow"><span class="sname" style="font-size:12px">${cat}</span><span class="samt" style="font-size:12px;color:${amt>0?'var(--blue)':'var(--hint)'}">${amt>0?fmt(amt):'미설정'}</span></div>`;
+      h+=`<div class="srow"><span class="sname" style="font-size:12px">${cat}</span>
+        <span class="samt" style="font-size:12px;color:${amt>0?'var(--blue)':'var(--hint)'}">
+          ${amt>0?fmt(amt):'미설정'}
+        </span></div>`;
     });
     h+='</div>';
   }
 
   // 카드 예산
-  const cardSet=Object.entries(CARD_BUDGET).filter(([,v])=>v>0);
-  if(cardSet.length>0){
-    h+=`<div style="margin-bottom:12px">
-      <div style="font-size:11px;font-weight:700;color:var(--sub);margin-bottom:6px">💳 카드 예산</div>`;
-    cardSet.forEach(([card,amt])=>{
-      h+=`<div class="srow"><span class="sname" style="font-size:12px">${card}</span><span class="samt" style="font-size:12px;color:var(--blue)">${fmt(amt)}</span></div>`;
+  if(hasCard){
+    h+=`<div style="margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;color:var(--sub);margin-bottom:6px;letter-spacing:.3px">💳 카드 예산</div>`;
+    Object.entries(CARD_BUDGET).filter(([,v])=>v>0).forEach(([c,amt])=>{
+      h+=`<div class="srow"><span class="sname" style="font-size:12px">${c}</span>
+        <span class="samt" style="font-size:12px;color:var(--blue)">${fmt(amt)}</span></div>`;
     });
     h+='</div>';
   }
 
   // 저축 목표
-  if(SAVE_GOALS.length>0){
-    h+=`<div style="margin-bottom:12px">
-      <div style="font-size:11px;font-weight:700;color:var(--sub);margin-bottom:6px">🎯 저축 목표</div>`;
+  if(hasGoals){
+    h+=`<div style="margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;color:var(--sub);margin-bottom:6px;letter-spacing:.3px">🎯 저축 목표</div>`;
     SAVE_GOALS.forEach(g=>{
-      h+=`<div class="srow"><span class="sname" style="font-size:12px">${g.n}</span><span class="samt" style="font-size:12px;color:var(--blue)">월 ${fmt(g.g)}</span></div>`;
+      h+=`<div class="srow"><span class="sname" style="font-size:12px">${g.n}</span>
+        <span class="samt" style="font-size:12px;color:var(--blue)">월 ${fmt(g.g)}</span></div>`;
     });
     h+='</div>';
   }
 
   // 초기 잔고
-  const nonZero=Object.entries(initBal).filter(([,v])=>v!==0);
-  if(nonZero.length>0){
-    h+=`<div style="margin-bottom:4px">
-      <div style="font-size:11px;font-weight:700;color:var(--sub);margin-bottom:6px">💰 초기 잔고</div>`;
-    nonZero.forEach(([k,v])=>{
+  if(hasInit){
+    h+=`<div>
+      <div style="font-size:11px;font-weight:700;color:var(--sub);margin-bottom:6px;letter-spacing:.3px">💰 초기 잔고</div>`;
+    Object.entries(initBal).filter(([,v])=>v!==0).forEach(([k,v])=>{
       const def=ACCOUNTS_DEF.find(a=>a.key===k);
       const label=def?def.label:k;
-      h+=`<div class="srow"><span class="sname" style="font-size:12px">${label}</span><span class="samt" style="font-size:12px;color:${v<0?'var(--red)':'var(--text)'}">${v<0?'-':''}${fmt(Math.abs(v))}</span></div>`;
+      h+=`<div class="srow"><span class="sname" style="font-size:12px">${label}</span>
+        <span class="samt" style="font-size:12px;color:${v<0?'var(--red)':'var(--text)'}">
+          ${v<0?'-':''}${fmt(Math.abs(v))}
+        </span></div>`;
     });
     h+='</div>';
   }
