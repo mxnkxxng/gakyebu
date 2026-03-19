@@ -337,22 +337,6 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
 <!-- 설정 페이지 -->
 <div class="page" id="page-setup">
 
-  <!-- 시트 동기화 -->
-  <div class="card">
-    <div class="ct" style="display:flex;justify-content:space-between;align-items:center">
-      🔄 구글 시트 동기화
-      <div class="sheets-dot" id="sheets-dot"></div>
-    </div>
-    <div style="font-size:12px;color:var(--sub);margin-bottom:12px;line-height:1.8">
-      시트에서 <b>설정 + 내역</b>을 한번에 불러와요.<br>
-      아래 구글 시트 연동을 먼저 설정해주세요.
-    </div>
-    <button onclick="syncFromSheet()"
-      style="width:100%;padding:12px;background:var(--green-bg);color:var(--green);border:.5px solid var(--green-lt);border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px">
-      🔄 시트에서 모두 불러오기
-    </button>
-  </div>
-
   <!-- 파일 가져오기 -->
   <div class="card">
     <div class="ct">📂 파일로 가져오기 (대안)</div>
@@ -751,24 +735,26 @@ function selSubF(s,e){
 }
 
 function addEntry(){
-  const amt=parseInt(document.getElementById('f-amount').value);
-  if(!amt||amt<=0){showToast('금액을 입력해주세요');return;}
+  const amt=Math.abs(parseInt(document.getElementById('f-amount').value)||0);
+  if(!amt){showToast('금액을 입력해주세요');return;}
   if(!selMaj){showToast('대분류를 선택해주세요');return;}
   if(!selSub){showToast('소분류를 선택해주세요');return;}
-  const entry={id:Date.now(),date:document.getElementById('f-date').value,type:cType,major:selMaj,sub:selSub,memo:document.getElementById('f-memo').value,amount:amt,inAcct:document.getElementById('f-in-acct').value,outAcct:document.getElementById('f-out-acct').value};
+  const entry={id:Date.now(),date:document.getElementById('f-date').value,type:cType,major:selMaj,sub:selSub,memo:document.getElementById('f-memo').value,amount:Math.abs(amt),inAcct:document.getElementById('f-in-acct').value,outAcct:document.getElementById('f-out-acct').value};
   entries.unshift(entry);
   try{localStorage.setItem('gb_v3',JSON.stringify(entries.slice(0,500)));}catch(e){}
   document.getElementById('f-amount').value='';document.getElementById('f-memo').value='';
   showToast('✅ 추가됐어요!');renderHome();renderHist();
   // 구글 시트 전송
   const sUrl=localStorage.getItem('scriptUrl')||'';
-  const sId=localStorage.getItem('sheetId')||'';
-  if(sUrl&&sId){
-    fetch(sUrl,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({sheetId:sId,date:entry.date,type:entry.type,major:entry.major,
-        sub:entry.sub,memo:entry.memo,amount:entry.type==='지출'?-entry.amount:entry.amount,
+  if(sUrl){
+    fetch(sUrl,{method:'POST',headers:{'Content-Type':'text/plain'},
+      body:JSON.stringify({action:'addEntry',id:String(entry.id),
+        date:entry.date,type:entry.type,major:entry.major,sub:entry.sub,
+        memo:entry.memo,amount:entry.amount,
         inAcct:entry.inAcct,outAcct:entry.outAcct})
-    }).then(()=>showToast('📊 시트에도 저장됐어요!')).catch(()=>showToast('⚠️ 시트 전송 실패'));
+    }).then(r=>r.json())
+     .then(d=>{if(d.ok)showToast('📊 시트에도 저장됐어요!');})
+     .catch(()=>{});
   }
 }
 function delEntry(id){
@@ -1520,60 +1506,9 @@ function resetAll(){
 // ── 구글 시트 동기화 ──────────────────────────────────────
 function getScriptUrl(){return localStorage.getItem('scriptUrl')||'';}
 
-function syncFromSheet(callback){
-  const url=getScriptUrl();
-  if(!url){if(callback)callback(false,'URL 없음');return;}
-  showToast('🔄 시트에서 불러오는 중...');
-  fetch(url+'?action=all')
-    .then(r=>r.json())
-    .then(data=>{
-      if(!data.ok){showToast('❌ 불러오기 실패');return;}
-      // 설정 적용
-      if(data.config){
-        const c=data.config;
-        if(c.budget&&Object.keys(c.budget).length>0){
-          Object.assign(BUDGET,c.budget);
-          try{localStorage.setItem('gb_budget',JSON.stringify(BUDGET));}catch(e){}
-        }
-        if(c.cardBudget&&Object.keys(c.cardBudget).length>0){
-          Object.assign(CARD_BUDGET,c.cardBudget);
-          try{localStorage.setItem('gb_card_budget',JSON.stringify(CARD_BUDGET));}catch(e){}
-        }
-        if(c.saveGoals&&c.saveGoals.length>0){
-          SAVE_GOALS.length=0;
-          c.saveGoals.forEach(g=>SAVE_GOALS.push(g));
-          try{localStorage.setItem('gb_save_goals',JSON.stringify(SAVE_GOALS));}catch(e){}
-        }
-        if(c.initBal&&Object.keys(c.initBal).length>0){
-          try{localStorage.setItem('initBal',JSON.stringify(c.initBal));}catch(e){}
-        }
-      }
-      // 내역 적용
-      if(data.entries&&data.entries.length>0){
-        const keys=new Set(entries.map(x=>x.date+'|'+x.type+'|'+x.major+'|'+x.sub+'|'+x.memo+'|'+x.amount));
-        const newOnes=data.entries.filter(x=>!keys.has(x.date+'|'+x.type+'|'+x.major+'|'+x.sub+'|'+x.memo+'|'+x.amount));
-        entries=[...entries,...newOnes];
-        entries.sort((a,b)=>b.date.localeCompare(a.date));
-        try{localStorage.setItem('gb_v3',JSON.stringify(entries.slice(0,2000)));}catch(e){}
-      }
-      showToast('✅ 시트 동기화 완료!');
-      location.reload();
-      if(callback)callback(true);
-    })
-    .catch(err=>{showToast('❌ 네트워크 오류');if(callback)callback(false,err);});
-}
 
-function syncConfigToSheet(){
-  const url=getScriptUrl();
-  if(!url)return;
-  const initBal=getInitBal();
-  fetch(url,{method:'POST',mode:'no-cors',
-    body:JSON.stringify({
-      action:'saveConfig',
-      config:{budget:BUDGET,cardBudget:CARD_BUDGET,saveGoals:SAVE_GOALS,initBal:initBal}
-    })
-  });
-}
+
+
 
 function toggleBrow(id){
   const det=document.getElementById('det-'+id);
@@ -1623,36 +1558,6 @@ if(_lastBtn){goPage(_lastTab,_lastBtn);}else{renderHome();}
 updateSheetStatus();initMemo();
 
 // 앱 시작 시 + 5분마다 시트 자동 동기화
-function autoSync(){
-  const url=localStorage.getItem('scriptUrl')||'';
-  if(!url)return;
-  fetch(url+'?action=all')
-    .then(r=>r.json())
-    .then(data=>{
-      if(!data.ok)return;
-      let changed=false;
-      if(data.config){
-        const c=data.config;
-        if(c.budget&&Object.keys(c.budget).length>0){Object.assign(BUDGET,c.budget);try{localStorage.setItem('gb_budget',JSON.stringify(BUDGET));}catch(e){}changed=true;}
-        if(c.cardBudget&&Object.keys(c.cardBudget).length>0){Object.assign(CARD_BUDGET,c.cardBudget);try{localStorage.setItem('gb_card_budget',JSON.stringify(CARD_BUDGET));}catch(e){}changed=true;}
-        if(c.saveGoals&&c.saveGoals.length>0){SAVE_GOALS.length=0;c.saveGoals.forEach(g=>SAVE_GOALS.push(g));try{localStorage.setItem('gb_save_goals',JSON.stringify(SAVE_GOALS));}catch(e){}changed=true;}
-        if(c.initBal&&Object.keys(c.initBal).length>0){try{localStorage.setItem('initBal',JSON.stringify(c.initBal));}catch(e){}changed=true;}
-      }
-      if(data.entries&&data.entries.length>0){
-        // 시트가 원본 → 시트 데이터로 완전 교체
-        entries=data.entries;
-        entries.sort((a,b)=>b.date.localeCompare(a.date));
-        try{localStorage.setItem('gb_v3',JSON.stringify(entries.slice(0,2000)));}catch(e){}
-        changed=true;
-      }
-      if(changed){renderHome();const t=localStorage.getItem('lastTab')||'home';if(t==='history')renderHist();else if(t==='balance')renderBalance();else if(t==='asset')renderAsset();}
-    }).catch(()=>{});
-}
-
-// 앱 시작 시 동기화
-autoSync();
-// 5분마다 자동 동기화
-setInterval(autoSync, 5*60*1000);
 
 </script>
 </body>
