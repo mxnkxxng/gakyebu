@@ -344,7 +344,7 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
     </div>
     <input type="file" id="setup-import-file" accept=".xlsx,.csv" style="display:none" onchange="importXLSX(this)"/>
     <button onclick="document.getElementById('setup-import-file').click()"
-      style="width:100%;padding:11px;background:var(--blue);color:#fff;border:none;border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px">
+      style="width:100%;padding:11px;background:var(--blue-bg);color:var(--blue);border:.5px solid var(--blue-lt);border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px">
       📂 파일 가져오기
     </button>
     <div style="font-size:11px;color:var(--sub);text-align:center" id="setup-import-status"></div>
@@ -509,7 +509,7 @@ const ACCOUNTS=['KB뱅크','NH뱅크','케이-덕질','케이-비상금','케이
 const CMAP=[{k:['롯카!실미'],v:'롯카!실미'},{k:['롯카!'],v:'롯카!'},{k:['롯카-'],v:'롯카-'},{k:['롯데카드','로카','롯카'],v:'롯카'},{k:['신카!실미'],v:'신카!실미'},{k:['신카!'],v:'신카!'},{k:['신한카드','신카','FBS'],v:'신카'},{k:['삼카!'],v:'삼카!'},{k:['삼성카드','삼카'],v:'삼카'},{k:['국카k!실미'],v:'국카k!실미'},{k:['국카k!'],v:'국카k!'},{k:['국카k-'],v:'국카k-'},{k:['국카k'],v:'국카k'},{k:['국카1'],v:'국카1'},{k:['국민카드','KB카드','KB Pay','KB국민'],v:'국카k'},{k:['농카!실미'],v:'농카!실미'},{k:['농카!'],v:'농카!'},{k:['농카-'],v:'농카-'},{k:['농협카드','NH카드','농카'],v:'농카'},{k:['케이뱅크'],v:'케이뱅크'},{k:['KB뱅크','KB은행'],v:'KB뱅크'},{k:['NH뱅크','농협은행'],v:'NH뱅크'},{k:['하나은행','하나카드'],v:'하나은행'},{k:['신한은행'],v:'신한은행'}];
 
 let cType='지출',selMaj='',selSub='',entries=[];
-const _now=new Date();let curMon=_now.getFullYear()+'-'+String(_now.getMonth()+1).padStart(2,'0');let histFilter='전체';let histCardFilter='';
+const _now=new Date();let curMon=_now.getFullYear()+'-'+String(_now.getMonth()+1).padStart(2,'0');let histFilter='전체';let histCardFilter='';let budgetExpanded=false;let cardExpanded=false;
 try{
   const s=localStorage.getItem('gb_v3');
   if(s) entries=JSON.parse(s);
@@ -650,6 +650,7 @@ function renderHome(){
   });
 
   document.getElementById('budget-list').innerHTML=fixedHtml+varHtml;
+  setTimeout(applyExpanded,0);
 
   const cdT={};
   es.filter(e=>e.type==='지출'&&e.outAcct).forEach(e=>{cdT[e.outAcct]=(cdT[e.outAcct]||0)+e.amount;});
@@ -704,6 +705,7 @@ function renderHome(){
       <div class="brow-detail" id="det-${cid}" style="padding:4px 0">${detailRows}</div>
     </div>`;
   }).join('');
+  setTimeout(applyExpanded,0);
 }
 
 function setType(t){
@@ -1112,6 +1114,50 @@ function parseCSVLine(l){
   r.push(cur.trim());
   return r;
 }
+function applyConfigCSV(rows){
+  let applied=[];
+  rows.forEach(r=>{
+    const type=String(r[0]||'').trim();
+    if(type==='예산'){
+      const cat=String(r[1]||'').trim();
+      const amt=parseInt(String(r[2]||'0').replace(/[^0-9\-]/g,''))||0;
+      if(cat)BUDGET[cat]=amt;
+      applied.push('예산:'+cat);
+    } else if(type==='카드예산'){
+      const card=String(r[1]||'').trim();
+      const amt=parseInt(String(r[2]||'0').replace(/[^0-9\-]/g,''))||0;
+      if(card)CARD_BUDGET[card]=amt;
+      applied.push('카드:'+card);
+    } else if(type==='저축목표'){
+      const n=String(r[1]||'').trim();
+      const g=parseInt(String(r[2]||'0').replace(/[^0-9\-]/g,''))||0;
+      const mk=String(r[3]||n).trim();
+      if(n){
+        const idx=SAVE_GOALS.findIndex(x=>x.n===n);
+        if(idx>=0)SAVE_GOALS[idx]={n,g,mk};
+        else SAVE_GOALS.push({n,g,mk});
+        applied.push('저축:'+n);
+      }
+    } else if(type==='초기잔고'){
+      const key=String(r[1]||'').trim();
+      const amt=parseInt(String(r[2]||'0').replace(/[^0-9\-]/g,''))||0;
+      if(key){
+        const d=getInitBal();
+        d[key]=amt;
+        try{localStorage.setItem('initBal',JSON.stringify(d));}catch(e){}
+        applied.push('잔고:'+key);
+      }
+    }
+  });
+  // 저장
+  try{
+    localStorage.setItem('gb_budget',JSON.stringify(BUDGET));
+    localStorage.setItem('gb_card_budget',JSON.stringify(CARD_BUDGET));
+    localStorage.setItem('gb_save_goals',JSON.stringify(SAVE_GOALS));
+  }catch(e){}
+  return applied.length;
+}
+
 function importXLSX(input){
   const file=input.files[0];if(!file)return;
   const isCSV=file.name.toLowerCase().endsWith('.csv');
@@ -1129,7 +1175,28 @@ function importXLSX(input){
           const c0=String(r[0]||''), c1=String(r[1]||'');
           return c0.match(/^20[0-9][0-9][\/\-]/)||c1.match(/^20[0-9][0-9][\/\-]/);
         });
-        if(rows.length===0){showToast('날짜 행을 찾을 수 없어요 ('+lines.length+'줄 확인)');return;}
+        if(rows.length===0){
+          const sample=lines.slice(0,12).map(l=>parseCSVLine(l)).map(r=>r[0]+'|'+r[1]).join(' / ');
+          showToast('날짜 못찾음: '+sample.slice(0,60));
+          return;
+        }
+        // 설정 CSV인지 확인 (첫 셀이 [예산] 등)
+        const firstCell=String(rows[0][0]||'').trim();
+        if(firstCell==='[예산]'||firstCell==='예산'||firstCell==='초기잔고'||firstCell==='카드예산'){
+          const cnt=applyConfigCSV(rows);
+          showToast('✅ 설정 '+cnt+'개 적용됐어요!');
+          renderHome();
+          return;
+        }
+        // 첫 줄이 헤더([예산])인 경우
+        const allRows=lines.map(l=>parseCSVLine(l)).filter(r=>r.length>1);
+        const isConfig=allRows.some(r=>['예산','카드예산','저축목표','초기잔고'].includes(String(r[0]||'').trim()));
+        if(isConfig){
+          const cnt=applyConfigCSV(allRows);
+          showToast('✅ 설정 '+cnt+'개 적용됐어요!');
+          renderHome();
+          return;
+        }
         mergeImport(parseRows(rows));
       }catch(err){showToast('CSV 오류: '+err.message);}
     };
@@ -1385,6 +1452,8 @@ function toggleBrow(id){
   if(arr)arr.classList.toggle('open');
 }
 function expandAll(group){
+  if(group==='budget')budgetExpanded=true;
+  if(group==='card')cardExpanded=true;
   document.querySelectorAll('.brow-wrap[data-group="'+group+'"]').forEach(w=>{
     const det=w.querySelector('.brow-detail');
     const arr=w.querySelector('.barr');
@@ -1393,12 +1462,18 @@ function expandAll(group){
   });
 }
 function collapseAll(group){
+  if(group==='budget')budgetExpanded=false;
+  if(group==='card')cardExpanded=false;
   document.querySelectorAll('.brow-wrap[data-group="'+group+'"]').forEach(w=>{
     const det=w.querySelector('.brow-detail');
     const arr=w.querySelector('.barr');
     if(det)det.classList.remove('open');
     if(arr)arr.classList.remove('open');
   });
+}
+function applyExpanded(){
+  if(budgetExpanded)expandAll('budget');
+  if(cardExpanded)expandAll('card');
 }
 
 
