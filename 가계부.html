@@ -596,9 +596,9 @@ function pickSub(s){
   selSub=s;
   document.querySelectorAll('.sbtn').forEach(function(b){b.classList.toggle('sel',b.textContent===s);});
   if(selMaj==='카드납부'){
-    document.getElementById('f-out-acct').value=s;
-    var inEl=document.getElementById('f-in-acct');
-    if(inEl&&!inEl.value)inEl.value='케이뱅크';
+    document.getElementById('f-in-acct').value=s;
+    var outEl=document.getElementById('f-out-acct');
+    if(outEl&&!outEl.value)outEl.value='케이뱅크';
   }
 }
 
@@ -614,7 +614,7 @@ function pickAcct(key,val){
   var id=key==='edit-out'?'edit-out-acct':key==='edit-in'?'edit-in-acct':'f-'+key+'-acct';
   var el=document.getElementById(id);if(el)el.value=val;
   closeAcctDrop(key);
-  if(selMaj==='카드납부'&&key==='out'){var inEl=document.getElementById('f-in-acct');if(inEl&&!inEl.value)inEl.value='케이뱅크';}
+  if(selMaj==='카드납부'&&key==='in'){var outEl=document.getElementById('f-out-acct');if(outEl&&!outEl.value)outEl.value='케이뱅크';}
 }
 
 function addEntry(){
@@ -817,18 +817,30 @@ function saveSheetConfig(){
   try{if(sid)localStorage.setItem('sheetId',sid);localStorage.setItem('scriptUrl',surl);}catch(e){}
   renderSetup();showToast('\uC5F0\uB3D9 \uC124\uC815 \uC800\uC7A5\uB410\uC5B4\uC694!');
 }
-function loadFromSheet(){
-  var url=getScriptUrl();if(!url){showToast('Script URL\uC744 \uBA3C\uC800 \uC124\uC815\uD574\uC8FC\uC138\uC694');return;}
-  var st=document.getElementById('sheet-load-status');st.textContent='\uBD88\uB7EC\uC624\uB294 \uC911...';
+function loadFromSheet(silent){
+  var url=getScriptUrl();if(!url){if(!silent)showToast('Script URL\uC744 \uBA3C\uC800 \uC124\uC815\uD574\uC8FC\uC138\uC694');return;}
+  var st=document.getElementById('sheet-load-status');if(st&&!silent)st.textContent='\uBD88\uB7EC\uC624\uB294 \uC911...';
   fetch(url+'?action=entries').then(function(r){return r.json();}).then(function(data){
     if(!data.ok)throw new Error(data.error||'\uC624\uB958');
-    var imported=(data.entries||[]).map(function(e){return {id:e.id||Date.now()+Math.random(),date:e.date,type:e.type,major:e.major||'',sub:e.sub||'',memo:e.memo||'',amount:Math.abs(parseFloat(e.amount)||0),inAcct:e.inAcct||'',outAcct:e.outAcct||''};}).filter(function(e){return e.date&&['\uC9C0\uCD9C','\uC218\uC785','\uC774\uB3D9'].indexOf(e.type)>=0&&e.amount>0;});
-    var keys=new Set(entries.map(function(x){return x.date+'|'+x.type+'|'+x.amount+'|'+(x.outAcct||'')+'|'+(x.inAcct||'');}));
-    var newOnes=imported.filter(function(x){return !keys.has(x.date+'|'+x.type+'|'+x.amount+'|'+(x.outAcct||'')+'|'+(x.inAcct||''));});
+    var allCardKeys=ACCTS.filter(function(a){return ACCTS_DEF.some(function(d){return d.key===a&&d.group==='debt';});});
+    var imported=(data.entries||[]).map(function(e){
+      var outAcct=e.outAcct||'',inAcct=e.inAcct||'';
+      if(e.type==='\uC9C0\uCD9C'&&!outAcct){
+        var guess=[String(e.sub||'').trim(),String(e.major||'').trim()];
+        for(var gi=0;gi<guess.length;gi++){if(allCardKeys.indexOf(guess[gi])>=0){outAcct=guess[gi];break;}}
+      }
+      if(e.type==='\uC774\uB3D9'&&!inAcct&&String(e.major||'').indexOf('\uCE74\uB4DC\uB099\uBD80')>=0){
+        var s=String(e.sub||'').trim();if(allCardKeys.indexOf(s)>=0)inAcct=s;
+      }
+      return {id:e.id||Date.now()+Math.random(),date:e.date,type:e.type,major:e.major||'',sub:e.sub||'',memo:e.memo||'',amount:Math.abs(parseFloat(e.amount)||0),inAcct:inAcct,outAcct:outAcct};
+    }).filter(function(e){return e.date&&['\uC9C0\uCD9C','\uC218\uC785','\uC774\uB3D9'].indexOf(e.type)>=0&&e.amount>0;});
+    var keys=new Set(entries.map(function(x){return x.date+'|'+x.type+'|'+x.amount+'|'+(x.outAcct||'')+'|'+(x.inAcct||'')+'|'+(x.major||'')+'|'+(x.sub||'');}));
+    var newOnes=imported.filter(function(x){return !keys.has(x.date+'|'+x.type+'|'+x.amount+'|'+(x.outAcct||'')+'|'+(x.inAcct||'')+'|'+(x.major||'')+'|'+(x.sub||''));});
     entries=entries.concat(newOnes);entries.sort(function(a,b){return b.date.localeCompare(a.date);});saveEntries();
-    st.textContent=newOnes.length+'\uAC74 \uC0C8\uB85C \uAC00\uC838\uC654\uC5B4\uC694 (\uCD1D '+entries.length+'\uAC74)';
-    showToast(newOnes.length+'\uAC74 \uBD88\uB7EC\uC654\uC5B4\uC694!');renderHome();renderHist();
-  }).catch(function(err){st.textContent='\uC2E4\uD328: '+err.message;showToast('\uBD88\uB7EC\uC624\uAE30 \uC2E4\uD328');});
+    if(st)st.textContent=newOnes.length+'\uAC74 \uC0C8\uB85C \uAC00\uC838\uC654\uC5B4\uC694 (\uCD1D '+entries.length+'\uAC74)';
+    if(newOnes.length>0||!silent)showToast(newOnes.length+'\uAC74 \uBD88\uB7EC\uC654\uC5B4\uC694!');
+    renderHome();renderHist();
+  }).catch(function(err){if(st)st.textContent='\uC2E4\uD328: '+err.message;if(!silent)showToast('\uBD88\uB7EC\uC624\uAE30 \uC2E4\uD328');});
 }
 function renderCurrentConfig(){
   var init=getInitBal(),card=document.getElementById('setup-current'),content=document.getElementById('setup-current-content');
@@ -889,8 +901,8 @@ function parseEntryRows(rows){
 }
 function mergeImport(imported){
   if(!imported.length){showToast('\uAC00\uC838\uC62C \uB0B4\uC5ED\uC774 \uC5C6\uC5B4\uC694');return;}
-  var keys=new Set(entries.map(function(x){return x.date+'|'+x.type+'|'+x.amount+'|'+(x.outAcct||'')+'|'+(x.inAcct||'');}));
-  var newOnes=imported.filter(function(x){return !keys.has(x.date+'|'+x.type+'|'+x.amount+'|'+(x.outAcct||'')+'|'+(x.inAcct||''));});
+  var keys=new Set(entries.map(function(x){return x.date+'|'+x.type+'|'+x.amount+'|'+(x.outAcct||'')+'|'+(x.inAcct||'')+'|'+(x.major||'')+'|'+(x.sub||'');}));
+  var newOnes=imported.filter(function(x){return !keys.has(x.date+'|'+x.type+'|'+x.amount+'|'+(x.outAcct||'')+'|'+(x.inAcct||'')+'|'+(x.major||'')+'|'+(x.sub||''));});
   entries=entries.concat(newOnes);entries.sort(function(a,b){return b.date.localeCompare(a.date);});saveEntries();
   showToast(newOnes.length+'\uAC74 \uAC00\uC838\uC655\uC5B4\uC694!');
   var st=document.getElementById('setup-import-status');if(st)st.textContent='\uCD1D '+entries.length+'\uAC74 \uB85C\uB4DC\uB428';
@@ -962,6 +974,8 @@ var _lt=localStorage.getItem('lastTab')||'home';
 var _nbs=document.querySelectorAll('.nb'),_lb=null;
 _nbs.forEach(function(b){if(b.getAttribute('onclick')&&b.getAttribute('onclick').indexOf("'"+_lt+"'")>=0)_lb=b;});
 if(_lb)goPage(_lt,_lb);else renderHome();
+// 앱 시작 시 시트에서 자동 동기화 (scriptUrl 설정된 경우)
+if(getScriptUrl()){setTimeout(function(){loadFromSheet(true);},800);}
 
 </script>
 </body>
