@@ -337,16 +337,31 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
 <!-- 설정 페이지 -->
 <div class="page" id="page-setup">
 
+  <!-- 시트 동기화 -->
+  <div class="card">
+    <div class="ct" style="display:flex;justify-content:space-between;align-items:center">
+      🔄 구글 시트 동기화
+      <div class="sheets-dot" id="sheets-dot"></div>
+    </div>
+    <div style="font-size:12px;color:var(--sub);margin-bottom:12px;line-height:1.8">
+      시트에서 <b>설정 + 내역</b>을 한번에 불러와요.<br>
+      아래 구글 시트 연동을 먼저 설정해주세요.
+    </div>
+    <button onclick="syncFromSheet()"
+      style="width:100%;padding:12px;background:var(--green-bg);color:var(--green);border:.5px solid var(--green-lt);border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px">
+      🔄 시트에서 모두 불러오기
+    </button>
+  </div>
+
   <!-- 파일 가져오기 -->
   <div class="card">
-    <div class="ct">📂 파일 가져오기</div>
-    <div style="font-size:12px;color:var(--sub);margin-bottom:12px;line-height:1.8">
-      <b>① 설정 파일</b> → 예산/카드/잔고/저축목표 한번에 적용<br>
-      <b>② 내역 파일</b> → 구글 시트에서 CSV로 다운받아 올리기
+    <div class="ct">📂 파일로 가져오기 (대안)</div>
+    <div style="font-size:12px;color:var(--sub);margin-bottom:10px;line-height:1.8">
+      시트 연동 없이 CSV/엑셀 파일로 올릴 수 있어요.
     </div>
     <input type="file" id="setup-import-file" accept=".xlsx,.csv" style="display:none" onchange="importXLSX(this)"/>
     <button onclick="document.getElementById('setup-import-file').click()"
-      style="width:100%;padding:12px;background:var(--blue-bg);color:var(--blue);border:.5px solid var(--blue-lt);border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer;margin-bottom:6px">
+      style="width:100%;padding:11px;background:var(--blue-bg);color:var(--blue);border:.5px solid var(--blue-lt);border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer;margin-bottom:6px">
       📂 파일 선택해서 올리기
     </button>
     <div style="font-size:11px;color:var(--sub);text-align:center" id="setup-import-status"></div>
@@ -746,7 +761,7 @@ function addEntry(){
   entries.unshift(entry);
   try{localStorage.setItem('gb_v3',JSON.stringify(entries.slice(0,500)));}catch(e){}
   document.getElementById('f-amount').value='';document.getElementById('f-memo').value='';
-  showToast('✅ 추가됐어요!');renderHome();
+  showToast('✅ 추가됐어요!');renderHome();renderHist();
   // 구글 시트 전송
   const sUrl=localStorage.getItem('scriptUrl')||'';
   const sId=localStorage.getItem('sheetId')||'';
@@ -1308,8 +1323,12 @@ function saveEdit() {
   document.getElementById('edit-modal').classList.add('hidden');
   editingId = null;
   showToast('✅ 수정됐어요!');
-  renderHist();
-  renderHome();
+  renderHist();renderHome();
+  // 시트 업데이트
+  const _sUrl=localStorage.getItem('scriptUrl')||'';
+  if(_sUrl){const _e=entries.find(x=>x.id===editingId)||{};
+    fetch(_sUrl,{method:'POST',mode:'no-cors',body:JSON.stringify({action:'updateEntry',..._e})}).catch(()=>{});
+  }
 }
 
 function deleteAndClose() {
@@ -1477,6 +1496,64 @@ function resetAll(){
   SAVE_GOALS.length=0;
   showToast('✅ 초기화 완료! 새로고침 합니다...');
   setTimeout(()=>location.reload(), 1000);
+}
+
+// ── 구글 시트 동기화 ──────────────────────────────────────
+function getScriptUrl(){return localStorage.getItem('scriptUrl')||'';}
+
+function syncFromSheet(callback){
+  const url=getScriptUrl();
+  if(!url){if(callback)callback(false,'URL 없음');return;}
+  showToast('🔄 시트에서 불러오는 중...');
+  fetch(url+'?action=all')
+    .then(r=>r.json())
+    .then(data=>{
+      if(!data.ok){showToast('❌ 불러오기 실패');return;}
+      // 설정 적용
+      if(data.config){
+        const c=data.config;
+        if(c.budget&&Object.keys(c.budget).length>0){
+          Object.assign(BUDGET,c.budget);
+          try{localStorage.setItem('gb_budget',JSON.stringify(BUDGET));}catch(e){}
+        }
+        if(c.cardBudget&&Object.keys(c.cardBudget).length>0){
+          Object.assign(CARD_BUDGET,c.cardBudget);
+          try{localStorage.setItem('gb_card_budget',JSON.stringify(CARD_BUDGET));}catch(e){}
+        }
+        if(c.saveGoals&&c.saveGoals.length>0){
+          SAVE_GOALS.length=0;
+          c.saveGoals.forEach(g=>SAVE_GOALS.push(g));
+          try{localStorage.setItem('gb_save_goals',JSON.stringify(SAVE_GOALS));}catch(e){}
+        }
+        if(c.initBal&&Object.keys(c.initBal).length>0){
+          try{localStorage.setItem('initBal',JSON.stringify(c.initBal));}catch(e){}
+        }
+      }
+      // 내역 적용
+      if(data.entries&&data.entries.length>0){
+        const keys=new Set(entries.map(x=>x.date+'|'+x.type+'|'+x.major+'|'+x.sub+'|'+x.memo+'|'+x.amount));
+        const newOnes=data.entries.filter(x=>!keys.has(x.date+'|'+x.type+'|'+x.major+'|'+x.sub+'|'+x.memo+'|'+x.amount));
+        entries=[...entries,...newOnes];
+        entries.sort((a,b)=>b.date.localeCompare(a.date));
+        try{localStorage.setItem('gb_v3',JSON.stringify(entries.slice(0,2000)));}catch(e){}
+      }
+      showToast('✅ 시트 동기화 완료!');
+      location.reload();
+      if(callback)callback(true);
+    })
+    .catch(err=>{showToast('❌ 네트워크 오류');if(callback)callback(false,err);});
+}
+
+function syncConfigToSheet(){
+  const url=getScriptUrl();
+  if(!url)return;
+  const initBal=getInitBal();
+  fetch(url,{method:'POST',mode:'no-cors',
+    body:JSON.stringify({
+      action:'saveConfig',
+      config:{budget:BUDGET,cardBudget:CARD_BUDGET,saveGoals:SAVE_GOALS,initBal:initBal}
+    })
+  });
 }
 
 function toggleBrow(id){
