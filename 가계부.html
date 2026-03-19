@@ -1095,7 +1095,17 @@ function mergeImport(imported){
   showToast('✅ '+newOnes.length+'건 가져왔어요!');
   const st=document.getElementById('setup-import-status');
   if(st)st.textContent='총 '+entries.length+'건 로드됨';
-  renderHome();renderHist();
+  renderHome();
+  // 현재 탭 재렌더링 (비활성 → 활성)
+  const _curTab=localStorage.getItem('lastTab')||'home';
+  if(_curTab==='history')renderHist();
+  else if(_curTab==='balance')renderBalance();
+  else if(_curTab==='asset')renderAsset();
+  else if(_curTab==='setup')renderSetup();
+  // 입력 탭 복원
+  if(document.getElementById('page-input').innerHTML.includes('설정을 먼저')){
+    location.reload();
+  }
 }
 function parseCSVLine(l){
   const r=[];let cur='';let inQ=false;
@@ -1175,7 +1185,9 @@ function importXLSX(input){
           const cnt=applyConfigCSV(allRows);
           showToast('✅ 설정 '+cnt+'개 적용됐어요!');
           renderHome();
-          if(document.getElementById('page-setup').classList.contains('active'))renderSetup();
+          renderSetup();
+          // 입력탭 포함 전체 새로고침
+          location.reload();
           return;
         }
         // 내역 CSV: 날짜 있는 행만
