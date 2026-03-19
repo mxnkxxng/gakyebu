@@ -391,7 +391,7 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
 </nav>
 <div class="toast" id="toast"></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" async></script>
 <script>
 const CAT={
   '지출':{
@@ -1033,7 +1033,8 @@ function importXLSX(input){
     reader.onload=function(e){
       try{
         const text=e.target.result;
-        const lines=text.split(/?
+        const lines=text.split(/
+?
 /).filter(l=>l.trim());
         // 헤더 행 스킵 (날짜로 시작 안하면)
         const rows=lines.map(l=>{
