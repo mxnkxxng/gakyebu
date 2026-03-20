@@ -861,10 +861,9 @@ var SHEET_INVEST_KEYS = ['우리IRP','미래에셋','삼성증권','토스증권
 // 계약금 그룹으로 분류할 키 (초기잔고 시트엔 invest로 돼있지만 앱에서 contract로)
 var CONTRACT_KEYS = ['케이-집계약용','신한은행'];
 
-function buildAcctsDef(){
-  var init=getInitBalRaw(); // 그룹 포함 raw 데이터
+function buildAcctsDef(rawData){
+  var init=rawData||getInitBalRaw(); // 파라미터로 받거나 localStorage에서
   if(!init||!init.length){
-    // localStorage에 저장된 것도 없으면 빈 상태
     ACCTS_DEF=[];ACCTS=[];return;
   }
   ACCTS_DEF=init.map(function(r){
@@ -1135,7 +1134,7 @@ function loadFromSheet(silent,overwrite){
       }
       if(cfg.initBalRaw){
         try{localStorage.setItem('initBalRaw',JSON.stringify(cfg.initBalRaw));}catch(e){}
-        buildAcctsDef();
+        buildAcctsDef(cfg.initBalRaw); // localStorage 거치지 않고 직접 전달
       }
     }
     var allCardKeys=ACCTS.filter(function(a){return ACCTS_DEF.some(function(d){return d.key===a&&d.group==='debt';});});
@@ -1161,8 +1160,7 @@ function loadFromSheet(silent,overwrite){
       try{localStorage.setItem('sheetAssetData',JSON.stringify(sheetAssetData));}catch(e){}
     }
     renderHome();renderHist();
-    // asset 데이터 있으면 자산탭 진입 시 혹은 즉시 렌더링
-    if(sheetAssetData&&Object.keys(sheetAssetData).length>0){setTimeout(function(){if(document.getElementById('page-asset').classList.contains('active'))renderAsset();},100);}
+    if(document.getElementById('page-asset').classList.contains('active'))renderAsset();
   }).catch(function(err){if(st)st.textContent='\uC2E4\uD328: '+err.message;if(!silent)showToast('\uBD88\uB7EC\uC624\uAE30 \uC2E4\uD328');});
 }
 function toggleCfgSec(id){
