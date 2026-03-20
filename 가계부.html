@@ -251,6 +251,7 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
   <div class="card" style="margin-bottom:12px">
     <div class="brow-hd" onclick="toggleAstSec('contract')" style="cursor:pointer">
       <span class="ct" style="margin-bottom:0;flex:1">🏡 집 계약금 가용 현황</span>
+      <span style="font-size:13px;font-weight:700;color:var(--blue);margin-right:6px" id="ast-contract-total">&#8361;0</span>
       <span class="barr" id="arr-contract">v</span>
     </div>
     <div id="ast-contract-body" class="brow-detail open" style="margin-top:8px">
@@ -415,10 +416,7 @@ var CARD_GROUPS = [
 ];
 
 var ACCTS = ['KB뱅크','NH뱅크','케이-덕질','케이-비상금','케이-임시','케이뱅크','하나은행','케이-집계약용','신한은행','전세 보증금','토스증권','미래에셋','삼성증권','우리IRP','농카','농카!','농카!실미','농카-','롯카','롯카!','롯카!실미','롯카-','신카','신카!','신카!실미','삼카','삼카!','국카1','국카k','국카k!','국카k!실미','국카k-','전세자금대출 원금(국민)','전세자금대출 원금(농협)','엄마신용대출 원금'];
-var ACCTS_DEF_EXTRA = [
-  {key:'미래주식',label:'미래(주식)',group:'invest'},
-  {key:'금',label:'금',group:'invest'}
-];
+var ACCTS_DEF_EXTRA = []; // 시트 initBalRaw로 동적 추가
 
 var ACCTS_DEF = [
   // ── 현금/예금 계좌 ──
@@ -432,13 +430,7 @@ var ACCTS_DEF = [
   // ── 계약금 ──
   {key:'케이-집계약용',label:'집계약용',group:'contract',goal:1000000},
   {key:'신한은행',label:'주택청약(신한)',group:'contract'},
-  // ── 투자/저축 계좌 ──
-  {key:'미래에셋',label:'개인연금(미래에셋)',group:'invest',goal:400000},
-  {key:'우리IRP',label:'우리IRP',group:'invest'},
-  {key:'토스증권',label:'ISA(토스)',group:'invest',goal:500000},
-  {key:'삼성증권',label:'삼성증권',group:'invest'},
-  {key:'미래주식',label:'미래(주식)',group:'invest'},
-  {key:'금',label:'금',group:'invest'},
+  // ── 투자/저축 계좌 (시트 initBalRaw에서 동적 추가) ──
   // ── 부동산 ──
   {key:'전세 보증금',label:'전세 보증금',group:'estate'},
   // ── 카드 미결제 ──
@@ -669,6 +661,7 @@ function renderMajor(){
   document.getElementById('sub-sec').style.display='none';
 }
 function pickMaj(k){
+  if(selMaj===k){selMaj='';selSub='';renderMajor();return;}
   selMaj=k;selSub='';renderMajor();
   var subs=getCatSubs(cType,k);
   if(!subs.length){document.getElementById('sub-sec').style.display='none';return;}
@@ -832,17 +825,11 @@ function buildAcctsDef(){
   }
   ACCTS_DEF=init.map(function(r){
     var grp=r.group||'cash';
-    // contract 분류 오버라이드
     if(CONTRACT_KEYS.indexOf(r.key)>=0)grp='contract';
-    // 시트연동 투자계좌는 goal 정보 추가
-    var goal=r.goal||0;
     var def={key:r.key,label:r.label||r.key,group:grp};
-    if(goal)def.goal=goal;
+    if(r.goal)def.goal=r.goal;
     return def;
   });
-  // ACCTS_DEF_EXTRA (미래주식, 금) 추가 - 중복 없으면
-  var existKeys=ACCTS_DEF.map(function(a){return a.key;});
-  ACCTS_DEF_EXTRA.forEach(function(x){if(existKeys.indexOf(x.key)<0)ACCTS_DEF.push(x);});
   // ACCTS 재구성 (입력폼 드롭다운용)
   ACCTS=ACCTS_DEF.map(function(a){return a.key;});
   // CARD_GROUPS 재구성 (debt 그룹 키들로)
@@ -918,6 +905,7 @@ function renderBalance(){
 // ── 자산 ──
 function renderAsset(){
   var _cb=calcBalances().curBal;
+  // 앱설정 키 → 자산시트 키 매핑
   var cb=function(k){
     if(sheetAssetData&&sheetAssetData[k]!==undefined)return sheetAssetData[k];
     return _cb(k);
@@ -962,6 +950,7 @@ function renderAsset(){
   }).join('');
   document.getElementById('ast-contract').innerHTML=contractRows
     +'<div class="div"></div><div class="trow"><span class="tlbl" style="font-weight:700">합계</span><span class="tval" style="color:var(--blue)">'+fmt(conT)+'</span></div>';
+  var conHdr=document.getElementById('ast-contract-total');if(conHdr)conHdr.textContent=fmt(conT);
 
   // ── 연금·투자 ──
   document.getElementById('ast-invest-total').textContent=fmt(invT);
@@ -1013,6 +1002,15 @@ function renderAsset(){
       +'<span style="font-size:10px;color:var(--sub);min-width:36px;text-align:right">저축 '+mR2+'%</span>'
       +'</div>';
   }).join('')||'<div class="empty">데이터 없음</div>';
+}
+
+// ── 메모 시트 저장 ──
+function saveMemoToSheet(memoText){
+  var url=getScriptUrl();if(!url)return;
+  var ym=curMon; // 현재 월 (예: 2026-03)
+  fetch(url,{method:'POST',headers:{'Content-Type':'text/plain'},
+    body:JSON.stringify({action:'saveMemo',yearMonth:ym,memo:memoText})
+  }).catch(function(){});
 }
 
 // ── 자산 시트 데이터 로드 ──
@@ -1112,15 +1110,30 @@ function loadFromSheet(silent,overwrite){
     renderHome();renderHist();
   }).catch(function(err){if(st)st.textContent='\uC2E4\uD328: '+err.message;if(!silent)showToast('\uBD88\uB7EC\uC624\uAE30 \uC2E4\uD328');});
 }
+function toggleCfgSec(id){
+  var b=document.getElementById('cfg-body-'+id),a=document.getElementById('cfg-arr-'+id);
+  if(!b)return;
+  b.classList.toggle('open');
+  if(a)a.classList.toggle('open');
+}
+function cfgSec(id,title,innerH){
+  return '<div style="margin-bottom:10px">'
+    +'<div class="brow-hd" onclick="toggleCfgSec(\\'+id+\\')" style="cursor:pointer;padding:6px 0;border-bottom:.5px solid var(--border)">'
+    +'<span style="font-size:12px;font-weight:700;color:var(--sub);flex:1">'+title+'</span>'
+    +'<span class="barr open" id="cfg-arr-'+id+'">v</span>'
+    +'</div>'
+    +'<div class="brow-detail open" id="cfg-body-'+id+'" style="margin-top:4px">'+innerH+'</div>'
+    +'</div>';
+}
 function renderCurrentConfig(){
   var init=getInitBal(),card=document.getElementById('setup-current'),content=document.getElementById('setup-current-content');
   var hB=Object.keys(BUDGET).length>0,hC=Object.values(CARD_BUDGET).some(function(v){return v>0;}),hG=SAVE_GOALS.length>0,hI=Object.values(init).some(function(v){return v!==0;});
   if(!hB&&!hC&&!hG&&!hI){card.style.display='none';return;}
   card.style.display='block';var h='';
-  if(hB){h+='<div style="margin-bottom:14px"><div style="font-size:11px;font-weight:700;color:var(--sub);margin-bottom:6px">카테고리 예산</div>';Object.entries(BUDGET).forEach(function(kv){var lbl=getCatLabel('지출',kv[0]);h+='<div class="srow"><span class="sname" style="font-size:11px">'+lbl+'</span><span class="samt" style="font-size:11px;color:'+(kv[1]>0?'var(--blue)':'var(--hint)')+'">'+( kv[1]>0?fmt(kv[1]):'\uBBF8\uC124\uC815')+'</span></div>';});h+='</div>';}
-  if(hC){h+='<div style="margin-bottom:14px"><div style="font-size:11px;font-weight:700;color:var(--sub);margin-bottom:6px">\uCE74\uB4DC \uC608\uC0B0</div>';Object.entries(CARD_BUDGET).filter(function(kv){return kv[1]>0;}).forEach(function(kv){h+='<div class="srow"><span class="sname" style="font-size:11px">'+kv[0]+'</span><span class="samt" style="font-size:11px;color:var(--blue)">'+fmt(kv[1])+'</span></div>';});h+='</div>';}
-  if(hG){h+='<div style="margin-bottom:14px"><div style="font-size:11px;font-weight:700;color:var(--sub);margin-bottom:6px">\uC800\uCD95 \uBAA9\uD45C</div>';SAVE_GOALS.forEach(function(g){h+='<div class="srow"><span class="sname" style="font-size:11px">'+g.n+'</span><span class="samt" style="font-size:11px;color:var(--blue)">\uC6D4 '+fmt(g.g)+'</span></div>';});h+='</div>';}
-  if(hI){h+='<div><div style="font-size:11px;font-weight:700;color:var(--sub);margin-bottom:6px">\uCD08\uAE30 \uC7D8\uACE0</div>';Object.entries(init).filter(function(kv){return kv[1]!==0;}).forEach(function(kv){var def=ACCTS_DEF.find(function(a){return a.key===kv[0];});h+='<div class="srow"><span class="sname" style="font-size:11px">'+(def?def.label:kv[0])+'</span><span class="samt" style="font-size:11px;color:'+(kv[1]<0?'var(--red)':'var(--text)')+'">'+fmt(kv[1])+'</span></div>';});h+='</div>';}
+  if(hB){var bH='';Object.entries(BUDGET).forEach(function(kv){var lbl=getCatLabel('지출',kv[0]);bH+='<div class="srow"><span class="sname" style="font-size:11px">'+lbl+'</span><span class="samt" style="font-size:11px;color:'+(kv[1]>0?'var(--blue)':'var(--hint)')+'">'+( kv[1]>0?fmt(kv[1]):'\uBBF8\uC124\uC815')+'</span></div>';});h+=cfgSec('budget','\uCE74\uD14C\uACE0\uB9AC \uC608\uC0B0',bH);}
+  if(hC){var cH='';Object.entries(CARD_BUDGET).filter(function(kv){return kv[1]>0;}).forEach(function(kv){cH+='<div class="srow"><span class="sname" style="font-size:11px">'+kv[0]+'</span><span class="samt" style="font-size:11px;color:var(--blue)">'+fmt(kv[1])+'</span></div>';});h+=cfgSec('card','\uCE74\uB4DC \uC608\uC0B0',cH);}
+  if(hG){var gH='';SAVE_GOALS.forEach(function(g){gH+='<div class="srow"><span class="sname" style="font-size:11px">'+g.n+'</span><span class="samt" style="font-size:11px;color:var(--blue)">\uC6D4 '+fmt(g.g)+'</span></div>';});h+=cfgSec('goals','\uC800\uCD95 \uBAA9\uD45C',gH);}
+  if(hI){var iH='';Object.entries(init).filter(function(kv){return kv[1]!==0;}).forEach(function(kv){var def=ACCTS_DEF.find(function(a){return a.key===kv[0];});iH+='<div class="srow"><span class="sname" style="font-size:11px">'+(def?def.label:kv[0])+'</span><span class="samt" style="font-size:11px;color:'+(kv[1]<0?'var(--red)':'var(--text)')+'">'+fmt(kv[1])+'</span></div>';});h+=cfgSec('initbal','\uCD08\uAE30 \uC7D8\uACE0',iH);}
   content.innerHTML=h;
 }
 function resetAll(){localStorage.clear();entries=[];BUDGET={};CARD_BUDGET={};SAVE_GOALS=[];showToast('\uCD08\uAE30\uD654 \uC644\uB8CC! \uC0C8\uB85C\uACE0\uCE68 \uD569\uB2C8\uB2E4...');setTimeout(function(){location.reload();},1000);}
@@ -1234,7 +1247,7 @@ var _mt;
 function initMemo(){
   var ta=document.getElementById('quick-memo');if(!ta)return;
   try{var sv=localStorage.getItem('quickMemo');if(sv)ta.value=sv;}catch(e){}
-  ta.addEventListener('input',function(){clearTimeout(_mt);document.getElementById('memo-saved').textContent='\uC800\uC7A5 \uC911...';_mt=setTimeout(function(){try{localStorage.setItem('quickMemo',ta.value);}catch(e){}document.getElementById('memo-saved').textContent='\uC800\uC7A5\uB428';setTimeout(function(){var s=document.getElementById('memo-saved');if(s)s.textContent='';},2000);},800);});
+  ta.addEventListener('input',function(){clearTimeout(_mt);document.getElementById('memo-saved').textContent='\uC800\uC7A5 \uC911...';_mt=setTimeout(function(){try{localStorage.setItem('quickMemo',ta.value);}catch(e){}document.getElementById('memo-saved').textContent='\uC800\uC7A5\uB428';setTimeout(function(){var s=document.getElementById('memo-saved');if(s)s.textContent='';},2000);saveMemoToSheet(ta.value);},800);});
 }
 
 // ── 초기화 ──
