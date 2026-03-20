@@ -249,39 +249,62 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
   </div>
   <!-- 계약금 가용 현황 -->
   <div class="card" style="margin-bottom:12px">
-    <div class="ct">🏡 집 계약금 가용 현황</div>
-    <div id="ast-contract"></div>
-    <div style="font-size:11px;color:var(--hint);margin-top:8px">주택청약 + 집계약용 통장 기준</div>
+    <div class="brow-hd" onclick="toggleAstSec('contract')" style="cursor:pointer">
+      <span class="ct" style="margin-bottom:0;flex:1">🏡 집 계약금 가용 현황</span>
+      <span class="barr" id="arr-contract">v</span>
+    </div>
+    <div id="ast-contract-body" class="brow-detail open" style="margin-top:8px">
+      <div id="ast-contract"></div>
+      <div style="font-size:11px;color:var(--hint);margin-top:6px">주택청약 + 집계약용 통장 기준</div>
+    </div>
   </div>
   <!-- 연금 & 투자 -->
   <div class="card" style="margin-bottom:12px">
-    <div class="ct" style="display:flex;justify-content:space-between;align-items:center">
-      📈 연금·투자 현황
-      <span style="font-size:13px;font-weight:700;color:var(--blue)" id="ast-invest-total">&#8361;0</span>
+    <div class="brow-hd" onclick="toggleAstSec('invest')" style="cursor:pointer">
+      <span class="ct" style="margin-bottom:0;flex:1">📈 연금·투자 현황</span>
+      <span style="font-size:13px;font-weight:700;color:var(--blue);margin-right:6px" id="ast-invest-total">&#8361;0</span>
+      <span class="barr" id="arr-invest">v</span>
     </div>
-    <div id="ast-invest"></div>
+    <div id="ast-invest-body" class="brow-detail open" style="margin-top:8px">
+      <div id="ast-invest"></div>
+    </div>
   </div>
   <!-- 부동산 -->
   <div class="card" style="margin-bottom:12px">
-    <div class="ct" style="display:flex;justify-content:space-between;align-items:center">
-      🏠 부동산 (전세)
-      <span style="font-size:13px;font-weight:700;color:var(--blue)" id="ast-estate-total">&#8361;0</span>
+    <div class="brow-hd" onclick="toggleAstSec('estate')" style="cursor:pointer">
+      <span class="ct" style="margin-bottom:0;flex:1">🏠 부동산 (전세)</span>
+      <div style="text-align:right;margin-right:6px">
+        <div style="font-size:13px;font-weight:700;color:var(--blue)" id="ast-estate-total">&#8361;0</div>
+        <div style="font-size:9px;color:var(--hint)">보증금-대출원금</div>
+      </div>
+      <span class="barr" id="arr-estate">v</span>
     </div>
-    <div id="ast-estate"></div>
+    <div id="ast-estate-body" class="brow-detail open" style="margin-top:8px">
+      <div id="ast-estate"></div>
+    </div>
   </div>
-  <!-- 저축 & 저축률 -->
+  <!-- 저축 현황 -->
   <div class="card" style="margin-bottom:12px">
-    <div class="ct" style="display:flex;justify-content:space-between;align-items:center">
-      💰 이달 저축 현황
-      <div><span id="ast-month-lbl" style="font-size:11px;color:var(--sub);margin-right:6px"></span><span style="font-size:13px;font-weight:700;color:var(--blue)" id="ast-sav-sum"></span></div>
+    <div class="brow-hd" onclick="toggleAstSec('monthly')" style="cursor:pointer">
+      <span class="ct" style="margin-bottom:0;flex:1">💰 이달 저축 현황</span>
+      <div style="margin-right:6px"><span id="ast-month-lbl" style="font-size:11px;color:var(--sub);margin-right:4px"></span><span style="font-size:13px;font-weight:700;color:var(--blue)" id="ast-sav-sum"></span></div>
+      <span class="barr" id="arr-monthly">v</span>
     </div>
-    <div id="ast-monthly"></div>
+    <div id="ast-monthly-body" class="brow-detail open" style="margin-top:8px">
+      <div id="ast-monthly"></div>
+    </div>
   </div>
+  <!-- 저축률 -->
   <div class="card">
-    <div class="ct">📊 저축률 추이</div>
-    <div class="trow" style="margin-bottom:4px"><span class="tlbl">(수입-지출)/수입</span><span class="tval" id="ast-sav-rate">0%</span></div>
-    <div class="trow" style="margin-bottom:8px"><span class="tlbl">급여 대비 저축액</span><span class="tval" id="ast-sav-rate2">0%</span></div>
-    <div id="ast-trend"></div>
+    <div class="brow-hd" onclick="toggleAstSec('trend')" style="cursor:pointer">
+      <span class="ct" style="margin-bottom:0;flex:1">📊 저축률 추이</span>
+      <span class="barr" id="arr-trend">v</span>
+    </div>
+    <div id="ast-trend-body" class="brow-detail open" style="margin-top:8px">
+      <div class="trow" style="margin-bottom:4px"><span class="tlbl">(수입-지출)/수입</span><span class="tval" id="ast-sav-rate">0%</span></div>
+      <div class="trow" style="margin-bottom:8px"><span class="tlbl">급여 대비 저축액</span><span class="tval" id="ast-sav-rate2">0%</span></div>
+      <div id="ast-trend"></div>
+    </div>
   </div>
 </div>
 <div class="page" id="page-setup">
@@ -391,37 +414,15 @@ var CARD_GROUPS = [
   {label:'국카1',keys:['국카1']}
 ];
 
-var ACCTS = ['KB뱅크','NH뱅크','케이-덕질','케이-비상금','케이-임시','케이뱅크','하나은행','케이-집계약용','신한은행','전세 보증금','토스증권','미래에셋','삼성증권','우리IRP','농카','농카!','농카!실미','농카-','롯카','롯카!','롯카!실미','롯카-','신카','신카!','신카!실미','삼카','삼카!','국카1','국카k','국카k!','국카k!실미','국카k-','전세자금대출 원금(국민)','전세자금대출 원금(농협)','엄마신용대출 원금'];
-
-var ACCTS_DEF = [
-  // ── 현금/예금 계좌 ──
-  {key:'케이뱅크',label:'케이뱅크',group:'cash'},
-  {key:'케이-비상금',label:'케이-비상금',group:'cash'},
-  {key:'케이-덕질',label:'케이-덕질',group:'cash'},
-  {key:'케이-임시',label:'케이-임시',group:'cash'},
-  {key:'KB뱅크',label:'KB뱅크',group:'cash'},
-  {key:'NH뱅크',label:'NH뱅크',group:'cash'},
-  {key:'하나은행',label:'하나은행',group:'cash'},
-  // ── 투자/저축 계좌 ──
-  {key:'케이-집계약용',label:'집계약용',group:'invest',goal:1000000},
-  {key:'신한은행',label:'주택청약(신한)',group:'invest'},
-  {key:'미래에셋',label:'개인연금(미래에셋)',group:'invest',goal:400000},
-  {key:'우리IRP',label:'우리IRP',group:'invest'},
-  {key:'토스증권',label:'ISA(토스)',group:'invest',goal:500000},
-  {key:'삼성증권',label:'삼성증권',group:'invest'},
-  // ── 부동산 ──
-  {key:'전세 보증금',label:'전세 보증금',group:'estate'},
-  // ── 카드 미결제 ──
-  {key:'롯카',label:'롯카',group:'debt'},{key:'롯카-',label:'롯카-',group:'debt'},
-  {key:'롯카!',label:'롯카!',group:'debt'},
-  {key:'삼카',label:'삼카',group:'debt'},{key:'삼카!',label:'삼카!',group:'debt'},
-  {key:'신카',label:'신카',group:'debt'},{key:'신카!',label:'신카!',group:'debt'},
-  {key:'국카1',label:'국카1',group:'debt'},
-  {key:'국카k',label:'국카k',group:'debt'},{key:'국카k!',label:'국카k!',group:'debt'},
-  {key:'국카k!실미',label:'국카k!실미',group:'debt'},{key:'국카k-',label:'국카k-',group:'debt'},
-  // ── 장기부채 ──
-  {key:'전세자금대출 원금(국민)',label:'전세대출(국민)',group:'longdebt'}
+// ACCTS, ACCTS_DEF는 시트 초기잔고에서 동적으로 생성 (소스코드에 계좌명 미포함)
+var ACCTS = [];
+var ACCTS_DEF_EXTRA = [
+  // 시트에 없지만 앱에서 필요한 시트연동 투자계좌
+  {key:'미래주식',label:'미래(주식)',group:'invest'},
+  {key:'금',label:'금',group:'invest'}
 ];
+
+var ACCTS_DEF = []; // 시트에서 동적 로드 (buildAcctsDef 참고)
 
 var CMAP = [
   {k:['롯카!실미'],v:'롯카!실미'},{k:['롯카!'],v:'롯카!'},{k:['롯카-'],v:'롯카-'},{k:['롯데카드','로카','롯카'],v:'롯카'},
@@ -449,6 +450,7 @@ try{var _s=localStorage.getItem('gb_budget');if(_s)BUDGET=JSON.parse(_s);}catch(
 try{var _s=localStorage.getItem('gb_card_budget');if(_s)CARD_BUDGET=JSON.parse(_s);}catch(e){}
 try{var _s=localStorage.getItem('gb_save_goals');if(_s)SAVE_GOALS=JSON.parse(_s);}catch(e){}
 try{var _sa=localStorage.getItem('sheetAssetData');if(_sa)sheetAssetData=JSON.parse(_sa);}catch(e){}
+buildAcctsDef(); // initBalRaw에서 ACCTS_DEF 동적 생성
 
 document.getElementById('f-date').value=new Date().toISOString().split('T')[0];
 
@@ -567,12 +569,15 @@ function renderHome(){
     var ov=l>0&&s>l,wn=l>0&&s>l*.8;
     var gc=ov?'gr':wn?'gw':'go';
     var id='cg'+gi;
-    var det=g.keys.map(function(k){var spent=cdT[k]||0;var bud=CARD_BUDGET[k]||0;var rem=bud>0?bud-spent:null;var remStr=rem!==null?'<span style="font-size:10px;color:var(--hint);margin-left:3px">('+( rem>=0?'잔 '+fmtK(rem):'초과 '+fmtK(-rem))+')</span>':'';return '<div class="srow2"><span style="flex:1;color:var(--sub)">'+k+'</span><span style="font-size:11px;font-weight:600;color:'+(spent>0?'var(--text)':'var(--hint)')+'">'+( spent>0?fmt(spent):'0')+remStr+'</span></div>';}).join('');
+    var det=g.keys.map(function(k){var spent=cdT[k]||0;var bud=CARD_BUDGET[k]||0;var rem=bud>0?bud-spent:null;var remStr=rem!==null?'<span style="font-size:10px;color:var(--hint);margin-left:3px">('+( rem>=0?'잔 '+fmt(rem):'초과 '+fmt(-rem))+')</span>':'';return '<div class="srow2"><span style="flex:1;color:var(--sub)">'+k+'</span><span style="font-size:11px;font-weight:600;color:'+(spent>0?'var(--text)':'var(--hint)')+'">'+( spent>0?fmt(spent):'0')+remStr+'</span></div>';}).join('');
+    var remG=l>0?l-s:null;
+    var remGStr=remG!==null?'<span style="font-size:10px;font-weight:700;color:'+(remG>=0?'var(--green)':'var(--red)')+';margin-left:3px">'+(remG>=0?'잔 ':'초과 ')+fmt(Math.abs(remG))+'</span>':'';
     return '<div class="brow-wrap" data-group="card">'
       +'<div class="brow-hd" onclick="toggleBrow(\''+id+'\')">'
       +'<span class="bn" style="flex:1">'+g.label+'</span>'
       +'<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">'
       +'<span style="font-size:10px;color:'+(ov?'var(--red)':'var(--text)')+';white-space:nowrap;font-weight:600">'+fmtK(s)+(l?'/'+fmtK(l):'')+'</span>'
+      +remGStr
       +(l?'<div class="gb" style="width:32px;flex-shrink:0"><div class="gf '+gc+'" style="width:'+p3+'%"></div></div>':'')
       +'</div><span class="barr" id="arr-'+id+'">v</span></div>'
       +'<div class="brow-detail" id="det-'+id+'">'+det+'</div></div>';
@@ -584,6 +589,12 @@ function toggleBrow(id){
   var det=document.getElementById('det-'+id),arr=document.getElementById('arr-'+id);
   if(!det)return;
   det.classList.toggle('open');
+  if(arr)arr.classList.toggle('open');
+}
+function toggleAstSec(id){
+  var body=document.getElementById('ast-'+id+'-body'),arr=document.getElementById('arr-'+id);
+  if(!body)return;
+  body.classList.toggle('open');
   if(arr)arr.classList.toggle('open');
 }
 function expandAll(g){
@@ -765,6 +776,45 @@ function deleteAndClose(){
 }
 
 // ── 잔고 ──
+// ── 계좌 정의 동적 생성 (앱설정 시트 초기잔고 기반) ──────────────
+// 그룹 라벨 매핑
+var ACCT_GROUP_LABELS = {
+  'cash':'현금/예금', 'invest':'투자/저축', 'contract':'계약금',
+  'estate':'부동산', 'debt':'카드미결제', 'longdebt':'장기부채'
+};
+// 투자계좌 중 시트에서 실잔액 받아오는 키 (GAS getAssetData 기준)
+var SHEET_INVEST_KEYS = ['우리IRP','미래에셋','삼성증권','토스증권','미래주식','금'];
+// 계약금 그룹으로 분류할 키 (초기잔고 시트엔 invest로 돼있지만 앱에서 contract로)
+var CONTRACT_KEYS = ['케이-집계약용','신한은행'];
+
+function buildAcctsDef(){
+  var init=getInitBalRaw(); // 그룹 포함 raw 데이터
+  if(!init||!init.length){
+    // localStorage에 저장된 것도 없으면 빈 상태
+    ACCTS_DEF=[];ACCTS=[];return;
+  }
+  ACCTS_DEF=init.map(function(r){
+    var grp=r.group||'cash';
+    // contract 분류 오버라이드
+    if(CONTRACT_KEYS.indexOf(r.key)>=0)grp='contract';
+    // 시트연동 투자계좌는 goal 정보 추가
+    var goal=r.goal||0;
+    var def={key:r.key,label:r.label||r.key,group:grp};
+    if(goal)def.goal=goal;
+    return def;
+  });
+  // ACCTS_DEF_EXTRA (미래주식, 금) 추가 - 중복 없으면
+  var existKeys=ACCTS_DEF.map(function(a){return a.key;});
+  ACCTS_DEF_EXTRA.forEach(function(x){if(existKeys.indexOf(x.key)<0)ACCTS_DEF.push(x);});
+  // ACCTS 재구성 (입력폼 드롭다운용)
+  ACCTS=ACCTS_DEF.map(function(a){return a.key;});
+}
+
+function getInitBalRaw(){
+  try{var s=localStorage.getItem('initBalRaw');if(s)return JSON.parse(s);}catch(e){}
+  return null;
+}
+
 function getInitBal(){try{var s=localStorage.getItem('initBal');if(s)return JSON.parse(s);}catch(e){}var d={};ACCTS_DEF.forEach(function(a){d[a.key]=0;});return d;}
 function saveInitBal(){
   var d={};ACCTS_DEF.forEach(function(a){var el=document.getElementById('ibal-'+a.key.replace(/[^a-zA-Z0-9]/g,'_'));if(el)d[a.key]=parseInt(el.value.replace(/,/g,''))||0;});
@@ -811,59 +861,67 @@ function renderBalance(){
 // ── 자산 ──
 function renderAsset(){
   var _cb=calcBalances().curBal;
-  // 시트에서 받은 실잔액이 있으면 해당 계좌는 시트값 우선 사용
   var cb=function(k){
     if(sheetAssetData&&sheetAssetData[k]!==undefined)return sheetAssetData[k];
     return _cb(k);
   };
-  var invA=ACCTS_DEF.filter(function(a){return a.group==='invest';}),estA=ACCTS_DEF.filter(function(a){return a.group==='estate';});
+  var invA=ACCTS_DEF.filter(function(a){return a.group==='invest';});
+  var conA=ACCTS_DEF.filter(function(a){return a.group==='contract';});
+  var estA=ACCTS_DEF.filter(function(a){return a.group==='estate';});
   var cA=ACCTS_DEF.filter(function(a){return a.group==='cash';});
-  var invT=invA.reduce(function(s,a){return s+cb(a.key);},0),estT=estA.reduce(function(s,a){return s+cb(a.key);},0);
+  var invT=invA.reduce(function(s,a){return s+cb(a.key);},0);
+  var conT=conA.reduce(function(s,a){return s+cb(a.key);},0);
+  var estT=estA.reduce(function(s,a){return s+cb(a.key);},0);
   var cashT=cA.reduce(function(s,a){return s+cb(a.key);},0);
   var debtT=ACCTS_DEF.filter(function(a){return a.group==='debt';}).reduce(function(s,a){return s+Math.min(0,cb(a.key));},0);
   var ldT=ACCTS_DEF.filter(function(a){return a.group==='longdebt';}).reduce(function(s,a){return s+cb(a.key);},0);
+  var dep=cb('전세 보증금'),loanAmt=0;
+  ACCTS_DEF.filter(function(a){return a.group==='longdebt';}).forEach(function(a){loanAmt+=Math.abs(cb(a.key));});
+  var netEstate=dep-loanAmt;
 
   // ── 순자산 ──
-  var netWorth=cashT+invT+estT+debtT-Math.abs(ldT);
+  var netWorth=cashT+invT+conT+netEstate+debtT;
   var nwEl=document.getElementById('ast-net-worth');
   nwEl.textContent=(netWorth<0?'-':'')+fmt(netWorth);
   nwEl.style.color=netWorth>=0?'var(--blue)':'var(--red)';
   var bdItems=[
-    {l:'현금',v:cashT,c:'var(--text)'},
-    {l:'투자',v:invT,c:'var(--blue)'},
-    {l:'부동산',v:estT,c:'var(--blue)'},
-    {l:'카드부채',v:Math.abs(debtT),c:'var(--red)',neg:true},
-    {l:'전세대출',v:Math.abs(ldT),c:'var(--red)',neg:true}
+    {l:'현금',v:cashT,c:'var(--text)',note:''},
+    {l:'투자',v:invT+conT,c:'var(--blue)',note:''},
+    {l:'부동산',v:netEstate,c:'var(--blue)',note:'보증금-대출'},
+    {l:'카드부채',v:Math.abs(debtT),c:'var(--red)',neg:true,note:''}
   ];
   document.getElementById('ast-net-breakdown').innerHTML=bdItems.map(function(x){
     return '<div style="text-align:center;padding:4px 8px;background:rgba(0,0,0,.04);border-radius:8px">'
       +'<div style="font-size:9px;color:var(--sub);margin-bottom:1px">'+x.l+'</div>'
-      +'<div style="font-size:12px;font-weight:700;color:'+x.c+'">'+(x.neg?'-':'')+fmtK(x.v)+'</div></div>';
+      +'<div style="font-size:12px;font-weight:700;color:'+x.c+'">'+(x.neg?'-':'')+fmt(x.v)+'</div>'
+      +(x.note?'<div style="font-size:9px;color:var(--hint);margin-top:1px">'+x.note+'</div>':'')
+      +'</div>';
   }).join('');
 
   // ── 계약금 가용 ──
-  var contractKeys=['신한은행','케이-집계약용'];
-  var contractTotal=contractKeys.reduce(function(s,k){return s+cb(k);},0);
-  var contractRows=contractKeys.map(function(k){
-    var def=ACCTS_DEF.find(function(a){return a.key===k;});
-    var v=cb(k);
-    return '<div class="srow"><span class="sname">'+(def?def.label:k)+'</span><span class="samt" style="color:var(--blue)">'+fmt(v)+'</span></div>';
+  var contractRows=conA.map(function(a){
+    var v=cb(a.key);
+    return '<div class="srow"><div><div class="sname">'+a.label+'</div>'+(a.goal?'<div style="font-size:10px;color:var(--sub)">월 목표 '+fmt(a.goal)+'</div>':'')+'</div><span class="samt" style="color:var(--blue)">'+fmt(v)+'</span></div>';
   }).join('');
   document.getElementById('ast-contract').innerHTML=contractRows
-    +'<div class="div"></div><div class="trow"><span class="tlbl" style="font-weight:700">합계</span><span class="tval" style="color:var(--blue)">'+fmt(contractTotal)+'</span></div>';
+    +'<div class="div"></div><div class="trow"><span class="tlbl" style="font-weight:700">합계</span><span class="tval" style="color:var(--blue)">'+fmt(conT)+'</span></div>';
 
   // ── 연금·투자 ──
   document.getElementById('ast-invest-total').textContent=fmt(invT);
-  document.getElementById('ast-invest').innerHTML=invA.map(function(a){var v=cb(a.key);return '<div class="srow"><div><div class="sname">'+a.label+'</div>'+(a.goal?'<div style="font-size:10px;color:var(--sub)">월 목표 '+fmt(a.goal)+'</div>':'')+'</div><span class="samt" style="color:var(--blue)">'+fmt(v)+'</span></div>';}).join('')+'<div class="div"></div><div class="trow"><span class="tlbl">투자 합계</span><span class="tval" style="color:var(--blue)">'+fmt(invT)+'</span></div>';
+  document.getElementById('ast-invest').innerHTML=invA.map(function(a){
+    var v=cb(a.key);
+    return '<div class="srow"><div><div class="sname">'+a.label+'</div>'+(a.goal?'<div style="font-size:10px;color:var(--sub)">월 목표 '+fmt(a.goal)+'</div>':'')+'</div><span class="samt" style="color:var(--blue)">'+fmt(v)+'</span></div>';
+  }).join('')+'<div class="div"></div><div class="trow"><span class="tlbl">합계</span><span class="tval" style="color:var(--blue)">'+fmt(invT)+'</span></div>';
 
   // ── 부동산 ──
-  document.getElementById('ast-estate-total').textContent=fmt(estT);
-  document.getElementById('ast-estate').innerHTML=estA.map(function(a){var v=cb(a.key);return '<div class="srow"><span class="sname">'+a.label+'</span><span class="samt" style="color:var(--blue)">'+fmt(v)+'</span></div>';}).join('')+(function(){
-    var dep=cb('전세 보증금'),loan=0;
-    ACCTS_DEF.filter(function(a){return a.group==='longdebt';}).forEach(function(a){loan+=Math.abs(cb(a.key));});
-    if(dep>0&&loan>0){var net=dep-loan;return '<div class="div"></div><div class="trow"><span class="tlbl" style="font-size:12px;color:var(--sub)">대출원금 잔액</span><span class="tval" style="font-size:13px;color:var(--red)">-'+fmtK(loan)+'</span></div><div class="trow"><span class="tlbl" style="font-weight:700">순수 보증금</span><span class="tval" style="color:var(--blue)">'+fmt(net)+'</span></div>';}
-    return '';
-  })();
+  document.getElementById('ast-estate-total').textContent=fmt(netEstate);
+  var estHTML=estA.map(function(a){var v=cb(a.key);return '<div class="srow"><span class="sname">'+a.label+'</span><span class="samt" style="color:var(--blue)">'+fmt(v)+'</span></div>';}).join('');
+  if(dep>0&&loanAmt>0){
+    estHTML+='<div class="div"></div>'
+      +'<div class="trow"><span class="tlbl" style="color:var(--sub)">대출원금 잔액</span><span class="tval" style="color:var(--red)">-'+fmt(loanAmt)+'</span></div>'
+      +'<div class="trow"><span class="tlbl" style="font-weight:700">순수 보증금</span><span class="tval" style="color:var(--blue)">'+fmt(netEstate)+'</span></div>';
+  }
+  document.getElementById('ast-estate').innerHTML=estHTML;
 
   // ── 이달 저축 ──
   var ym=curMon.split('-');document.getElementById('ast-month-lbl').textContent=ym[0]+'년 '+parseInt(ym[1])+'월';
@@ -879,9 +937,7 @@ function renderAsset(){
   var allInc=entries.filter(function(e){return e.type==='수입';}).reduce(function(s,e){return s+e.amount;},0);
   var allExp=entries.filter(function(e){return e.type==='지출';}).reduce(function(s,e){return s+e.amount;},0);
   var allSav=entries.filter(function(e){return e.type==='이동'&&invA.some(function(a){return a.key===e.inAcct;});}).reduce(function(s,e){return s+e.amount;},0);
-  // 방법1: (수입-지출)/수입
   var sr1=allInc>0?Math.round((allInc-allExp)/allInc*100):0;
-  // 방법2: 급여 대비 저축액/수입
   var sr2=allInc>0?Math.round(allSav/allInc*100):0;
   var rEl=document.getElementById('ast-sav-rate');rEl.textContent=sr1+'%';rEl.style.color=sr1>=30?'var(--green)':sr1>=0?'var(--amber)':'var(--red)';
   var r2El=document.getElementById('ast-sav-rate2');r2El.textContent=sr2+'%';r2El.style.color=sr2>=30?'var(--green)':sr2>=15?'var(--amber)':'var(--red)';
@@ -900,17 +956,6 @@ function renderAsset(){
       +'<span style="font-size:10px;color:var(--sub);min-width:36px;text-align:right">저축 '+mR2+'%</span>'
       +'</div>';
   }).join('')||'<div class="empty">데이터 없음</div>';
-}
-
-// ── 자산 시트 데이터 로드 ──
-function loadAssetFromSheet(){
-  var url=getScriptUrl();if(!url)return;
-  fetch(url+'?action=asset').then(function(r){return r.json();}).then(function(data){
-    if(!data.ok||!data.asset)return;
-    sheetAssetData=data.asset;
-    try{localStorage.setItem('sheetAssetData',JSON.stringify(sheetAssetData));}catch(e){}
-    if(document.getElementById('page-asset').classList.contains('active'))renderAsset();
-  }).catch(function(){});
 }
 
 // ── 설정 ──
@@ -963,9 +1008,23 @@ function autoSyncFromSheet(){
 function loadFromSheet(silent,overwrite){
   var url=getScriptUrl();if(!url){if(!silent)showToast('Script URL\uC744 \uBA3C\uC800 \uC124\uC815\uD574\uC8FC\uC138\uC694');return;}
   var st=document.getElementById('sheet-load-status');if(st&&!silent)st.textContent='\uBD88\uB7EC\uC624\uB294 \uC911...';
-  fetch(url+'?action=entries').then(function(r){return r.json();}).then(function(data){
+  fetch(url+'?action=all').then(function(r){return r.json();}).then(function(data){
     if(!data.ok)throw new Error(data.error||'\uC624\uB958');
     if(overwrite){entries=[];saveEntries();}
+    // config 처리 (예산, 카드예산, 저축목표, 초기잔고+그룹)
+    if(data.config){
+      var cfg=data.config;
+      if(cfg.budget)   {BUDGET=cfg.budget;try{localStorage.setItem('gb_budget',JSON.stringify(BUDGET));}catch(e){}}
+      if(cfg.cardBudget){CARD_BUDGET=cfg.cardBudget;try{localStorage.setItem('gb_card_budget',JSON.stringify(CARD_BUDGET));}catch(e){}}
+      if(cfg.saveGoals){SAVE_GOALS=cfg.saveGoals;try{localStorage.setItem('gb_save_goals',JSON.stringify(SAVE_GOALS));}catch(e){}}
+      if(cfg.initBal){
+        try{localStorage.setItem('initBal',JSON.stringify(cfg.initBal));}catch(e){}
+      }
+      if(cfg.initBalRaw){
+        try{localStorage.setItem('initBalRaw',JSON.stringify(cfg.initBalRaw));}catch(e){}
+        buildAcctsDef();
+      }
+    }
     var allCardKeys=ACCTS.filter(function(a){return ACCTS_DEF.some(function(d){return d.key===a&&d.group==='debt';});});
     var imported=(data.entries||[]).map(function(e){
       var outAcct=e.outAcct||'',inAcct=e.inAcct||'';
@@ -1059,7 +1118,7 @@ function applyConfigCSV(rows){
     if(type==='\uC608\uC0B0'){var cat=String(r[1]||'').trim(),amt=parseInt(String(r[2]||'0').replace(/[^0-9-]/g,''))||0;if(cat){BUDGET[cat]=amt;cnt++;}}
     else if(type==='\uCE74\uB4DC\uC608\uC0B0'){var card=String(r[1]||'').trim(),amt=parseInt(String(r[2]||'0').replace(/[^0-9-]/g,''))||0;if(card){CARD_BUDGET[card]=amt;cnt++;}}
     else if(type==='\uC800\uCD95\uBAA9\uD45C'){var n=String(r[1]||'').trim(),g=parseInt(String(r[2]||'0').replace(/[^0-9-]/g,''))||0,mk=String(r[3]||n).trim();if(n){var idx=SAVE_GOALS.findIndex(function(x){return x.n===n;});if(idx>=0)SAVE_GOALS[idx]={n:n,g:g,mk:mk};else SAVE_GOALS.push({n:n,g:g,mk:mk});cnt++;}}
-    else if(type==='\uCD08\uAE30\uC7D8\uACE0'){var key=String(r[1]||'').trim(),amt=parseInt(String(r[2]||'0').replace(/[^0-9-]/g,''))||0;if(key){var d=getInitBal();d[key]=amt;try{localStorage.setItem('initBal',JSON.stringify(d));}catch(e){}cnt++;}}
+    else if(type==='\uCD08\uAE30\uC7D8\uACE0'){var key=String(r[1]||'').trim(),amt=parseInt(String(r[2]||'0').replace(/[^0-9-]/g,''))||0,grp=String(r[3]||'cash').trim();if(key){var d=getInitBal();d[key]=amt;try{localStorage.setItem('initBal',JSON.stringify(d));}catch(e){}var raw=getInitBalRaw()||[];var ri=raw.findIndex(function(x){return x.key===key;});var entry={key:key,label:key,group:grp,goal:0};if(ri>=0)raw[ri]=entry;else raw.push(entry);try{localStorage.setItem('initBalRaw',JSON.stringify(raw));}catch(e){}cnt++;}}
   });
   try{localStorage.setItem('gb_budget',JSON.stringify(BUDGET));localStorage.setItem('gb_card_budget',JSON.stringify(CARD_BUDGET));localStorage.setItem('gb_save_goals',JSON.stringify(SAVE_GOALS));}catch(e){}
   return cnt;
