@@ -1118,7 +1118,7 @@ function toggleCfgSec(id){
 }
 function cfgSec(id,title,innerH){
   return '<div style="margin-bottom:10px">'
-    +'<div class="brow-hd" onclick="toggleCfgSec(\\'+id+\\')" style="cursor:pointer;padding:6px 0;border-bottom:.5px solid var(--border)">'
+    +'<div class="brow-hd" data-cfgid="'+id+'" onclick="toggleCfgSec(this.getAttribute(\"data-cfgid\"))" style="cursor:pointer;padding:6px 0;border-bottom:.5px solid var(--border)">'
     +'<span style="font-size:12px;font-weight:700;color:var(--sub);flex:1">'+title+'</span>'
     +'<span class="barr open" id="cfg-arr-'+id+'">v</span>'
     +'</div>'
