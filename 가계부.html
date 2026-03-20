@@ -207,6 +207,7 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
       <div style="font-size:15px;font-weight:700" id="hist-month"></div>
       <button class="mb" onclick="changeHistMonth(1)" style="font-size:18px;padding:2px 8px">&#8250;</button>
       <button onclick="setHistAll()" id="hist-all-btn" style="font-size:11px;padding:4px 8px;border:.5px solid var(--border-md);border-radius:99px;background:transparent;color:var(--sub);cursor:pointer;margin-left:4px">전체</button>
+      <button onclick="toggleHistSort()" id="hist-sort-btn" style="font-size:11px;padding:4px 8px;border:.5px solid var(--border-md);border-radius:99px;background:transparent;color:var(--sub);cursor:pointer;margin-left:4px">날짜순</button>
     </div>
     <div style="display:flex;gap:6px">
       <button onclick="addMonthlyTemplates()" style="padding:7px 10px;font-size:11px;border:.5px solid var(--blue-lt);border-radius:var(--rx);background:var(--blue-bg);color:var(--blue);cursor:pointer;font-weight:600">&#128203; 이번달 템플릿</button>
@@ -273,9 +274,9 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
     <div class="brow-hd" onclick="toggleAstSec('contract')" style="cursor:pointer">
       <span class="ct" style="margin-bottom:0;flex:1">🏡 집 계약금 가용 현황</span>
       <span style="font-size:13px;font-weight:700;color:var(--blue);margin-right:6px" id="ast-contract-total">&#8361;0</span>
-      <span class="barr" id="arr-contract">v</span>
+      <span class="barr" id="arr-contract" class="barr">v</span>
     </div>
-    <div id="ast-contract-body" class="brow-detail open" style="margin-top:8px">
+    <div id="ast-contract-body" class="brow-detail" style="margin-top:8px">
       <div id="ast-contract"></div>
       <div style="font-size:11px;color:var(--hint);margin-top:6px">주택청약 + 집계약용 통장 기준</div>
     </div>
@@ -285,9 +286,9 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
     <div class="brow-hd" onclick="toggleAstSec('invest')" style="cursor:pointer">
       <span class="ct" style="margin-bottom:0;flex:1">📈 연금·투자 현황</span>
       <span style="font-size:13px;font-weight:700;color:var(--blue);margin-right:6px" id="ast-invest-total">&#8361;0</span>
-      <span class="barr" id="arr-invest">v</span>
+      <span class="barr" id="arr-invest" class="barr">v</span>
     </div>
-    <div id="ast-invest-body" class="brow-detail open" style="margin-top:8px">
+    <div id="ast-invest-body" class="brow-detail" style="margin-top:8px">
       <div id="ast-invest"></div>
     </div>
   </div>
@@ -299,9 +300,9 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
         <div style="font-size:13px;font-weight:700;color:var(--blue)" id="ast-estate-total">&#8361;0</div>
         <div style="font-size:9px;color:var(--hint)">보증금-대출원금</div>
       </div>
-      <span class="barr" id="arr-estate">v</span>
+      <span class="barr" id="arr-estate" class="barr">v</span>
     </div>
-    <div id="ast-estate-body" class="brow-detail open" style="margin-top:8px">
+    <div id="ast-estate-body" class="brow-detail" style="margin-top:8px">
       <div id="ast-estate"></div>
     </div>
   </div>
@@ -310,9 +311,9 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
     <div class="brow-hd" onclick="toggleAstSec('monthly')" style="cursor:pointer">
       <span class="ct" style="margin-bottom:0;flex:1">💰 이달 저축 현황</span>
       <div style="margin-right:6px"><span id="ast-month-lbl" style="font-size:11px;color:var(--sub);margin-right:4px"></span><span style="font-size:13px;font-weight:700;color:var(--blue)" id="ast-sav-sum"></span></div>
-      <span class="barr" id="arr-monthly">v</span>
+      <span class="barr" id="arr-monthly" class="barr">v</span>
     </div>
-    <div id="ast-monthly-body" class="brow-detail open" style="margin-top:8px">
+    <div id="ast-monthly-body" class="brow-detail" style="margin-top:8px">
       <div id="ast-monthly"></div>
     </div>
   </div>
@@ -320,9 +321,9 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
   <div class="card">
     <div class="brow-hd" onclick="toggleAstSec('trend')" style="cursor:pointer">
       <span class="ct" style="margin-bottom:0;flex:1">📊 저축률 추이</span>
-      <span class="barr" id="arr-trend">v</span>
+      <span class="barr" id="arr-trend" class="barr">v</span>
     </div>
-    <div id="ast-trend-body" class="brow-detail open" style="margin-top:8px">
+    <div id="ast-trend-body" class="brow-detail" style="margin-top:8px">
       <div class="trow" style="margin-bottom:4px"><span class="tlbl">(수입-지출)/수입</span><span class="tval" id="ast-sav-rate">0%</span></div>
       <div class="trow" style="margin-bottom:8px"><span class="tlbl">급여 대비 저축액</span><span class="tval" id="ast-sav-rate2">0%</span></div>
       <div id="ast-trend"></div>
@@ -529,10 +530,8 @@ var entries=[],BUDGET={},CARD_BUDGET={},SAVE_GOALS=[];
 var templates=[]; // 고정지출 템플릿
 var sheetAssetData={}; // 시트에서 가져온 투자계좌 실잔액
 var cType='지출',selMaj='',selSub='';
-var histFilter='전체',histCardFilter='',histViewAll=false,histMon='';
+var histFilter='전체',histCardFilter='',histViewAll=false,histMon='',histSort='date';
 var budgetExpanded=false,cardExpanded=false;
-var astExpanded={contract:true,invest:true,estate:true,monthly:true,trend:true};
-var cfgExpanded={budget:true,card:true,goals:true,initbal:true};
 var astExpanded={contract:true,invest:true,estate:true,monthly:true,trend:true};
 var cfgExpanded={budget:true,card:true,goals:true,initbal:true};
 var editingId=null,memoTimer;
@@ -575,7 +574,7 @@ function goPage(n,btn){
   if(n==='home'){renderHome();autoSyncFromSheet();}
   else if(n==='history'){if(isConfigured()){if(!histMon)histMon=curMon;renderHist();}else document.getElementById('entry-list').innerHTML='<div class="empty">\uC124\uC815\uD0ED\uC5D0\uC11C \uD30C\uC77C\uC744 \uC62C\uB824\uC8FC\uC138\uC694</div>';}
   else if(n==='balance'){if(isConfigured())renderBalance();else document.getElementById('page-balance').innerHTML='<div class="empty">\uC124\uC815\uD0ED\uC5D0\uC11C \uD30C\uC77C\uC744 \uC62C\uB824\uC8FC\uC138\uC694</div>';}
-  else if(n==='asset'){if(isConfigured()){renderAsset();loadAssetFromSheet();setTimeout(restoreAstState,50);}else document.getElementById('page-asset').innerHTML='<div class="empty">\uC124\uC815\uD0ED\uC5D0\uC11C \uD30C\uC77C\uC744 \uC62C\uB824\uC8FC\uC138\uC694</div>';}
+  else if(n==='asset'){if(isConfigured()){renderAsset();setTimeout(applyAstState,0);loadAssetFromSheet();}else document.getElementById('page-asset').innerHTML='<div class="empty">\uC124\uC815\uD0ED\uC5D0\uC11C \uD30C\uC77C\uC744 \uC62C\uB824\uC8FC\uC138\uC694</div>';}
   else if(n==='input'){if(!isConfigured())document.getElementById('page-input').innerHTML='<div class="empty">\uC124\uC815\uD0ED\uC5D0\uC11C \uD30C\uC77C\uC744 \uC62C\uB824\uC8FC\uC138\uC694</div>';}
   else if(n==='setup'){renderSetup();setTimeout(restoreCfgState,50);}
 }
@@ -885,10 +884,36 @@ function setCardFilter(f,btn){
   else{histCardFilter=f;document.querySelectorAll('[id^="cf-"]').forEach(function(b){b.classList.remove('on');});btn.classList.add('on');}
   renderHist();
 }
+function toggleHistSort(){
+  histSort=(histSort==='date')?'major':'date';
+  var btn=document.getElementById('hist-sort-btn');
+  if(btn){
+    btn.textContent=histSort==='date'?'\uB0A0\uC9DC\uC21C':'\uB300\uBD84\uB958\uC21C';
+    btn.style.background=histSort==='major'?'var(--blue)':'transparent';
+    btn.style.color=histSort==='major'?'#fff':'var(--sub)';
+  }
+  renderHist();
+}
+function renderEntryRow(e){
+  var ii=e.type==='\uC218\uC785',im=e.type==='\uC774\uB3D9';
+  var bg=ii?'var(--green-bg)':im?'var(--blue-bg)':'var(--red-bg)';
+  var cl=ii?'ap':im?'av':'am2';var sg=ii?'+':im?'<->':'-';
+  var icon=e.major?e.major.split(' ')[0]:'';
+  var desc=e.major?e.major.split(' ').slice(1).join(' '):(e.memo||'\uC774\uB3D9');
+  var meta=[e.memo,e.outAcct&&('\uCD9C: '+e.outAcct),e.inAcct&&('\uC785: '+e.inAcct)].filter(Boolean).join(' / ');
+  return '<div class="entry">'
+    +'<div class="ei" style="background:'+bg+'">'+icon+'</div>'
+    +'<div class="einfo"><div class="edesc">'+desc+(e.sub?' \xb7 '+e.sub:'')+'</div>'
+    +'<div class="emeta">'+meta+'</div></div>'
+    +(e.isTpl&&e.amount===0?'<div class="eamt" style="color:var(--red);font-size:11px;font-weight:700;background:var(--red-bg);padding:2px 8px;border-radius:99px">\uBBF8\uC785\uB825</div>':'<div class="eamt '+cl+'">'+sg+fmt(e.amount)+'</div>')
+    +'<button class="del" onclick="openEditModal(\''+e.id+'\')">&#9998;</button>'
+    +'<button class="del" onclick="if(confirm(\'\uC0AD\uC81C\uD560\uAE4C\uC694?\'))delEntry(\''+e.id+'\')">&#10005;</button>'
+    +'</div>';
+}
 function renderHist(){
   var mon=histMon||curMon;
   var hm=document.getElementById('hist-month');
-  if(hm){if(histViewAll)hm.textContent='전체 내역';else hm.textContent=mon.split('-')[0]+'년 '+parseInt(mon.split('-')[1])+'월 내역';}
+  if(hm){if(histViewAll)hm.textContent='\uC804\uCCB4 \uB0B4\uC5ED';else hm.textContent=mon.split('-')[0]+'\uB144 '+parseInt(mon.split('-')[1])+'\uC6D4 \uB0B4\uC5ED';}
   var list=document.getElementById('entry-list');
   var q=(document.getElementById('hist-search')?document.getElementById('hist-search').value:'').trim().toLowerCase();
   var es=me();
@@ -896,26 +921,44 @@ function renderHist(){
   if(histCardFilter){var ks=CARD_GROUP_KEYS[histCardFilter]||[];es=es.filter(function(e){return ks.indexOf(e.outAcct)>=0||ks.indexOf(e.inAcct)>=0;});}
   if(q)es=es.filter(function(e){return (e.major+e.sub+e.memo+e.inAcct+e.outAcct).toLowerCase().indexOf(q)>=0;});
   if(!es.length){list.innerHTML='<div class="empty">\uB0B4\uC5ED\uC774 \uC5C6\uC5B4\uC694</div>';return;}
-  var byDate={};es.forEach(function(e){if(!byDate[e.date])byDate[e.date]=[];byDate[e.date].push(e);});
-  list.innerHTML=Object.keys(byDate).sort(function(a,b){return b.localeCompare(a);}).map(function(date){
-    var dayEs=byDate[date];
-    var dayTotal=dayEs.reduce(function(s,e){return s+(e.type==='\uC9C0\uCD9C'?-e.amount:e.type==='\uC218\uC785'?e.amount:0);},0);
-    var rows=dayEs.map(function(e){
+  if(histSort==='major'){
+    // 대분류순 + 날짜순 정렬, 그룹핑 없이 flat 리스트
+    es=es.slice().sort(function(a,b){
+      var ma=a.major||'',mb=b.major||'';
+      if(ma!==mb)return ma.localeCompare(mb);
+      return b.date.localeCompare(a.date);
+    });
+    list.innerHTML=es.map(function(e){
+      var dm=e.date.split('-')[1],dd=e.date.split('-')[2];
+      var dateLbl='<span style="font-size:10px;color:var(--hint);margin-right:4px">'+parseInt(dm)+'/'+parseInt(dd)+'</span>';
+      return '<div class="entry">'+dateLbl+renderEntryRow(e).replace('<div class="entry">','').replace(/^<div class="entry">/, '');
+    }).join('');
+    // flat 리스트라 entry div 중복 제거
+    list.innerHTML=es.map(function(e){
       var ii=e.type==='\uC218\uC785',im=e.type==='\uC774\uB3D9';
       var bg=ii?'var(--green-bg)':im?'var(--blue-bg)':'var(--red-bg)';
       var cl=ii?'ap':im?'av':'am2';var sg=ii?'+':im?'<->':'-';
       var icon=e.major?e.major.split(' ')[0]:'';
       var desc=e.major?e.major.split(' ').slice(1).join(' '):(e.memo||'\uC774\uB3D9');
       var meta=[e.memo,e.outAcct&&('\uCD9C: '+e.outAcct),e.inAcct&&('\uC785: '+e.inAcct)].filter(Boolean).join(' / ');
+      var dm=e.date.split('-')[1],dd=e.date.split('-')[2];
       return '<div class="entry">'
         +'<div class="ei" style="background:'+bg+'">'+icon+'</div>'
-        +'<div class="einfo"><div class="edesc">'+desc+(e.sub?' · '+e.sub:'')+'</div>'
-        +'<div class="emeta">'+meta+'</div></div>'
-        +(e.isTpl&&e.amount===0?'<div class="eamt" style="color:var(--red);font-size:11px;font-weight:700;background:var(--red-bg);padding:2px 8px;border-radius:99px">미입력</div>':'<div class="eamt '+cl+'">'+sg+fmt(e.amount)+'</div>')
+        +'<div class="einfo"><div class="edesc">'+desc+(e.sub?' \xb7 '+e.sub:'')+'</div>'
+        +'<div class="emeta"><span style="color:var(--hint);font-size:10px">'+parseInt(dm)+'/'+parseInt(dd)+'</span>'+(meta?' \xb7 '+meta:'')+'</div></div>'
+        +(e.isTpl&&e.amount===0?'<div class="eamt" style="color:var(--red);font-size:11px;font-weight:700;background:var(--red-bg);padding:2px 8px;border-radius:99px">\uBBF8\uC785\uB825</div>':'<div class="eamt '+cl+'">'+sg+fmt(e.amount)+'</div>')
         +'<button class="del" onclick="openEditModal(\''+e.id+'\')">&#9998;</button>'
         +'<button class="del" onclick="if(confirm(\'\uC0AD\uC81C\uD560\uAE4C\uC694?\'))delEntry(\''+e.id+'\')">&#10005;</button>'
         +'</div>';
     }).join('');
+    return;
+  }
+  // 날짜순 (기존)
+  var byDate={};es.forEach(function(e){if(!byDate[e.date])byDate[e.date]=[];byDate[e.date].push(e);});
+  list.innerHTML=Object.keys(byDate).sort(function(a,b){return b.localeCompare(a);}).map(function(date){
+    var dayEs=byDate[date];
+    var dayTotal=dayEs.reduce(function(s,e){return s+(e.type==='\uC9C0\uCD9C'?-e.amount:e.type==='\uC218\uC785'?e.amount:0);},0);
+    var rows=dayEs.map(renderEntryRow).join('');
     var dm=date.split('-')[1],dd=date.split('-')[2];
     return '<div style="margin-bottom:4px">'
       +'<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:.5px solid var(--border-md)">'
@@ -1178,15 +1221,15 @@ function renderAsset(){
       +'<span style="font-size:10px;color:var(--sub);min-width:36px;text-align:right">저축 '+mR2+'%</span>'
       +'</div>';
   }).join('')||'<div class="empty">데이터 없음</div>';
-  // 저장된 접힘 상태 적용
-  setTimeout(function(){
-    Object.keys(astExpanded).forEach(function(id){
-      var b=document.getElementById('ast-'+id+'-body'),a=document.getElementById('arr-'+id);
-      if(!b)return;
-      if(astExpanded[id]){b.classList.add('open');if(a)a.classList.add('open');}
-      else{b.classList.remove('open');if(a)a.classList.remove('open');}
-    });
-  },0);
+  applyAstState();
+}
+function applyAstState(){
+  Object.keys(astExpanded).forEach(function(id){
+    var b=document.getElementById('ast-'+id+'-body'),a=document.getElementById('arr-'+id);
+    if(!b)return;
+    if(astExpanded[id]){b.classList.add('open');if(a)a.classList.add('open');}
+    else{b.classList.remove('open');if(a)a.classList.remove('open');}
+  });
 }
 
 // ── 메모 시트 저장 ──
