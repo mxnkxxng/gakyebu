@@ -424,6 +424,32 @@ var CARD_GROUPS = [
 var ACCTS = ['KB뱅크','NH뱅크','케이-덕질','케이-비상금','케이-임시','케이뱅크','하나은행','케이-집계약용','신한은행','전세 보증금','토스증권','미래에셋','삼성증권','우리IRP','농카','농카!','농카!실미','농카-','롯카','롯카!','롯카!실미','롯카-','신카','신카!','신카!실미','삼카','삼카!','국카1','국카k','국카k!','국카k!실미','국카k-','전세자금대출 원금(국민)','전세자금대출 원금(농협)','엄마신용대출 원금'];
 var ACCTS_DEF_EXTRA = []; // 시트 initBalRaw로 동적 추가
 
+var __HARD_ACCTS_DEF = [
+  // ── 현금/예금 계좌 ──
+  {key:'케이뱅크',label:'케이뱅크',group:'cash'},
+  {key:'케이-비상금',label:'케이-비상금',group:'cash'},
+  {key:'케이-덕질',label:'케이-덕질',group:'cash'},
+  {key:'케이-임시',label:'케이-임시',group:'cash'},
+  {key:'KB뱅크',label:'KB뱅크',group:'cash'},
+  {key:'NH뱅크',label:'NH뱅크',group:'cash'},
+  {key:'하나은행',label:'하나은행',group:'cash'},
+  // ── 계약금 ──
+  {key:'케이-집계약용',label:'집계약용',group:'contract',goal:1000000},
+  {key:'신한은행',label:'주택청약(신한)',group:'contract'},
+  // ── 투자/저축 계좌 (시트 initBalRaw에서 동적 추가) ──
+  // ── 부동산 ──
+  {key:'전세 보증금',label:'전세 보증금',group:'estate'},
+  // ── 카드 미결제 ──
+  {key:'롯카',label:'롯카',group:'debt'},{key:'롯카-',label:'롯카-',group:'debt'},
+  {key:'롯카!',label:'롯카!',group:'debt'},
+  {key:'삼카',label:'삼카',group:'debt'},{key:'삼카!',label:'삼카!',group:'debt'},
+  {key:'신카',label:'신카',group:'debt'},{key:'신카!',label:'신카!',group:'debt'},
+  {key:'국카1',label:'국카1',group:'debt'},
+  {key:'국카k',label:'국카k',group:'debt'},{key:'국카k!',label:'국카k!',group:'debt'},
+  {key:'국카k!실미',label:'국카k!실미',group:'debt'},{key:'국카k-',label:'국카k-',group:'debt'},
+  // ── 장기부채 ──
+  {key:'전세자금대출 원금(국민)',label:'전세대출(국민)',group:'longdebt'}
+];
 var ACCTS_DEF = [
   // ── 현금/예금 계좌 ──
   {key:'케이뱅크',label:'케이뱅크',group:'cash'},
@@ -873,6 +899,10 @@ function buildAcctsDef(rawData){
     if(r.goal)def.goal=r.goal;
     return def;
   });
+  // debt/longdebt는 하드코딩 유지 (시트에 없을 수 있음)
+  var hardDebt=__HARD_ACCTS_DEF.filter(function(a){return a.group==='debt'||a.group==='longdebt';});
+  var existDebtKeys=ACCTS_DEF.filter(function(a){return a.group==='debt'||a.group==='longdebt';}).map(function(a){return a.key;});
+  hardDebt.forEach(function(a){if(existDebtKeys.indexOf(a.key)<0)ACCTS_DEF.push(a);});
   // ACCTS 재구성 (입력폼 드롭다운용)
   ACCTS=ACCTS_DEF.map(function(a){return a.key;});
   // CARD_GROUPS 재구성 (debt 그룹 키들로)
@@ -1170,16 +1200,16 @@ function toggleCfgSec(id){
   if(a)a.classList.toggle('open');
 }
 function cfgSec(id,title,innerH){
+function cfgSec(id,title,innerH){
+  var safeId=id;
   return '<div style="margin-bottom:10px">'
-    +'<div class="brow-hd" data-cfgid="'+id+'" onclick="toggleCfgSec(this.getAttribute(\"data-cfgid\"))" style="cursor:pointer;padding:6px 0;border-bottom:.5px solid var(--border)">'
+    +'<div class="brow-hd cfg-toggle" data-id="'+safeId+'" style="cursor:pointer;padding:6px 0;border-bottom:.5px solid var(--border)">'
     +'<span style="font-size:12px;font-weight:700;color:var(--sub);flex:1">'+title+'</span>'
-    +'<span class="barr open" id="cfg-arr-'+id+'">v</span>'
+    +'<span class="barr open" id="cfg-arr-'+safeId+'">v</span>'
     +'</div>'
-    +'<div class="brow-detail open" id="cfg-body-'+id+'" style="margin-top:4px">'+innerH+'</div>'
+    +'<div class="brow-detail open" id="cfg-body-'+safeId+'" style="margin-top:4px">'+innerH+'</div>'
     +'</div>';
 }
-function renderCurrentConfig(){
-  var init=getInitBal(),card=document.getElementById('setup-current'),content=document.getElementById('setup-current-content');
   var hB=Object.keys(BUDGET).length>0,hC=Object.values(CARD_BUDGET).some(function(v){return v>0;}),hG=SAVE_GOALS.length>0,hI=Object.values(init).some(function(v){return v!==0;});
   if(!hB&&!hC&&!hG&&!hI){card.style.display='none';return;}
   card.style.display='block';var h='';
@@ -1188,6 +1218,10 @@ function renderCurrentConfig(){
   if(hG){var gH='';SAVE_GOALS.forEach(function(g){gH+='<div class="srow"><span class="sname" style="font-size:11px">'+g.n+'</span><span class="samt" style="font-size:11px;color:var(--blue)">\uC6D4 '+fmt(g.g)+'</span></div>';});h+=cfgSec('goals','\uC800\uCD95 \uBAA9\uD45C',gH);}
   if(hI){var iH='';Object.entries(init).filter(function(kv){return kv[1]!==0;}).forEach(function(kv){var def=ACCTS_DEF.find(function(a){return a.key===kv[0];});iH+='<div class="srow"><span class="sname" style="font-size:11px">'+(def?def.label:kv[0])+'</span><span class="samt" style="font-size:11px;color:'+(kv[1]<0?'var(--red)':'var(--text)')+'">'+fmt(kv[1])+'</span></div>';});h+=cfgSec('initbal','\uCD08\uAE30 \uC7D8\uACE0',iH);}
   content.innerHTML=h;
+  // cfg-toggle 클릭 이벤트 등록
+  content.querySelectorAll('.cfg-toggle').forEach(function(el){
+    el.addEventListener('click',function(){toggleCfgSec(this.getAttribute('data-id'));});
+  });
 }
 function resetAll(){localStorage.clear();entries=[];BUDGET={};CARD_BUDGET={};SAVE_GOALS=[];showToast('\uCD08\uAE30\uD654 \uC644\uB8CC! \uC0C8\uB85C\uACE0\uCE68 \uD569\uB2C8\uB2E4...');setTimeout(function(){location.reload();},1000);}
 
