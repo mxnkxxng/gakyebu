@@ -1455,7 +1455,7 @@ function autoSyncFromSheet(){
     }).map(function(e){
       return {id:String(e.id),date:String(e.date||'').slice(0,10),type:String(e.type||''),
         major:String(e.major||''),sub:String(e.sub||''),memo:String(e.memo||''),
-        amount:parseFloat(e.amount)||0,inAcct:String(e.inAcct||''),outAcct:String(e.outAcct||'')};
+        amount:Math.abs(parseFloat(e.amount)||0),inAcct:String(e.inAcct||''),outAcct:String(e.outAcct||'')};
     }).filter(function(e){
       return e.date.match(/^20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]/);
     });
