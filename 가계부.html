@@ -208,7 +208,10 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
       <button class="mb" onclick="changeHistMonth(1)" style="font-size:18px;padding:2px 8px">&#8250;</button>
       <button onclick="setHistAll()" id="hist-all-btn" style="font-size:11px;padding:4px 8px;border:.5px solid var(--border-md);border-radius:99px;background:transparent;color:var(--sub);cursor:pointer;margin-left:4px">전체</button>
     </div>
-    <button onclick="exportXLSX()" style="padding:7px 14px;font-size:12px;border:.5px solid var(--border-md);border-radius:var(--rx);background:transparent;color:var(--sub);cursor:pointer">엑셀 저장</button>
+    <div style="display:flex;gap:6px">
+      <button onclick="addMonthlyTemplates()" style="padding:7px 10px;font-size:11px;border:.5px solid var(--blue-lt);border-radius:var(--rx);background:var(--blue-bg);color:var(--blue);cursor:pointer;font-weight:600">&#128203; 이번달 템플릿</button>
+      <button onclick="exportXLSX()" style="padding:7px 14px;font-size:12px;border:.5px solid var(--border-md);border-radius:var(--rx);background:transparent;color:var(--sub);cursor:pointer">엑셀 저장</button>
+    </div>
   </div>
   <div style="display:flex;gap:6px;margin-bottom:6px;overflow-x:auto;padding-bottom:2px">
     <button class="ftab on" onclick="setFilter('전체',this)">전체</button>
@@ -528,6 +531,10 @@ var sheetAssetData={}; // 시트에서 가져온 투자계좌 실잔액
 var cType='지출',selMaj='',selSub='';
 var histFilter='전체',histCardFilter='',histViewAll=false,histMon='';
 var budgetExpanded=false,cardExpanded=false;
+var astExpanded={contract:true,invest:true,estate:true,monthly:true,trend:true};
+var cfgExpanded={budget:true,card:true,goals:true,initbal:true};
+var astExpanded={contract:true,invest:true,estate:true,monthly:true,trend:true};
+var cfgExpanded={budget:true,card:true,goals:true,initbal:true};
 var editingId=null,memoTimer;
 var now=new Date();
 var curMon=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
@@ -535,7 +542,8 @@ var curMon=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
 try{var _s=localStorage.getItem('gb_v3');if(_s)entries=JSON.parse(_s);}catch(e){}
 try{var _s=localStorage.getItem('gb_budget');if(_s)BUDGET=JSON.parse(_s);}catch(e){}
 try{var _he=localStorage.getItem('homeExpanded');if(_he){var _hep=JSON.parse(_he);budgetExpanded=!!_hep.budget;cardExpanded=!!_hep.card;}}catch(e){}
-try{var _he=localStorage.getItem('homeExpanded');if(_he){var _hep=JSON.parse(_he);budgetExpanded=!!_hep.budget;cardExpanded=!!_hep.card;}}catch(e){}
+try{var _ae=localStorage.getItem('astExpanded');if(_ae)astExpanded=JSON.parse(_ae);}catch(e){}
+try{var _ce=localStorage.getItem('cfgExpanded');if(_ce)cfgExpanded=JSON.parse(_ce);}catch(e){}
 try{var _s=localStorage.getItem('gb_card_budget');if(_s)CARD_BUDGET=JSON.parse(_s);}catch(e){}
 try{var _s=localStorage.getItem('gb_save_goals');if(_s)SAVE_GOALS=JSON.parse(_s);}catch(e){}
 try{var _sa=localStorage.getItem('sheetAssetData');if(_sa)sheetAssetData=JSON.parse(_sa);}catch(e){}
@@ -745,14 +753,16 @@ function restoreAstState(){
 function expandAllAst(){
   ['contract','invest','estate','monthly','trend'].forEach(function(id){
     var b=document.getElementById('ast-'+id+'-body'),a=document.getElementById('arr-'+id);
-    if(b){b.classList.add('open');if(a)a.classList.add('open');}
+    if(b){b.classList.add('open');if(a)a.classList.add('open');astExpanded[id]=true;}
   });
+  try{localStorage.setItem('astExpanded',JSON.stringify(astExpanded));}catch(e){}
 }
 function collapseAllAst(){
   ['contract','invest','estate','monthly','trend'].forEach(function(id){
     var b=document.getElementById('ast-'+id+'-body'),a=document.getElementById('arr-'+id);
-    if(b){b.classList.remove('open');if(a)a.classList.remove('open');}
+    if(b){b.classList.remove('open');if(a)a.classList.remove('open');astExpanded[id]=false;}
   });
+  try{localStorage.setItem('astExpanded',JSON.stringify(astExpanded));}catch(e){}
 }
 function expandAllCfg(){
   document.querySelectorAll('.cfg-toggle').forEach(function(el){
@@ -901,7 +911,7 @@ function renderHist(){
         +'<div class="ei" style="background:'+bg+'">'+icon+'</div>'
         +'<div class="einfo"><div class="edesc">'+desc+(e.sub?' · '+e.sub:'')+'</div>'
         +'<div class="emeta">'+meta+'</div></div>'
-        +'<div class="eamt '+cl+'">'+sg+fmt(e.amount)+'</div>'
+        +(e.isTpl&&e.amount===0?'<div class="eamt" style="color:var(--red);font-size:11px;font-weight:700;background:var(--red-bg);padding:2px 8px;border-radius:99px">미입력</div>':'<div class="eamt '+cl+'">'+sg+fmt(e.amount)+'</div>')
         +'<button class="del" onclick="openEditModal(\''+e.id+'\')">&#9998;</button>'
         +'<button class="del" onclick="if(confirm(\'\uC0AD\uC81C\uD560\uAE4C\uC694?\'))delEntry(\''+e.id+'\')">&#10005;</button>'
         +'</div>';
@@ -1168,6 +1178,15 @@ function renderAsset(){
       +'<span style="font-size:10px;color:var(--sub);min-width:36px;text-align:right">저축 '+mR2+'%</span>'
       +'</div>';
   }).join('')||'<div class="empty">데이터 없음</div>';
+  // 저장된 접힘 상태 적용
+  setTimeout(function(){
+    Object.keys(astExpanded).forEach(function(id){
+      var b=document.getElementById('ast-'+id+'-body'),a=document.getElementById('arr-'+id);
+      if(!b)return;
+      if(astExpanded[id]){b.classList.add('open');if(a)a.classList.add('open');}
+      else{b.classList.remove('open');if(a)a.classList.remove('open');}
+    });
+  },0);
 }
 
 // ── 메모 시트 저장 ──
@@ -1266,6 +1285,35 @@ function saveCurAsTpl(){
   showToast(name+' 저장됐어요!');
 }
 
+// ── 이번달 템플릿 추가 ────────────────────────────────────────
+function addMonthlyTemplates(){
+  if(!templates.length){showToast('템플릿이 없어요. 시트에서 불러오기를 먼저 해주세요');return;}
+  var mon=histMon||curMon;
+  var day1=mon+'-01';
+  // 이미 이번달에 같은 템플릿이 있으면 스킵
+  var existKeys=new Set(entries.filter(function(e){return e.date&&e.date.indexOf(mon)===0&&e.isTpl;}).map(function(e){return e.major+'|'+e.sub+'|'+e.memo+'|'+e.outAcct+'|'+e.inAcct;}));
+  var added=0;
+  var url=getScriptUrl();
+  templates.forEach(function(t){
+    var key=(t.major||'')+'|'+(t.sub||'')+'|'+(t.memo||'')+'|'+(t.outAcct||'')+'|'+(t.inAcct||'');
+    if(existKeys.has(key))return;
+    var entry={id:Date.now()+added,date:day1,type:t.type||'지출',
+      major:t.major||'',sub:t.sub||'',memo:t.memo||'',
+      amount:0,inAcct:t.inAcct||'',outAcct:t.outAcct||'',isTpl:true};
+    entries.push(entry);
+    if(url){
+      var p=Object.assign({},entry);p.id=String(p.id);p.action='addEntry';
+      fetch(url,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(p)}).catch(function(){});
+    }
+    added++;
+  });
+  if(!added){showToast('이미 이번달 템플릿이 추가돼 있어요');return;}
+  entries.sort(function(a,b){return b.date.localeCompare(a.date);});
+  saveEntries();
+  renderHist();
+  showToast(added+'개 템플릿 추가됐어요! 금액을 입력해주세요');
+}
+
 // ── 자산 시트 데이터 로드 ──
 function loadAssetFromSheet(){
   var url=getScriptUrl();if(!url)return;
@@ -1310,7 +1358,7 @@ function autoSyncFromSheet(){
         major:String(e.major||''),sub:String(e.sub||''),memo:String(e.memo||''),
         amount:parseFloat(e.amount)||0,inAcct:String(e.inAcct||''),outAcct:String(e.outAcct||'')};
     }).filter(function(e){
-      return e.date.match(/^20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]/)&&e.amount!==0;
+      return e.date.match(/^20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]/)&&(e.amount!==0||e.isTpl);
     });
     // ID 기준 중복체크만
     var idSet=new Set(entries.map(function(x){return String(x.id);}));
@@ -1355,7 +1403,7 @@ function loadFromSheet(silent,overwrite){
         var s=String(e.sub||'').trim();if(allCardKeys.indexOf(s)>=0)inAcct=s;
       }
       return {id:e.id||Date.now()+Math.random(),date:e.date,type:e.type,major:e.major||'',sub:e.sub||'',memo:e.memo||'',amount:parseFloat(e.amount)||0,inAcct:inAcct,outAcct:outAcct};
-    }).filter(function(e){return e.date&&['\uC9C0\uCD9C','\uC218\uC785','\uC774\uB3D9'].indexOf(e.type)>=0&&e.amount!==0;});
+    }).filter(function(e){return e.date&&['\uC9C0\uCD9C','\uC218\uC785','\uC774\uB3D9'].indexOf(e.type)>=0&&(e.amount!==0||e.isTpl);});
     var keys=new Set(entries.map(function(x){return x.date+'|'+x.type+'|'+x.amount+'|'+(x.outAcct||'')+'|'+(x.inAcct||'')+'|'+(x.major||'')+'|'+(x.sub||'');}));
     var newOnes=imported.filter(function(x){return !keys.has(x.date+'|'+x.type+'|'+x.amount+'|'+(x.outAcct||'')+'|'+(x.inAcct||'')+'|'+(x.major||'')+'|'+(x.sub||''));});
     entries=entries.concat(newOnes);entries.sort(function(a,b){return b.date.localeCompare(a.date);});saveEntries();
@@ -1422,6 +1470,13 @@ function renderCurrentConfig(){
   // cfg-toggle 클릭 이벤트 등록
   content.querySelectorAll('.cfg-toggle').forEach(function(el){
     el.addEventListener('click',function(){toggleCfgSec(this.getAttribute('data-id'));});
+  });
+  // 저장된 접힘 상태 적용
+  Object.keys(cfgExpanded).forEach(function(id){
+    var b=document.getElementById('cfg-body-'+id),a=document.getElementById('cfg-arr-'+id);
+    if(!b)return;
+    if(cfgExpanded[id]){b.classList.add('open');if(a)a.classList.add('open');}
+    else{b.classList.remove('open');if(a)a.classList.remove('open');}
   });
 }
 function resetAll(){localStorage.clear();entries=[];BUDGET={};CARD_BUDGET={};SAVE_GOALS=[];showToast('\uCD08\uAE30\uD654 \uC644\uB8CC! \uC0C8\uB85C\uACE0\uCE68 \uD569\uB2C8\uB2E4...');setTimeout(function(){location.reload();},1000);}
