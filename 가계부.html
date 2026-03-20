@@ -1048,15 +1048,17 @@ function saveEdit(){
   var amt=Math.abs(parseFloat(document.getElementById('edit-amount').value)||0);
   entries[idx].date=document.getElementById('edit-date').value;
   entries[idx].amount=amt;
-  if(amt!==0&&entries[idx].isTpl)delete entries[idx].isTpl; // 금액 입력시 미입력 상태 해제
+  if(amt!==0&&entries[idx].isTpl)delete entries[idx].isTpl;
   entries[idx].memo=document.getElementById('edit-memo').value;
   entries[idx].outAcct=document.getElementById('edit-out-acct').value;
   entries[idx].inAcct=document.getElementById('edit-in-acct').value;
   saveEntries();
+  // 로컬 저장 후 즉시 화면 갱신 (GAS 기다리지 않음)
+  document.getElementById('edit-modal').classList.add('hidden');editingId=null;
+  showToast('수정됐어요!');renderHist();renderHome();
+  // GAS 전송은 별도 비동기
   var url=getScriptUrl();
   if(url){var _e=entries[idx];fetch(url,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'updateEntry',id:String(_e.id),date:_e.date,type:_e.type,major:_e.major,sub:_e.sub,memo:_e.memo,amount:_e.amount,inAcct:_e.inAcct,outAcct:_e.outAcct})}).catch(function(){});}
-  document.getElementById('edit-modal').classList.add('hidden');editingId=null;
-  showToast('\uC218\uC815\uB410\uC5B4\uC694!');renderHist();renderHome();
 }
 function deleteAndClose(){
   if(!editingId)return;var _id=editingId;
