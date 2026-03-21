@@ -354,6 +354,8 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
       <button onclick="saveSheetConfig()" style="padding:11px;background:var(--blue);color:#fff;border:none;border-radius:var(--rs);font-size:13px;font-weight:700;cursor:pointer">저장 &amp; 연결</button>
       <button onclick="loadFromSheet()" style="padding:11px;background:var(--blue-bg);color:var(--blue);border:.5px solid var(--blue-lt);border-radius:var(--rs);font-size:13px;font-weight:700;cursor:pointer">&#128202; 시트에서 불러오기</button>
       <button onclick="if(confirm('시트 데이터로 완전 덮어쓰기할까요? 현재 앱 데이터가 모두 삭제됩니다.'))loadFromSheet(false,true)" style="padding:11px;background:var(--red-bg);color:var(--red);border:.5px solid var(--red-lt);border-radius:var(--rs);font-size:13px;font-weight:700;cursor:pointer">시트로 덮어쓰기</button>
+      <button onclick="dbgShow()" style="padding:11px;background:#f5f5f5;color:#888;border:.5px solid #ddd;border-radius:var(--rs);font-size:12px;cursor:pointer">🔍 디버그</button>
+      <div id="dbg-out" style="margin-top:8px;font-size:11px;color:#555;background:#f9f9f9;border-radius:6px;padding:8px;display:none;word-break:break-all;line-height:1.6;"></div>
     </div>
     <div id="sheet-load-status" style="margin-top:8px;font-size:12px;color:var(--sub)"></div>
   </div>
@@ -565,7 +567,22 @@ function fmtK(n){var a=Math.abs(n),sg=n<0?'-':'';return sg+(a>=10000?(a/10000).t
 var _tt;
 function showToast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(_tt);_tt=setTimeout(function(){t.classList.remove('show');},2000);}
 function saveEntries(){try{localStorage.setItem('gb_v3',JSON.stringify(entries.slice(0,1000)));}catch(e){}}
-function isConfigured(){return Object.keys(BUDGET).length>0||entries.length>0;}
+function dbgShow(){
+  var d=document.getElementById('dbg-out');
+  d.style.display=d.style.display==='none'?'block':'none';
+  if(d.style.display==='none')return;
+  var ir=localStorage.getItem('initBalRaw');
+  var sa=localStorage.getItem('sheetAssetData');
+  var ib=localStorage.getItem('initBal');
+  var lines=[];
+  lines.push('<b>ACCTS_DEF 개수:</b> '+(ACCTS_DEF?ACCTS_DEF.length:'없음'));
+  lines.push('<b>invest 계좌:</b> '+(ACCTS_DEF?ACCTS_DEF.filter(function(a){return a.group==='invest';}).map(function(a){return a.key;}).join(', ')||'없음':'없음'));
+  lines.push('<b>localStorage.initBalRaw:</b> '+(ir?'있음 ('+JSON.parse(ir).length+'개)':'❌ 없음'));
+  lines.push('<b>localStorage.sheetAssetData:</b> '+(sa?'있음 → '+Object.keys(JSON.parse(sa)).join(', '):'❌ 없음'));
+  lines.push('<b>localStorage.initBal:</b> '+(ib?'있음':'❌ 없음'));
+  lines.push('<b>현재 sheetAssetData 키:</b> '+Object.keys(sheetAssetData||{}).join(', ')||'비어있음');
+  d.innerHTML=lines.join('<br>');
+}
 function me(){
   if(histViewAll)return entries;
   var mon=histMon||curMon;
