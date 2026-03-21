@@ -578,6 +578,7 @@ function dbgShow(){
   lines.push('<b>ACCTS_DEF 개수:</b> '+(ACCTS_DEF?ACCTS_DEF.length:'없음'));
   lines.push('<b>invest 계좌:</b> '+(ACCTS_DEF?ACCTS_DEF.filter(function(a){return a.group==='invest';}).map(function(a){return a.key;}).join(', ')||'없음':'없음'));
   lines.push('<b>localStorage.initBalRaw:</b> '+(ir?'있음 ('+JSON.parse(ir).length+'개)':'❌ 없음'));
+  if(ir){var irp=JSON.parse(ir);lines.push('<b>initBalRaw 그룹 샘플:</b> '+irp.slice(0,5).map(function(x){return x.key+'='+x.group;}).join(', '));}
   lines.push('<b>localStorage.sheetAssetData:</b> '+(sa?'있음 → '+Object.keys(JSON.parse(sa)).join(', '):'❌ 없음'));
   lines.push('<b>localStorage.initBal:</b> '+(ib?'있음':'❌ 없음'));
   lines.push('<b>현재 sheetAssetData 키:</b> '+Object.keys(sheetAssetData||{}).join(', ')||'비어있음');
