@@ -1748,10 +1748,27 @@ var _nbs=document.querySelectorAll('.nb'),_lb=null;
 _nbs.forEach(function(b){if(b.getAttribute('onclick')&&b.getAttribute('onclick').indexOf("'"+_lt+"'")>=0)_lb=b;});
 if(_lb)goPage(_lt,_lb);else renderHome();
 
-// 새로고침 시 자동으로 시트에서 덮어쓰기 (시트가 진실)
+// 새로고침 시 내역만 시트 기준으로 자동 동기화 (설정/URL 건드리지 않음)
 setTimeout(function(){
   var url=getScriptUrl();
-  if(url) loadFromSheet(true, true); // silent=true, overwrite=true
+  if(!url) return;
+  fetch(url+'?action=entries').then(function(r){return r.json();}).then(function(data){
+    if(!data.ok||!data.entries) return;
+    var allCardKeys=ACCTS.filter(function(a){return ACCTS_DEF.some(function(d){return d.key===a&&d.group==='debt';});});
+    var imported=data.entries.map(function(e){
+      var outAcct=e.outAcct||'',inAcct=e.inAcct||'';
+      if(e.type==='지출'&&!outAcct){
+        var guess=[String(e.sub||'').trim(),String(e.major||'').trim()];
+        for(var gi=0;gi<guess.length;gi++){if(allCardKeys.indexOf(guess[gi])>=0){outAcct=guess[gi];break;}}
+      }
+      return {id:String(e.id||Date.now()+Math.random()),date:String(e.date||'').slice(0,10),type:e.type,major:e.major||'',sub:e.sub||'',memo:e.memo||'',amount:parseFloat(e.amount)||0,inAcct:inAcct,outAcct:outAcct};
+    }).filter(function(e){return e.date.match(/^20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]/)&&['지출','수입','이동'].indexOf(e.type)>=0;});
+    imported.sort(function(a,b){return b.date.localeCompare(a.date);});
+    entries=imported;
+    saveEntries();
+    renderHome();
+    if(document.getElementById('page-history')&&document.getElementById('page-history').classList.contains('active')) renderHist();
+  }).catch(function(){});
 }, 500);
 
 </script>
