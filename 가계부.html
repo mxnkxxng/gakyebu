@@ -182,7 +182,7 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
       <div id="sub-sec" style="display:none"><div class="sl2">소분류</div><div class="sgrid2" id="sub-grid"></div></div>
     </div>
     <div class="field"><label>내용</label><input type="text" id="f-memo" placeholder="메모 (선택)"/></div>
-    <div class="field"><label>금액</label><input type="number" id="f-amount" placeholder="0" inputmode="numeric"/></div>
+    <div class="field"><label>금액</label><input type="text" id="f-amount" placeholder="0" inputmode="decimal" pattern="[0-9\-]*"/></div>
     <div class="field" id="f-in-wrap"><label>입금계좌</label>
       <div class="acct-wrap">
         <input class="acct-input" id="f-in-acct" type="text" placeholder="계좌 검색 또는 입력" autocomplete="off"
