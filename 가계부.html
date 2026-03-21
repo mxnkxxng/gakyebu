@@ -531,7 +531,7 @@ var CMAP = [
 ];
 
 // ── 상태 ──
-var entries=[],BUDGET={},CARD_BUDGET={},SAVE_GOALS=[];
+var entries=[],BUDGET={},CARD_BUDGET={},SAVE_GOALS=[],SUB_BUDGET={};
 var templates=[]; // 고정지출 템플릿
 var sheetAssetData={}; // 시트에서 가져온 투자계좌 실잔액
 var cType='지출',selMaj='',selSub='';
@@ -550,6 +550,7 @@ try{var _ae=localStorage.getItem('astExpanded');if(_ae)astExpanded=JSON.parse(_a
 try{var _ce=localStorage.getItem('cfgExpanded');if(_ce)cfgExpanded=JSON.parse(_ce);}catch(e){}
 try{var _s=localStorage.getItem('gb_card_budget');if(_s)CARD_BUDGET=JSON.parse(_s);}catch(e){}
 try{var _s=localStorage.getItem('gb_save_goals');if(_s)SAVE_GOALS=JSON.parse(_s);}catch(e){}
+try{var _s=localStorage.getItem('gb_sub_budget');if(_s)SUB_BUDGET=JSON.parse(_s);}catch(e){}
 try{var _sa=localStorage.getItem('sheetAssetData');if(_sa)sheetAssetData=JSON.parse(_sa);}catch(e){}
 try{var _st=localStorage.getItem('gb_templates');if(_st)templates=JSON.parse(_st);}catch(e){}
 try{
@@ -655,6 +656,11 @@ function setHistAll(){
 
 // ── 홈 ──
 function renderHome(){
+  // 월별 메모 불러오기
+  try{
+    var ta=document.getElementById('quick-memo');
+    if(ta){var mv=localStorage.getItem('quickMemo_'+curMon)||'';if(ta.value!==mv)ta.value=mv;}
+  }catch(e){}
   var p=curMon.split('-'),y=p[0],m=p[1];
   document.getElementById('month-label').textContent=y+'\uB144 '+parseInt(m)+'\uC6D4';
   var hm=document.getElementById('hist-month');
@@ -701,8 +707,10 @@ function renderHome(){
     var remC=rem>=0?'var(--green)':'var(--red)';
     var subH=(subKeys||[]).map(function(s){
       var sv=subT[label+'__'+s]||subT[id+'__'+s]||subT['__'+s]||0;
+      var sbud=(SUB_BUDGET[label]&&SUB_BUDGET[label][s])||0;
       var sc2=sv>0?'var(--text)':'var(--hint)';
-      return '<div class="srow2"><span style="flex:1;color:var(--sub)">'+s+'</span><span style="font-size:11px;font-weight:600;color:'+sc2+'">'+fmt(sv)+'</span></div>';
+      var budTxt=sbud>0?'<span style="font-size:10px;color:var(--hint);margin-left:4px">/'+fmtK(sbud)+'</span>':'';
+      return '<div class="srow2"><span style="flex:1;color:var(--sub)">'+s+'</span><span style="font-size:11px;font-weight:600;color:'+sc2+'">'+fmt(sv)+'</span>'+budTxt+'</div>';
     }).join('');
     return '<div class="brow-wrap" data-group="'+group+'">'
       +'<div class="brow-hd" onclick="toggleBrow(\''+id+'\')">'
@@ -1527,6 +1535,7 @@ function loadFromSheet(silent,overwrite){
       if(cfg.budget)   {BUDGET=cfg.budget;try{localStorage.setItem('gb_budget',JSON.stringify(BUDGET));}catch(e){}}
       if(cfg.cardBudget){CARD_BUDGET=cfg.cardBudget;try{localStorage.setItem('gb_card_budget',JSON.stringify(CARD_BUDGET));}catch(e){}}
       if(cfg.saveGoals){SAVE_GOALS=cfg.saveGoals;try{localStorage.setItem('gb_save_goals',JSON.stringify(SAVE_GOALS));}catch(e){}}
+      if(cfg.subBudget){SUB_BUDGET=cfg.subBudget;try{localStorage.setItem('gb_sub_budget',JSON.stringify(SUB_BUDGET));}catch(e){}}
       if(cfg.initBal){
         try{localStorage.setItem('initBal',JSON.stringify(cfg.initBal));}catch(e){}
       }
@@ -1746,8 +1755,18 @@ function exportXLSX(){
 var _mt;
 function initMemo(){
   var ta=document.getElementById('quick-memo');if(!ta)return;
-  try{var sv=localStorage.getItem('quickMemo');if(sv)ta.value=sv;}catch(e){}
-  ta.addEventListener('input',function(){clearTimeout(_mt);document.getElementById('memo-saved').textContent='\uC800\uC7A5 \uC911...';_mt=setTimeout(function(){try{localStorage.setItem('quickMemo',ta.value);}catch(e){}document.getElementById('memo-saved').textContent='\uC800\uC7A5\uB428';setTimeout(function(){var s=document.getElementById('memo-saved');if(s)s.textContent='';},2000);saveMemoToSheet(ta.value);},800);});
+  var memoKey='quickMemo_'+curMon;
+  try{var sv=localStorage.getItem(memoKey);if(sv)ta.value=sv;}catch(e){}
+  ta.addEventListener('input',function(){
+    clearTimeout(_mt);
+    document.getElementById('memo-saved').textContent='저장 중...';
+    _mt=setTimeout(function(){
+      try{localStorage.setItem(memoKey,ta.value);}catch(e){}
+      document.getElementById('memo-saved').textContent='저장됨';
+      setTimeout(function(){var s=document.getElementById('memo-saved');if(s)s.textContent='';},2000);
+      saveMemoToSheet(ta.value);
+    },800);
+  });
 }
 
 // ── 초기화 ──
