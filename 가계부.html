@@ -1222,7 +1222,21 @@ function renderBalance(){
   document.getElementById('bal-cash-total').textContent=fmt(cT);
   document.getElementById('bal-debt-total').textContent=fmt(Math.abs(dT));
   document.getElementById('bal-cash').innerHTML=cA.map(function(a){var v=cb(a.key);return '<div class="srow"><span class="sname">'+a.label+'</span><span class="samt" style="color:'+(v>=0?'var(--text)':'var(--red)')+'">'+fmt(v)+'</span></div>';}).join('')+'<div class="div"></div><div class="trow"><span class="tlbl">\uD569\uACC4</span><span class="tval" style="color:var(--blue)">'+fmt(cT)+'</span></div>';
-  document.getElementById('bal-card-debt').innerHTML=dA.map(function(a){var v=cb(a.key),dt=Math.abs(Math.min(0,v));return '<div class="srow"><span class="sname">'+a.label+'</span><span class="samt" style="color:'+(dt>0?'var(--red)':'var(--hint)')+'">'+( dt>0?fmt(dt):'-')+'</span></div>';}).join('');
+  // 카드 합산 표시 (CARD_GROUPS 기준)
+  document.getElementById('bal-card-debt').innerHTML=CARD_GROUPS.map(function(g){
+    var total=g.keys.reduce(function(s,k){return s+Math.abs(Math.min(0,cb(k)));},0);
+    if(total===0&&g.keys.every(function(k){return cb(k)===0;})){
+      return '<div class="srow"><span class="sname">'+g.label+'</span><span class="samt" style="color:var(--hint)">-</span></div>';
+    }
+    var subRows=g.keys.filter(function(k){return Math.abs(cb(k))>0;}).map(function(k){
+      return '<div class="srow2" style="padding-left:12px"><span style="flex:1;color:var(--sub);font-size:12px">'+k+'</span><span style="font-size:11px;font-weight:600;color:var(--red)">'+fmt(Math.abs(cb(k)))+'</span></div>';
+    }).join('');
+    var hasMulti=g.keys.filter(function(k){return Math.abs(cb(k))>0;}).length>1;
+    return '<div class="srow" style="cursor:'+(hasMulti?'pointer':'default')+'" onclick="this.nextElementSibling&&this.nextElementSibling.classList.toggle(\'open\')">'
+      +'<span class="sname">'+g.label+(hasMulti?' <span style=\"font-size:10px;color:var(--hint)\">▾</span>':'')+'</span>'
+      +'<span class="samt" style="color:var(--red)">'+fmt(total)+'</span></div>'
+      +(hasMulti?'<div class="brow-detail">'+subRows+'</div>':'');
+  }).join('');
   document.getElementById('bal-longdebt').textContent=fmt(Math.abs(ldT));
 }
 
