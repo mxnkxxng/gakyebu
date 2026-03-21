@@ -698,7 +698,7 @@ function renderHome(){
     var remT=rem>=0?'\uC794\uC561 '+fmtK(rem):'\uCD08\uACFC '+fmtK(-rem);
     var remC=rem>=0?'var(--green)':'var(--red)';
     var subH=(subKeys||[]).map(function(s){
-      var sv=subT[label+'__'+s]||0;
+      var sv=subT[label+'__'+s]||subT[id+'__'+s]||0;
       var sc2=sv>0?'var(--text)':'var(--hint)';
       return '<div class="srow2"><span style="flex:1;color:var(--sub)">'+s+'</span><span style="font-size:11px;font-weight:600;color:'+sc2+'">'+fmt(sv)+'</span></div>';
     }).join('');
