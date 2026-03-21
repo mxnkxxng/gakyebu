@@ -182,7 +182,7 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
       <div id="sub-sec" style="display:none"><div class="sl2">소분류</div><div class="sgrid2" id="sub-grid"></div></div>
     </div>
     <div class="field"><label>내용</label><input type="text" id="f-memo" placeholder="메모 (선택)"/></div>
-    <div class="field"><label>금액</label><input type="text" id="f-amount" placeholder="0" inputmode="decimal" pattern="[0-9\-]*"/></div>
+    <div class="field"><label>금액</label><div style="display:flex;gap:8px;align-items:center;"><input type="text" id="f-amount" placeholder="0" inputmode="decimal" pattern="[0-9\-]*" style="flex:1;"/><button type="button" id="f-amount-neg" onclick="toggleNeg()" style="padding:0 14px;height:44px;border-radius:var(--rs);border:1.5px solid var(--border);background:var(--bg2);color:var(--sub);font-size:18px;font-weight:700;cursor:pointer;flex-shrink:0;">−</button></div></div>
     <div class="field" id="f-in-wrap"><label>입금계좌</label>
       <div class="acct-wrap">
         <input class="acct-input" id="f-in-acct" type="text" placeholder="계좌 검색 또는 입력" autocomplete="off"
@@ -586,6 +586,22 @@ function fmtK(n){var a=Math.abs(n),sg=n<0?'-':'';return sg+(a>=10000?(a/10000).t
 var _tt;
 function showToast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(_tt);_tt=setTimeout(function(){t.classList.remove('show');},2000);}
 function saveEntries(){try{localStorage.setItem('gb_v3',JSON.stringify(entries.slice(0,1000)));}catch(e){}}
+function toggleNeg(){
+  var el=document.getElementById('f-amount');
+  var btn=document.getElementById('f-amount-neg');
+  var v=el.value.trim();
+  if(v.startsWith('-')){
+    el.value=v.slice(1);
+    btn.style.color='var(--sub)';
+    btn.style.background='var(--bg2)';
+    btn.style.borderColor='var(--border)';
+  } else {
+    el.value=v?'-'+v:'-';
+    btn.style.color='var(--red)';
+    btn.style.background='var(--red-bg)';
+    btn.style.borderColor='var(--red)';
+  }
+}
 function isConfigured(){return Object.keys(BUDGET).length>0||entries.length>0;}
 function me(){
   if(histViewAll)return entries;
