@@ -601,6 +601,7 @@ function goPage(n,btn){
   document.getElementById('page-'+n).classList.add('active');
   btn.classList.add('active');
   try{localStorage.setItem('lastTab',n);}catch(e){}
+  autoSync();
   if(n==='home'){renderHome();}
   else if(n==='history'){if(isConfigured()){if(!histMon)histMon=curMon;renderHist();}else document.getElementById('entry-list').innerHTML='<div class="empty">\uC124\uC815\uD0ED\uC5D0\uC11C \uD30C\uC77C\uC744 \uC62C\uB824\uC8FC\uC138\uC694</div>';}
   else if(n==='balance'){if(isConfigured())renderBalance();else document.getElementById('page-balance').innerHTML='<div class="empty">\uC124\uC815\uD0ED\uC5D0\uC11C \uD30C\uC77C\uC744 \uC62C\uB824\uC8FC\uC138\uC694</div>';}
@@ -1728,11 +1729,30 @@ function initMemo(){
 // ── 초기화 ──
 setType('\uC9C0\uCD9C');
 initMemo();
+
+// URL 파라미터로 Script URL 자동 세팅 (?url=...)
+(function(){
+  try{
+    var params=new URLSearchParams(window.location.search);
+    var pu=params.get('url');
+    if(pu){
+      localStorage.setItem('scriptUrl',pu);
+      // URL에서 파라미터 제거 (북마크용 URL은 유지하되 주소창은 깔끔하게)
+      history.replaceState(null,'',window.location.pathname);
+    }
+  }catch(e){}
+})();
+
 var _lt=localStorage.getItem('lastTab')||'home';
 var _nbs=document.querySelectorAll('.nb'),_lb=null;
 _nbs.forEach(function(b){if(b.getAttribute('onclick')&&b.getAttribute('onclick').indexOf("'"+_lt+"'")>=0)_lb=b;});
 if(_lb)goPage(_lt,_lb);else renderHome();
-// 자동 시트 동기화 비활성화 - 수동 '시트에서 불러오기' 버튼만 사용
+
+// 새로고침 시 자동으로 시트에서 불러오기 (백그라운드, 토스트 없음)
+setTimeout(function(){
+  var url=getScriptUrl();
+  if(url) loadFromSheet(true);
+}, 500);
 
 </script>
 </body>
