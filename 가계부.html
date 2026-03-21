@@ -1507,8 +1507,24 @@ function loadFromSheet(silent,overwrite){
         try{localStorage.setItem('initBal',JSON.stringify(cfg.initBal));}catch(e){}
       }
       if(cfg.initBalRaw){
+        // group이 전부 cash인 경우 (saveConfig 구버전 시트) → 알려진 키로 그룹 복원
+        var KNOWN_INVEST=['케이-집계약용','신한은행','미래에셋_연금','미래에셋_종합','미래에셋_ISA','미래에셋_금','우리_IRP','삼성증권_연금'];
+        var KNOWN_CONTRACT=['케이-집계약용','신한은행'];
+        var KNOWN_ESTATE=['전세 보증금'];
+        var KNOWN_LONGDEBT=['전세자금대출 원금(국민)'];
+        var KNOWN_DEBT=['롯카','롯카-','롯카!','삼카','삼카!','신카','신카!','국카1','국카k','국카k!','국카k!실미','국카k-','농카','농카!'];
+        cfg.initBalRaw=cfg.initBalRaw.map(function(r){
+          if(r.group&&r.group!=='cash') return r; // 이미 올바른 그룹이면 유지
+          var g='cash';
+          if(KNOWN_LONGDEBT.indexOf(r.key)>=0) g='longdebt';
+          else if(KNOWN_DEBT.indexOf(r.key)>=0) g='debt';
+          else if(KNOWN_ESTATE.indexOf(r.key)>=0) g='estate';
+          else if(KNOWN_CONTRACT.indexOf(r.key)>=0) g='contract';
+          else if(KNOWN_INVEST.indexOf(r.key)>=0) g='invest';
+          return {key:r.key,label:r.label||r.key,group:g,goal:r.goal||0};
+        });
         try{localStorage.setItem('initBalRaw',JSON.stringify(cfg.initBalRaw));}catch(e){}
-        buildAcctsDef(cfg.initBalRaw); // localStorage 거치지 않고 직접 전달
+        buildAcctsDef(cfg.initBalRaw);
       }
     }
     var allCardKeys=ACCTS.filter(function(a){return ACCTS_DEF.some(function(d){return d.key===a&&d.group==='debt';});});
