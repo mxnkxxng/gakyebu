@@ -683,6 +683,8 @@ function renderHome(){
   es.filter(function(e){return e.type==='지출';}).forEach(function(e){
     majT[e.major]=(majT[e.major]||0)+e.amount;
     var k=e.major+'__'+e.sub;subT[k]=(subT[k]||0)+e.amount;
+    // 소분류만으로도 집계 (major 이모지 불일치 대비)
+    if(e.sub) subT['__'+e.sub]=(subT['__'+e.sub]||0)+e.amount;
   });
   var mamaLabel=getCatLabel('지출','엄마'); // '☀️ 엄마'
   var mamaF=es.filter(function(e){return e.type==='지출'&&(e.major===mamaLabel||e.major==='엄마')&&MAMA_FIXED.indexOf(e.sub)>=0;}).reduce(function(s,e){return s+e.amount;},0);
@@ -698,7 +700,7 @@ function renderHome(){
     var remT=rem>=0?'\uC794\uC561 '+fmtK(rem):'\uCD08\uACFC '+fmtK(-rem);
     var remC=rem>=0?'var(--green)':'var(--red)';
     var subH=(subKeys||[]).map(function(s){
-      var sv=subT[label+'__'+s]||subT[id+'__'+s]||0;
+      var sv=subT[label+'__'+s]||subT[id+'__'+s]||subT['__'+s]||0;
       var sc2=sv>0?'var(--text)':'var(--hint)';
       return '<div class="srow2"><span style="flex:1;color:var(--sub)">'+s+'</span><span style="font-size:11px;font-weight:600;color:'+sc2+'">'+fmt(sv)+'</span></div>';
     }).join('');
