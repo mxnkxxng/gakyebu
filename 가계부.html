@@ -583,6 +583,7 @@ function dbgShow(){
   lines.push('<b>현재 sheetAssetData 키:</b> '+Object.keys(sheetAssetData||{}).join(', ')||'비어있음');
   d.innerHTML=lines.join('<br>');
 }
+function isConfigured(){return Object.keys(BUDGET).length>0||entries.length>0;}
 function me(){
   if(histViewAll)return entries;
   var mon=histMon||curMon;
