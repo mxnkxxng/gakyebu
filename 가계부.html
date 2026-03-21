@@ -557,7 +557,32 @@ try{var _s=localStorage.getItem('gb_card_budget');if(_s)CARD_BUDGET=JSON.parse(_
 try{var _s=localStorage.getItem('gb_save_goals');if(_s)SAVE_GOALS=JSON.parse(_s);}catch(e){}
 try{var _sa=localStorage.getItem('sheetAssetData');if(_sa)sheetAssetData=JSON.parse(_sa);}catch(e){}
 try{var _st=localStorage.getItem('gb_templates');if(_st)templates=JSON.parse(_st);}catch(e){}
-try{var _ir=localStorage.getItem('initBalRaw');if(_ir)buildAcctsDef(JSON.parse(_ir));}catch(e){}
+try{
+  var _ir=localStorage.getItem('initBalRaw');
+  if(_ir){
+    var _irp=JSON.parse(_ir);
+    // group이 전부 cash면 (구버전 시트) 알려진 키로 강제 복원
+    var _INVEST=['미래에셋_연금','미래에셋_종합','미래에셋_ISA','미래에셋_금','우리_IRP','삼성증권_연금'];
+    var _CONTRACT=['케이-집계약용','신한은행'];
+    var _ESTATE=['전세 보증금'];
+    var _LONGDEBT=['전세자금대출 원금(국민)'];
+    var _DEBT=['롯카','롯카-','롯카!','삼카','삼카!','신카','신카!','국카1','국카k','국카k!','국카k!실미','국카k-','농카','농카!'];
+    var _allCash=_irp.every(function(r){return !r.group||r.group==='cash';});
+    if(_allCash){
+      _irp=_irp.map(function(r){
+        var g='cash';
+        if(_LONGDEBT.indexOf(r.key)>=0) g='longdebt';
+        else if(_DEBT.indexOf(r.key)>=0) g='debt';
+        else if(_ESTATE.indexOf(r.key)>=0) g='estate';
+        else if(_CONTRACT.indexOf(r.key)>=0) g='contract';
+        else if(_INVEST.indexOf(r.key)>=0) g='invest';
+        return {key:r.key,label:r.label||r.key,group:g,goal:r.goal||0};
+      });
+      localStorage.setItem('initBalRaw',JSON.stringify(_irp));
+    }
+    buildAcctsDef(_irp);
+  }
+}catch(e){}
 
 document.getElementById('f-date').value=new Date().toISOString().split('T')[0];
 
