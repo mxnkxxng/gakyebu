@@ -543,7 +543,7 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
   탭 5 : 가계부 (기존 HTML 그대로)
 ═════════════════════════════════════════════ -->
 <div id="p5" class="panel" style="padding:0;max-width:100%">
-  <div id="gb-wrap" style="max-width:480px;margin:0 auto;padding:0 0 80px">
+  <div id="gb-wrap" style="max-width:480px;margin:0 auto;padding:0 0 100px">
 <div class="page active" id="page-home">
   <div class="month-nav">
     <button class="mb" onclick="changeMonth(-1)">&#8249;</button>
@@ -852,6 +852,14 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
 </div>
 <div class="toast" id="toast"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <nav class="nav" id="gb-nav" style="position:fixed;bottom:0;left:0;right:0;background:var(--surface,#fff);border-top:.5px solid var(--border,rgba(0,0,0,.07));display:none;grid-template-columns:repeat(6,1fr);z-index:200;padding-bottom:env(safe-area-inset-bottom)">
+  <button class="nb active" onclick="goPage('home',this)"><span class="ni">&#127968;</span>홈</button>
+  <button class="nb" onclick="goPage('input',this)"><span class="ni">&#9999;&#65039;</span>입력</button>
+  <button class="nb" onclick="goPage('history',this)"><span class="ni">&#128203;</span>내역</button>
+  <button class="nb" onclick="goPage('balance',this)"><span class="ni">&#128181;</span>잔고</button>
+  <button class="nb" onclick="goPage('asset',this)"><span class="ni">&#128200;</span>자산</button>
+  <button class="nb" onclick="goPage('cfg',this)"><span class="ni">&#9881;&#65039;</span>설정</button>
+</nav>
   </div>
 </div>
 
@@ -929,6 +937,13 @@ function showTab(i) {
   document.querySelectorAll('.topnav-tab').forEach((t,j)=>t.classList.toggle('on',i===j));
   document.querySelectorAll('.panel').forEach((p,j)=>p.classList.toggle('on',i===j));
   if (i===4) runSim();
+  // 가계부 탭(5) 진입 시 하단 네비 표시
+  var gbNav = document.getElementById('gb-nav');
+  if (gbNav) gbNav.style.display = (i===5) ? 'grid' : 'none';
+  if (i===5) {
+    // 가계부 초기화
+    if (typeof renderHome === 'function') renderHome();
+  }
 }
 
 // ── 데이터 ──
@@ -1437,10 +1452,12 @@ function getScriptUrl(){return localStorage.getItem('scriptUrl')||'';}
 
 // ── 네비게이션 ──
 function goPage(n,btn){
-  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
-  document.querySelectorAll('.nb').forEach(function(b){b.classList.remove('active');});
-  document.getElementById('page-'+n).classList.add('active');
-  btn.classList.add('active');
+  var wrap=document.getElementById('gb-wrap');
+  if(wrap){wrap.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});}
+  else{document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});}
+  if(btn){document.querySelectorAll('.nb').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');}
+  var target=document.getElementById('page-'+n);
+  if(target)target.classList.add('active');
   try{localStorage.setItem('lastTab',n);}catch(e){}
   if(n==='home'){renderHome();}
   else if(n==='history'){if(isConfigured()){if(!histMon)histMon=curMon;renderHist();}else document.getElementById('entry-list').innerHTML='<div class="empty">\uC124\uC815\uD0ED\uC5D0\uC11C \uD30C\uC77C\uC744 \uC62C\uB824\uC8FC\uC138\uC694</div>';}
