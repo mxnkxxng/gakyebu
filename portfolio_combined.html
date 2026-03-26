@@ -598,13 +598,13 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
       <button class="tbtn" id="tb-in" onclick="setType('수입')">수입</button>
       <button class="tbtn" id="tb-mv" onclick="setType('이동')">이동</button>
     </div>
-    <div class="field"><label>날짜</label><input type="date" id="f-date"/></div>
+    <div class="field"><label>날짜</label><input type="date" id="gb-f-date"/></div>
     <div>
       <div class="sl2">대분류</div><div class="cgrid" id="major-grid"></div>
       <div id="sub-sec" style="display:none"><div class="sl2">소분류</div><div class="sgrid2" id="sub-grid"></div></div>
     </div>
-    <div class="field"><label>내용</label><input type="text" id="f-memo" placeholder="메모 (선택)"/></div>
-    <div class="field"><label>금액</label><div style="display:flex;gap:8px;align-items:center;"><input type="text" id="f-amount" placeholder="0" inputmode="decimal" pattern="[0-9\-]*" style="flex:1;"/><button type="button" id="f-amount-neg" onclick="toggleNeg()" style="padding:0 14px;height:44px;border-radius:var(--rs);border:1.5px solid var(--border);background:var(--bg2);color:var(--sub);font-size:18px;font-weight:700;cursor:pointer;flex-shrink:0;">−</button></div></div>
+    <div class="field"><label>내용</label><input type="text" id="gb-f-memo" placeholder="메모 (선택)"/></div>
+    <div class="field"><label>금액</label><div style="display:flex;gap:8px;align-items:center;"><input type="text" id="gb-f-amount" placeholder="0" inputmode="decimal" pattern="[0-9\-]*" style="flex:1;"/><button type="button" id="f-amount-neg" onclick="toggleNeg()" style="padding:0 14px;height:44px;border-radius:var(--rs);border:1.5px solid var(--border);background:var(--bg2);color:var(--sub);font-size:18px;font-weight:700;cursor:pointer;flex-shrink:0;">−</button></div></div>
     <div class="field" id="f-in-wrap"><label>입금계좌</label>
       <div class="acct-wrap">
         <input class="acct-input" id="f-in-acct" type="text" placeholder="계좌 검색 또는 입력" autocomplete="off"
@@ -1418,7 +1418,7 @@ try{
   }
 }catch(e){}
 
-document.getElementById('f-date').value=new Date().toISOString().split('T')[0];
+document.getElementById('gb-f-date').value=new Date().toISOString().split('T')[0];
 
 // ── 유틸 ──
 function fmt(n){return '\u20A9'+Math.abs(n).toLocaleString('ko-KR');}
@@ -1427,7 +1427,7 @@ var _tt;
 function showToast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(_tt);_tt=setTimeout(function(){t.classList.remove('show');},2000);}
 function saveEntries(){try{localStorage.setItem('gb_v3',JSON.stringify(entries.slice(0,1000)));}catch(e){}}
 function toggleNeg(){
-  var el=document.getElementById('f-amount');
+  var el=document.getElementById('gb-f-amount');
   var btn=document.getElementById('f-amount-neg');
   var v=el.value.trim();
   if(v.startsWith('-')){
@@ -1452,12 +1452,17 @@ function getScriptUrl(){return localStorage.getItem('scriptUrl')||'';}
 
 // ── 네비게이션 ──
 function goPage(n,btn){
+  // gb-wrap 안의 .page만 전환 (포트폴리오 .panel 건드리지 않음)
   var wrap=document.getElementById('gb-wrap');
-  if(wrap){wrap.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});}
-  else{document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});}
-  if(btn){document.querySelectorAll('.nb').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');}
+  if(wrap){
+    wrap.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
+  }
+  // 하단 네비 버튼 active 처리
+  document.querySelectorAll('#gb-nav .nb').forEach(function(b){b.classList.remove('active');});
+  if(btn) btn.classList.add('active');
+  // 해당 페이지 표시
   var target=document.getElementById('page-'+n);
-  if(target)target.classList.add('active');
+  if(target) target.classList.add('active');
   try{localStorage.setItem('lastTab',n);}catch(e){}
   if(n==='home'){renderHome();}
   else if(n==='history'){if(isConfigured()){if(!histMon)histMon=curMon;renderHist();}else document.getElementById('entry-list').innerHTML='<div class="empty">\uC124\uC815\uD0ED\uC5D0\uC11C \uD30C\uC77C\uC744 \uC62C\uB824\uC8FC\uC138\uC694</div>';}
@@ -1739,14 +1744,14 @@ function pickAcct(key,val){
 }
 
 function addEntry(){
-  var amt=parseFloat(document.getElementById('f-amount').value);
+  var amt=parseFloat(document.getElementById('gb-f-amount').value);
   if(!amt||isNaN(amt)){showToast('\uAE08\uC561\uC744 \uC785\uB825\uD574\uC8FC\uC138\uC694');return;}
   var label=selMaj?getCatLabel(cType,selMaj):'';
-  var entry={id:Date.now(),date:document.getElementById('f-date').value,type:cType,major:label,sub:selSub,
-    memo:document.getElementById('f-memo').value,amount:amt,
+  var entry={id:Date.now(),date:document.getElementById('gb-f-date').value,type:cType,major:label,sub:selSub,
+    memo:document.getElementById('gb-f-memo').value,amount:amt,
     inAcct:document.getElementById('f-in-acct').value,outAcct:document.getElementById('f-out-acct').value};
   entries.unshift(entry);saveEntries();
-  document.getElementById('f-amount').value='';document.getElementById('f-memo').value='';
+  document.getElementById('gb-f-amount').value='';document.getElementById('gb-f-memo').value='';
   showToast('\uCD94\uAC00\uB410\uC5B4\uC694!');renderHome();renderHist();
   var url=getScriptUrl();
   if(url){
@@ -2254,7 +2259,7 @@ function applyTplByIdx(i){
   var majKey=keys.find(function(k){return getCatLabel(t.type||'지출',k)===t.major||k===t.major;});
   if(majKey){selMaj=majKey;renderMajor();}
   if(t.sub){selSub=t.sub;document.querySelectorAll('.sbtn').forEach(function(b){b.classList.toggle('sel',b.textContent===t.sub);});}
-  if(t.memo)document.getElementById('f-memo').value=t.memo;
+  if(t.memo)document.getElementById('gb-f-memo').value=t.memo;
   if(t.outAcct)document.getElementById('f-out-acct').value=t.outAcct;
   if(t.inAcct)document.getElementById('f-in-acct').value=t.inAcct;
   document.getElementById('tpl-modal').classList.add('hidden');
@@ -2282,7 +2287,7 @@ function saveCurAsTpl(){
   if(!name){showToast('이름을 입력해주세요');return;}
   var majLabel=selMaj?getCatLabel(cType,selMaj):'';
   var t={name:name,type:cType,major:majLabel,sub:selSub,
-    memo:document.getElementById('f-memo').value,
+    memo:document.getElementById('gb-f-memo').value,
     outAcct:document.getElementById('f-out-acct').value,
     inAcct:document.getElementById('f-in-acct').value};
   var idx=templates.findIndex(function(x){return x.name===name;});
@@ -2525,8 +2530,8 @@ function onNotif(v){
   if(!r.amount&&!r.date&&!r.card)h+='\uC778\uC2DD \uD56D\uBAA9 \uC5C6\uC74C';
   h+='</div>';p.style.display='block';p.innerHTML=h;
 }
-function apAmt(a){document.getElementById('f-amount').value=a;showToast(a.toLocaleString()+'\uC6D0 \uC785\uB825');}
-function apDate(d){document.getElementById('f-date').value=d;showToast(d+' \uC785\uB825');}
+function apAmt(a){document.getElementById('gb-f-amount').value=a;showToast(a.toLocaleString()+'\uC6D0 \uC785\uB825');}
+function apDate(d){document.getElementById('gb-f-date').value=d;showToast(d+' \uC785\uB825');}
 function apCard(c){var el=cType==='\uC218\uC785'?document.getElementById('f-in-acct'):document.getElementById('f-out-acct');if(el){el.value=c;showToast(c+' \uC120\uD0DD');}}
 function clearNotif(){document.getElementById('notif-input').value='';var p=document.getElementById('nprev');p.style.display='none';p.innerHTML='';}
 
