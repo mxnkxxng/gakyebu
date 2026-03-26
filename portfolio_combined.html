@@ -134,6 +134,12 @@ body { background:var(--bg); color:var(--txt); font-family:'IBM Plex Sans KR',sa
 
 .loading  { text-align:center; padding:40px; color:var(--txt3); }
 .tbl-wrap { overflow-x:auto; }
+.topnav-group-label {
+  font-size:10px; font-weight:700; color:var(--txt3);
+  letter-spacing:.06em; text-transform:uppercase;
+  padding:0 8px; display:flex; align-items:center;
+  white-space:nowrap; flex-shrink:0;
+}
 
 @media(max-width:900px){
   .kpi-grid { grid-template-columns:repeat(3,1fr); }
@@ -253,10 +259,7 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
 .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(10px);background:#1a1a1a;color:#fff;padding:10px 20px;border-radius:99px;font-size:13px;opacity:0;transition:all .2s;pointer-events:none;white-space:nowrap;z-index:999}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-/* 가계부 페이지는 gb-wrap 안에서만 */
-#gb-wrap .page{display:none;}
-#gb-wrap .page.active{display:block;}
-#gb-wrap .nav{display:none !important;}
+/* 가계부 패널은 포트폴리오 .panel 방식으로 동작 */
 </style>
 </head>
 <body>
@@ -278,14 +281,20 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
 <!-- ── 상단 네비 ── -->
 <nav class="topnav">
   <div class="topnav-logo">portfolio.db</div>
-  <div class="topnav-tab on"  onclick="showTab(0)">대시보드</div>
-  <div class="topnav-tab"     onclick="showTab(1)">거래 입력</div>
-  <div class="topnav-tab"     onclick="showTab(2)">거래 내역</div>
-  <div class="topnav-tab"     onclick="showTab(3)">연금·ISA</div>
-  <div class="topnav-tab"     onclick="showTab(4)">투자 플랜</div>
+  <div class="topnav-group-label">📈 주식·연금</div>
+  <div class="topnav-tab on" onclick="showTab(0)">대시보드</div>
+  <div class="topnav-tab"   onclick="showTab(1)">거래 입력</div>
+  <div class="topnav-tab"   onclick="showTab(2)">거래 내역</div>
+  <div class="topnav-tab"   onclick="showTab(3)">연금·ISA</div>
+  <div class="topnav-tab"   onclick="showTab(4)">투자 플랜</div>
   <div class="topnav-sep"></div>
-  <div class="topnav-tab"     onclick="showTab(5)">💰 가계부</div>
-  <div class="topnav-tab"     onclick="showTab(6)">⚙ 설정</div>
+  <div class="topnav-group-label">💰 가계부</div>
+  <div class="topnav-tab"   onclick="showTab(5)">홈</div>
+  <div class="topnav-tab"   onclick="showTab(6)">입력</div>
+  <div class="topnav-tab"   onclick="showTab(7)">내역</div>
+  <div class="topnav-tab"   onclick="showTab(8)">잔고</div>
+  <div class="topnav-tab"   onclick="showTab(9)">자산</div>
+  <div class="topnav-tab"   onclick="showTab(10)">설정</div>
 </nav>
 
 <!-- ════════════════════════════════════════════
@@ -542,9 +551,7 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
 <!-- ════════════════════════════════════════════
   탭 5 : 가계부 (기존 HTML 그대로)
 ═════════════════════════════════════════════ -->
-<div id="p5" class="panel" style="padding:0;max-width:100%">
-  <div id="gb-wrap" style="max-width:480px;margin:0 auto;padding:0 0 100px">
-<div class="page active" id="page-home">
+<div id="p5" class="panel gb-panel" style="max-width:480px;margin:0 auto;padding:16px 14px 40px">
   <div class="month-nav">
     <button class="mb" onclick="changeMonth(-1)">&#8249;</button>
     <div class="ml" id="month-label"></div>
@@ -580,7 +587,8 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
     <div id="card-list"></div>
   </div>
 </div>
-<div class="page" id="page-input">
+
+<div id="p6" class="panel gb-panel" style="max-width:480px;margin:0 auto;padding:16px 14px 40px">
   <div style="display:flex;gap:8px;margin-bottom:6px">
     <button onclick="openTplModal()" style="flex:1;padding:10px;border:.5px solid var(--blue-lt);border-radius:var(--rs);background:var(--blue-bg);color:var(--blue);font-size:13px;font-weight:700;cursor:pointer">📋 템플릿 불러오기</button>
     <button onclick="openSaveTplModal()" style="padding:10px 14px;border:.5px solid var(--border-md);border-radius:var(--rs);background:transparent;color:var(--sub);font-size:12px;cursor:pointer">저장</button>
@@ -622,7 +630,8 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
     <button class="add-btn" onclick="addEntry()">+ 추가하기</button>
   </div>
 </div>
-<div class="page" id="page-history">
+
+<div id="p7" class="panel gb-panel" style="max-width:480px;margin:0 auto;padding:16px 14px 40px">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
     <div style="display:flex;align-items:center;gap:4px">
       <button class="mb" onclick="changeHistMonth(-1)" style="font-size:18px;padding:2px 8px">&#8249;</button>
@@ -663,7 +672,8 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
   </div>
   <div id="entry-list"><div class="empty">아직 내역이 없어요</div></div>
 </div>
-<div class="page" id="page-balance">
+
+<div id="p8" class="panel gb-panel" style="max-width:480px;margin:0 auto;padding:16px 14px 40px">
   <div class="sgrid" style="margin-bottom:12px">
     <div class="sc" style="grid-column:span 2"><div class="sl">현금/예금 합계</div><div class="sv" style="color:var(--blue)" id="bal-cash-total">&#8361;0</div></div>
     <div class="sc"><div class="sl">카드 미결제</div><div class="sv" style="color:var(--red)" id="bal-debt-total">&#8361;0</div></div>
@@ -687,7 +697,8 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
     <div class="trow"><span class="tlbl">장기부채 (전세대출 등)</span><span class="tval" style="color:var(--red)" id="bal-longdebt">&#8361;0</span></div>
   </div>
 </div>
-<div class="page" id="page-asset">
+
+<div id="p9" class="panel gb-panel" style="max-width:480px;margin:0 auto;padding:16px 14px 40px">
   <div style="display:flex;justify-content:flex-end;gap:6px;margin-bottom:8px">
     <button onclick="expandAllAst()" style="font-size:10px;padding:3px 8px;border:.5px solid var(--border-md);border-radius:99px;background:transparent;color:var(--sub);cursor:pointer">전체 펴기</button>
     <button onclick="collapseAllAst()" style="font-size:10px;padding:3px 8px;border:.5px solid var(--border-md);border-radius:99px;background:transparent;color:var(--sub);cursor:pointer">전체 접기</button>
@@ -760,7 +771,8 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
     </div>
   </div>
 </div>
-<div class="page" id="page-setup">
+
+<div id="p10" class="panel gb-panel" style="max-width:480px;margin:0 auto;padding:16px 14px 40px">
   <div class="card">
     <div class="ct" style="display:flex;align-items:center;gap:7px">
       &#128202; 구글 시트 연동
@@ -807,102 +819,8 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
     </button>
   </div>
 </div>
-<!-- 템플릿 불러오기 모달 -->
-<div class="modal-bg hidden" id="tpl-modal" onclick="closeTplModal(event)">
-  <div class="modal">
-    <div class="modal-title">템플릿 불러오기 <button class="modal-close" onclick="closeTplModal()">&#10005;</button></div>
-    <div id="tpl-list" style="max-height:60vh;overflow-y:auto"></div>
-  </div>
-</div>
-<!-- 템플릿 저장 모달 -->
-<div class="modal-bg hidden" id="save-tpl-modal" onclick="closeSaveTplModal(event)">
-  <div class="modal">
-    <div class="modal-title">템플릿으로 저장 <button class="modal-close" onclick="closeSaveTplModal()">&#10005;</button></div>
-    <div class="field"><label>템플릿 이름</label><input type="text" id="tpl-name-input" placeholder="예: 엄마생활비"/></div>
-    <button onclick="saveCurAsTpl()" style="width:100%;padding:12px;background:var(--blue);color:#fff;border:none;border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer">저장</button>
-  </div>
-</div>
-<div class="modal-bg hidden" id="edit-modal" onclick="closeEditModal(event)">
-  <div class="modal">
-    <div class="modal-title">내역 수정 <button class="modal-close" onclick="closeEditModal()">&#10005;</button></div>
-    <div class="field"><label>날짜</label><input type="date" id="edit-date"/></div>
-    <div class="field"><label>금액</label><input type="number" id="edit-amount" inputmode="decimal" oninput="this.value=this.value.replace(/[^0-9.-]/g,'')"  /></div>
-    <div class="field"><label>내용</label><input type="text" id="edit-memo"/></div>
-    <div class="field"><label>출금계좌</label>
-      <div class="acct-wrap">
-        <input class="acct-input" id="edit-out-acct" type="text" autocomplete="off"
-          oninput="acctSearch('edit-out',this.value)" onfocus="acctSearch('edit-out',this.value)"
-          onblur="setTimeout(function(){closeAcctDrop('edit-out')},200)"/>
-        <div class="acct-drop" id="drop-edit-out"></div>
-      </div>
-    </div>
-    <div class="field"><label>입금계좌</label>
-      <div class="acct-wrap">
-        <input class="acct-input" id="edit-in-acct" type="text" autocomplete="off"
-          oninput="acctSearch('edit-in',this.value)" onfocus="acctSearch('edit-in',this.value)"
-          onblur="setTimeout(function(){closeAcctDrop('edit-in')},200)"/>
-        <div class="acct-drop" id="drop-edit-in"></div>
-      </div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px">
-      <button onclick="saveEdit()" style="padding:12px;background:var(--blue);color:#fff;border:none;border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer">저장</button>
-      <button onclick="deleteAndClose()" style="padding:12px;background:var(--red-bg);color:var(--red);border:.5px solid var(--red-lt);border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer">삭제</button>
-    </div>
-  </div>
-</div>
-<div class="toast" id="toast"></div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <nav class="nav" id="gb-nav" style="position:fixed;bottom:0;left:0;right:0;background:var(--surface,#fff);border-top:.5px solid var(--border,rgba(0,0,0,.07));display:none;grid-template-columns:repeat(6,1fr);z-index:200;padding-bottom:env(safe-area-inset-bottom)">
-  <button class="nb active" onclick="goPage('home',this)"><span class="ni">&#127968;</span>홈</button>
-  <button class="nb" onclick="goPage('input',this)"><span class="ni">&#9999;&#65039;</span>입력</button>
-  <button class="nb" onclick="goPage('history',this)"><span class="ni">&#128203;</span>내역</button>
-  <button class="nb" onclick="goPage('balance',this)"><span class="ni">&#128181;</span>잔고</button>
-  <button class="nb" onclick="goPage('asset',this)"><span class="ni">&#128200;</span>자산</button>
-  <button class="nb" onclick="goPage('cfg',this)"><span class="ni">&#9881;&#65039;</span>설정</button>
-</nav>
-  </div>
-</div>
 
-<!-- ════════════════════════════════════════════
-  탭 6 : 설정
-═════════════════════════════════════════════ -->
-<div id="p6" class="panel">
-  <div class="g2">
-    <div class="card">
-      <div class="sec">포트폴리오 설정</div>
-      <div class="form-group" style="margin-bottom:16px">
-        <label>Apps Script URL</label>
-        <input type="text" id="cfg-pf-url" placeholder="https://script.google.com/macros/s/.../exec" style="font-size:12px">
-      </div>
-      <div class="form-group" style="margin-bottom:16px">
-        <label>비밀번호 변경</label>
-        <input type="password" id="cfg-pw" placeholder="새 비밀번호 입력">
-      </div>
-      <div style="display:flex;gap:10px">
-        <button class="btn btn-primary" onclick="savePfConfig()">저장</button>
-        <button class="btn btn-ghost"   onclick="loadPfData()">↺ 데이터 새로고침</button>
-      </div>
-      <div id="cfg-msg" style="font-size:12px;color:var(--txt3);margin-top:10px"></div>
-    </div>
-    <div class="card">
-      <div class="sec">가계부 설정</div>
-      <div class="form-group" style="margin-bottom:12px">
-        <label>시트 ID</label>
-        <input type="text" id="gb-sheet-id" id2="sheet-id2" placeholder="스프레드시트 URL의 /d/ 뒤 ID">
-      </div>
-      <div class="form-group" style="margin-bottom:16px">
-        <label>Script URL</label>
-        <input type="text" id="gb-script-url" placeholder="https://script.google.com/macros/s/.../exec" style="font-size:12px">
-      </div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap">
-        <button class="btn btn-primary" onclick="saveGbConfig()">저장 &amp; 연결</button>
-        <button class="btn btn-ghost"   onclick="loadFromSheet()">📊 시트에서 불러오기</button>
-        <button class="btn btn-danger"  onclick="if(confirm('시트 데이터로 완전 덮어쓰기할까요?'))loadFromSheet(false,true)">덮어쓰기</button>
-      </div>
-      <div id="gb-load-status" style="margin-top:8px;font-size:12px;color:var(--txt2)"></div>
-    </div>
-  </div>
-</div>
+
 
 <div id="pf-toast" class="toast"></div>
 
@@ -936,34 +854,20 @@ try { if(sessionStorage.getItem('pf_auth')==='1') document.getElementById('lock'
 function showTab(i) {
   // 탭 버튼 active
   document.querySelectorAll('.topnav-tab').forEach((t,j)=>t.classList.toggle('on',i===j));
-  // 패널 전환 — ID 직접 지정 방식으로 안정적으로
-  ['p0','p1','p2','p3','p4','p5','p6'].forEach(function(id,j){
+  // 패널 전환 — 11개 패널 ID 직접 지정
+  ['p0','p1','p2','p3','p4','p5','p6','p7','p8','p9','p10'].forEach(function(id,j){
     var el = document.getElementById(id);
     if(el) el.classList.toggle('on', i===j);
   });
-  // 가계부 하단 네비
-  var gbNav = document.getElementById('gb-nav');
-  if(gbNav) gbNav.style.display = (i===5) ? 'grid' : 'none';
-  // 각 탭 초기화
+  // 포트폴리오 탭별 초기화
   if(i===4) runSim();
-  if(i===5) {
-    var wrap = document.getElementById('gb-wrap');
-    if(wrap) {
-      // 모든 page 숨기고 home만 활성화
-      wrap.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
-      var homeP = document.getElementById('page-home');
-      if(homeP) homeP.classList.add('active');
-    }
-    // 하단 네비 첫 번째 버튼 active
-    document.querySelectorAll('#gb-nav .nb').forEach(function(b){ b.classList.remove('active'); });
-    var homeBtn = document.querySelector('#gb-nav .nb:first-child');
-    if(homeBtn) homeBtn.classList.add('active');
-    // 가계부 렌더링 (p5가 display:block 된 후 실행)
-    setTimeout(function(){
-      if(typeof renderHome==='function') renderHome();
-      if(typeof renderBalance==='function') renderBalance();
-    }, 50);
-  }
+  if(i===0) { if(pfTx.length) renderDashboard(); }
+  // 가계부 탭 진입 시 렌더링
+  if(i===5) { setTimeout(function(){ if(typeof renderHome==='function') renderHome(); }, 50); }
+  if(i===6) { setTimeout(function(){ if(typeof renderInput==='function') renderInput(); }, 50); }
+  if(i===7) { setTimeout(function(){ if(typeof renderHist==='function') renderHist(); }, 50); }
+  if(i===8) { setTimeout(function(){ if(typeof renderBalance==='function') renderBalance(); }, 50); }
+  if(i===9) { setTimeout(function(){ if(typeof renderAsset==='function') renderAsset(); }, 50); }
 }
 
 // ── 데이터 ──
@@ -1472,24 +1376,14 @@ function getScriptUrl(){return localStorage.getItem('scriptUrl')||'';}
 
 // ── 네비게이션 ──
 function goPage(n,btn){
-  // gb-wrap 안의 .page만 전환 (포트폴리오 .panel 건드리지 않음)
-  var wrap=document.getElementById('gb-wrap');
-  if(wrap){
-    wrap.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
+  // 가계부 내부 페이지 → 상단 탭으로 전환
+  var pageToTab = {home:5,input:6,history:7,balance:8,asset:9,setup:10};
+  var tabIdx = pageToTab[n];
+  if(tabIdx !== undefined) {
+    showTab(tabIdx);
+    // 탭 버튼 active 업데이트
+    document.querySelectorAll('.topnav-tab').forEach(function(t,j){ t.classList.toggle('on', j===tabIdx); });
   }
-  // 하단 네비 버튼 active 처리
-  document.querySelectorAll('#gb-nav .nb').forEach(function(b){b.classList.remove('active');});
-  if(btn) btn.classList.add('active');
-  // 해당 페이지 표시
-  var target=document.getElementById('page-'+n);
-  if(target) target.classList.add('active');
-  try{localStorage.setItem('lastTab',n);}catch(e){}
-  if(n==='home'){renderHome();}
-  else if(n==='history'){if(isConfigured()){if(!histMon)histMon=curMon;renderHist();}else document.getElementById('entry-list').innerHTML='<div class="empty">\uC124\uC815\uD0ED\uC5D0\uC11C \uD30C\uC77C\uC744 \uC62C\uB824\uC8FC\uC138\uC694</div>';}
-  else if(n==='balance'){if(isConfigured())renderBalance();else document.getElementById('page-balance').innerHTML='<div class="empty">\uC124\uC815\uD0ED\uC5D0\uC11C \uD30C\uC77C\uC744 \uC62C\uB824\uC8FC\uC138\uC694</div>';}
-  else if(n==='asset'){if(isConfigured()){renderAsset();setTimeout(applyAstState,0);}else document.getElementById('page-asset').innerHTML='<div class="empty">\uC124\uC815\uD0ED\uC5D0\uC11C \uD30C\uC77C\uC744 \uC62C\uB824\uC8FC\uC138\uC694</div>';}
-  else if(n==='input'){if(!isConfigured())document.getElementById('page-input').innerHTML='<div class="empty">\uC124\uC815\uD0ED\uC5D0\uC11C \uD30C\uC77C\uC744 \uC62C\uB824\uC8FC\uC138\uC694</div>';}
-  else if(n==='setup'){renderSetup();setTimeout(restoreCfgState,50);}
 }
 function changeMonth(d){
   var p=curMon.split('-'),y=parseInt(p[0]),m=parseInt(p[1]);
