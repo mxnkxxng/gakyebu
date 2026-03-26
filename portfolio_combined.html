@@ -563,11 +563,8 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
     <button class="ftab" onclick="setFilter('이동',this)">이동</button>
   </div>
   <div style="display:flex;gap:6px;margin-bottom:10px;overflow-x:auto;padding-bottom:2px">
-    <button class="ftab" id="cf-lk" onclick="setCardFilter('롯카',this)">롯카</button>
-    <button class="ftab" id="cf-sk" onclick="setCardFilter('삼카',this)">삼카</button>
-    <button class="ftab" id="cf-sk2" onclick="setCardFilter('신카',this)">신카</button>
-    <button class="ftab" id="cf-gk" onclick="setCardFilter('국카k',this)">국카k</button>
-    <button class="ftab" id="cf-g1" onclick="setCardFilter('국카1',this)">국카1</button>
+    <!-- 카드 필터: renderHist()에서 ACCTS_DEF 기반으로 동적 생성 -->
+    <span id="card-filter-btns"></span>
   </div>
   <div style="display:flex;gap:6px;margin-bottom:8px;align-items:center">
     <input id="hist-search" type="text" placeholder="검색 (내용/카테고리/계좌)" oninput="renderHist()"
@@ -791,7 +788,11 @@ try { if(sessionStorage.getItem('pf_auth')==='1') document.getElementById('lock'
 // ── 탭 전환 ──
 function showTab(i) {
   // 탭 버튼 active
-  document.querySelectorAll('.topnav-tab').forEach((t,j)=>t.classList.toggle('on',i===j));
+  document.querySelectorAll('.topnav-tab').forEach(function(t){
+    var m=t.getAttribute('onclick')||'';
+    var match=m.match(/showTab\((\d+)\)/);
+    if(match) t.classList.toggle('on', parseInt(match[1])===i);
+  });
   // 패널 전환 — 11개 패널 ID 직접 지정
   ['p0','p1','p2','p3','p4','p5','p6','p7','p8','p9','p10','p11'].forEach(function(id,j){
     var el = document.getElementById(id);
@@ -809,28 +810,25 @@ function showTab(i) {
   // 포트폴리오 탭별 초기화
   if(i===4) renderPlan();
   if(i===0) { if(pfTx.length) renderDashboard(); }
+  // 가계부 탭(5~9) — scriptUrl 없으면 설정 탭(10)으로 리다이렉트
+  if(i>=5 && i<=9) {
+    var gbUrl = localStorage.getItem('scriptUrl')||'';
+    if(!gbUrl) {
+      // 모든 패널 끄고 설정 탭으로
+      ['p5','p6','p7','p8','p9'].forEach(function(id){ var el=document.getElementById(id); if(el) el.classList.remove('on'); });
+      var p10=document.getElementById('p10'); if(p10) p10.classList.add('on');
+      // 설정 탭 버튼도 active
+      document.querySelectorAll('.topnav-tab').forEach(function(t){
+        var m=t.getAttribute('onclick')||''; var match=m.match(/showTab\((\d+)\)/);
+        if(match) t.classList.toggle('on', parseInt(match[1])===10);
+      });
+      if(typeof showToast==='function') showToast('먼저 설정 탭에서 시트를 연동해 주세요');
+      return;
+    }
+  }
   // 가계부 탭 진입 시 렌더링
   if(i===5) { setTimeout(function(){ if(typeof renderHome==='function') renderHome(); }, 50); }
-  if(i===6) {
-    // 가계부 미설정 시 안내
-    var p6=document.getElementById('p6');
-    if(p6) {
-      var configured = (typeof isConfigured==='function') ? isConfigured() : true;
-      var ov6=document.getElementById('p6-noconfig');
-      if(!configured) {
-        if(!ov6) {
-          var d=document.createElement('div');
-          d.id='p6-noconfig';
-          d.style.cssText='position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);z-index:10;gap:12px;';
-          d.innerHTML='<div style="font-size:32px">⚙️</div><div style="font-size:14px;font-weight:700;color:var(--txt)">설정이 필요해요</div><div style="font-size:12px;color:var(--txt3);text-align:center">설정 탭에서 파일을 불러오거나<br>예산을 입력해 주세요</div><button onclick="showTab(10)" style="margin-top:8px;padding:10px 24px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">설정으로 이동</button>';
-          p6.style.position='relative';
-          p6.appendChild(d);
-        }
-        return;
-      } else if(ov6) { ov6.remove(); }
-    }
-    setTimeout(function(){ if(typeof renderInput==='function') renderInput(); }, 50);
-  }
+  if(i===6) { setTimeout(function(){ if(typeof renderInput==='function') renderInput(); }, 50); }
   if(i===7) { setTimeout(function(){ if(typeof renderHist==='function') renderHist(); }, 50); }
   if(i===8) { setTimeout(function(){ if(typeof renderBalance==='function') renderBalance(); }, 50); }
   if(i===9) { setTimeout(function(){ if(typeof renderAsset==='function') renderAsset(); }, 50); }
@@ -1313,30 +1311,9 @@ var __HARD_ACCTS_DEF = [
   // ── 장기부채 ──
   {key:'전세자금대출 원금(국민)',label:'전세대출(국민)',group:'longdebt'}
 ];
-var ACCTS_DEF = [
-  // ── 현금/예금 계좌 ──
-  {key:'케이뱅크',label:'케이뱅크',group:'cash'},
-  {key:'케이-비상금',label:'케이-비상금',group:'cash'},
-  {key:'케이-덕질',label:'케이-덕질',group:'cash'},
-  {key:'케이-임시',label:'케이-임시',group:'cash'},
-  {key:'KB뱅크',label:'KB뱅크',group:'cash'},
-  {key:'NH뱅크',label:'NH뱅크',group:'cash'},
-  {key:'하나은행',label:'하나은행',group:'cash'},
-  // ── 계약금 (시트 initBalRaw에서 동적 추가) ──
-  // ── 투자/저축 계좌 (시트 initBalRaw에서 동적 추가) ──
-  // ── 부동산 ──
-  {key:'전세 보증금',label:'전세 보증금',group:'estate'},
-  // ── 카드 미결제 ──
-  {key:'롯카',label:'롯카',group:'debt'},{key:'롯카-',label:'롯카-',group:'debt'},
-  {key:'롯카!',label:'롯카!',group:'debt'},
-  {key:'삼카',label:'삼카',group:'debt'},{key:'삼카!',label:'삼카!',group:'debt'},
-  {key:'신카',label:'신카',group:'debt'},{key:'신카!',label:'신카!',group:'debt'},
-  {key:'국카1',label:'국카1',group:'debt'},
-  {key:'국카k',label:'국카k',group:'debt'},{key:'국카k!',label:'국카k!',group:'debt'},
-  {key:'국카k!실미',label:'국카k!실미',group:'debt'},{key:'국카k-',label:'국카k-',group:'debt'},
-  // ── 장기부채 ──
-  {key:'전세자금대출 원금(국민)',label:'전세대출(국민)',group:'longdebt'}
-];
+var ACCTS_DEF = [];
+// ※ 시트 앱설정 > 초기잔고 행에서 loadFromSheet() 시 동적으로 채워짐
+// ※ 연동 전에는 빈 배열 → 잔고/입력탭에 아무것도 표시 안 됨
 
 var CMAP = [
   {k:['롯카!실미'],v:'롯카!실미'},{k:['롯카!'],v:'롯카!'},{k:['롯카-'],v:'롯카-'},{k:['롯데카드','로카','롯카'],v:'롯카'},
@@ -1814,6 +1791,16 @@ function renderEntryRow(e){
     +'</div>';
 }
 function renderHist(){
+  // 카드 필터 버튼 동적 생성
+  var cfEl=document.getElementById('card-filter-btns');
+  if(cfEl) {
+    var debtAccts=ACCTS_DEF.filter(function(a){return a.group==='debt';});
+    // 대표 카드만 (! 없는 기본 키)
+    var baseCards=[...new Set(debtAccts.map(function(a){return a.key.replace(/[!\-]/g,'').replace('실미','');}).filter(function(k){return k;}))];
+    cfEl.innerHTML=baseCards.map(function(k){
+      return '<button class="ftab" onclick="setCardFilter(''+k+'',this)">'+k+'</button>';
+    }).join('');
+  }
   var mon=histMon||curMon;
   var hm=document.getElementById('hist-month');
   if(hm){if(histViewAll)hm.textContent='\uC804\uCCB4 \uB0B4\uC5ED';else hm.textContent=mon.split('-')[0]+'\uB144 '+parseInt(mon.split('-')[1])+'\uC6D4 \uB0B4\uC5ED';}
@@ -2032,6 +2019,21 @@ function calcBalances(){
   return {curBal:function(k){return (init[k]||0)+(allIn[k]||0)-(allOut[k]||0);}};
 }
 function renderBalance(){
+  // 시트 연동 전 안내
+  if(!ACCTS_DEF.length) {
+    var container = document.getElementById('p8');
+    if(container && !document.getElementById('p8-noconfig')) {
+      var d=document.createElement('div');
+      d.id='p8-noconfig';
+      d.style.cssText='display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;gap:12px;';
+      d.innerHTML='<div style="font-size:32px">🏦</div><div style="font-size:14px;font-weight:700;color:var(--text)">계좌 설정이 필요해요</div><div style="font-size:12px;color:var(--sub);text-align:center">설정 탭에서 시트를 불러오면<br>계좌 잔고가 표시됩니다</div><button onclick="showTab(10)" style="margin-top:8px;padding:10px 24px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">설정으로 이동</button>';
+      container.style.position='relative';
+      container.prepend(d);
+    }
+    return;
+  }
+  var existing=document.getElementById('p8-noconfig');
+  if(existing) existing.remove();
   var cb=calcBalances().curBal;
   var cA=ACCTS_DEF.filter(function(a){return a.group==='cash';}),dA=ACCTS_DEF.filter(function(a){return a.group==='debt';}),ldA=ACCTS_DEF.filter(function(a){return a.group==='longdebt';});
   var cT=cA.reduce(function(s,a){return s+cb(a.key);},0),dT=dA.reduce(function(s,a){return s+Math.min(0,cb(a.key));},0),ldT=ldA.reduce(function(s,a){return s+cb(a.key);},0);
@@ -2377,14 +2379,13 @@ function loadFromSheet(silent,overwrite){
         try{localStorage.setItem('initBal',JSON.stringify(cfg.initBal));}catch(e){}
       }
       if(cfg.initBalRaw){
+        var VALID_GROUPS=['cash','debt','longdebt','estate','contract','invest'];
         var _raw=cfg.initBalRaw.map(function(r){
-          var g='cash';
-          if(['전세자금대출 원금(국민)'].indexOf(r.key)>=0) g='longdebt';
-          else if(['롯카','롯카-','롯카!','삼카','삼카!','신카','신카!','국카1','국카k','국카k!','국카k!실미','국카k-','농카','농카!'].indexOf(r.key)>=0) g='debt';
-          else if(['전세 보증금'].indexOf(r.key)>=0) g='estate';
-          else if(['케이-집계약용','신한은행'].indexOf(r.key)>=0) g='contract';
-          else if(['미래에셋_연금','미래에셋_종합','미래에셋_ISA','미래에셋_금','우리_IRP','삼성증권_연금'].indexOf(r.key)>=0) g='invest';
-          return {key:r.key,label:r.label||r.key,group:g,goal:r.goal||0};
+          // 시트에서 받은 group 그대로 사용, 유효하지 않으면 cash
+          var g=VALID_GROUPS.indexOf(r.group)>=0 ? r.group : 'cash';
+          // 시트 E열 표시명(label) 우선, 없으면 key
+          var lbl=r.label||r.key;
+          return {key:r.key,label:lbl,group:g,goal:r.goal||0};
         });
         try{localStorage.setItem('initBalRaw',JSON.stringify(_raw));}catch(e){}
         buildAcctsDef(_raw);
