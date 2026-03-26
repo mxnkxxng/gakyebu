@@ -2011,7 +2011,7 @@ function buildEditMajorGrid(){
     var icon=labels[k]?labels[k].split(' ')[0]:'';
     var label=labels[k]?(labels[k].split(' ').slice(1).join(' ')||labels[k]):k;
     var sel=editMajor===k;
-    return '<button class="cbtn'+(sel?' cs':'')+'" onclick="selectEditMajor(''+k+'')">'+icon+'<br><span style="font-size:10px">'+label+'</span></button>';
+    return '<button class="cbtn'+(sel?' cs':'')+'" onclick="selectEditMajor(\x27"+k+"\x27)">'+icon+'<br><span style="font-size:10px">'+label+'</span></button>';
   }).join('');
   buildEditSubGrid();
 }
@@ -2027,7 +2027,7 @@ function buildEditSubGrid(){
   if(!ss.length){sec.style.display='none';return;}
   sec.style.display='block';
   grid.innerHTML=ss.map(function(s){
-    return '<button class="sbtn'+(editSub===s?' sel':'')+'" onclick="selectEditSub(''+s+'')">'+s+'</button>';
+    return '<button class="sbtn'+(editSub===s?' sel':'')+'" onclick="selectEditSub(\x27"+s+"\x27)">'+s+'</button>';
   }).join('');
 }
 function selectEditSub(s){ editSub=s; buildEditSubGrid(); }
