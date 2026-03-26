@@ -1807,7 +1807,7 @@ function setFilter(f,btn){
   if(histFilter===f&&f!=='전체'){
     histFilter='전체';
     document.querySelectorAll('.ftab:not([id^="cf-"])').forEach(function(b){b.classList.remove('on');});
-    document.querySelector('.ftab[onclick*="전체"]').classList.add('on');
+    var allTab=document.querySelector('.ftab[onclick*="전체"]');if(allTab)allTab.classList.add('on');
   } else {
     histFilter=f;
     document.querySelectorAll('.ftab:not([id^="cf-"])').forEach(function(b){b.classList.remove('on');});
@@ -2578,7 +2578,7 @@ function loadFromSheet(silent,overwrite){
       templates=data.templates;
       try{localStorage.setItem('gb_templates',JSON.stringify(templates));}catch(e){}
     }
-    renderHome();renderHist();
+    renderHome();if(document.getElementById('entry-list'))renderHist();
     if(document.getElementById('page-asset').classList.contains('active')){sheetAssetData=data.asset||sheetAssetData;renderAsset();}
   }).catch(function(err){if(st)st.textContent='\uC2E4\uD328: '+err.message;if(!silent)showToast('\uBD88\uB7EC\uC624\uAE30 \uC2E4\uD328');});
 }
