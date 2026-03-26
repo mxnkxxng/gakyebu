@@ -2550,6 +2550,7 @@ function loadFromSheet(silent,overwrite){
   var url=getScriptUrl();if(!url){if(!silent)showToast('Script URL\uC744 \uBA3C\uC800 \uC124\uC815\uD574\uC8FC\uC138\uC694');return;}
   var st=document.getElementById('sheet-load-status');if(st&&!silent)st.textContent='\uBD88\uB7EC\uC624\uB294 \uC911...';
   fetch(url+'?action=all').then(function(r){return r.json();}).then(function(data){
+    try{
     if(!data.ok)throw new Error(data.error||'\uC624\uB958');
     if(overwrite){entries=[];saveEntries();}
     // config 처리 (예산, 카드예산, 저축목표, 초기잔고+그룹)
@@ -2606,9 +2607,12 @@ function loadFromSheet(silent,overwrite){
       templates=data.templates;
       try{localStorage.setItem('gb_templates',JSON.stringify(templates));}catch(e){}
     }
-    renderHome();if(document.getElementById('entry-list'))renderHist();
+    try{renderHome();}catch(e){console.error('renderHome error:',e);}
+    if(document.getElementById('entry-list')){try{renderHist();}catch(e){console.error('renderHist error:',e);}}
     var _pa=document.getElementById('page-asset');if(_pa&&_pa.classList.contains('active')){sheetAssetData=data.asset||sheetAssetData;renderAsset();}
-  }).catch(function(err){if(st)st.textContent='\uC2E4\uD328: '+err.message;if(!silent)showToast('\uBD88\uB7EC\uC624\uAE30 \uC2E4\uD328');});
+    if(st)st.textContent=entries.length+'\uAC74 \uBD88\uB7EC\uC654\uC5B4\uC694 \u2713';
+    }catch(innerErr){console.error('loadFromSheet inner error:',innerErr);if(st)st.textContent='\uC2E4\uD328: '+innerErr.message;if(!silent)showToast('\uBD88\uB7EC\uC624\uAE30 \uC2E4\uD328');}
+  }).catch(function(err){console.error('loadFromSheet fetch error:',err);if(st)st.textContent='\uC2E4\uD328(\uB124\uD2B8\uC6CC\uD06C): '+err.message;if(!silent)showToast('\uBD88\uB7EC\uC624\uAE30 \uC2E4\uD328');});
 }
 function toggleCfgSec(id){
   var b=document.getElementById('cfg-body-'+id),a=document.getElementById('cfg-arr-'+id);
