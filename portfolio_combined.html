@@ -934,15 +934,34 @@ try { if(sessionStorage.getItem('pf_auth')==='1') document.getElementById('lock'
 
 // ── 탭 전환 ──
 function showTab(i) {
+  // 탭 버튼 active
   document.querySelectorAll('.topnav-tab').forEach((t,j)=>t.classList.toggle('on',i===j));
-  document.querySelectorAll('.panel').forEach((p,j)=>p.classList.toggle('on',i===j));
-  if (i===4) runSim();
-  // 가계부 탭(5) 진입 시 하단 네비 표시
+  // 패널 전환 — ID 직접 지정 방식으로 안정적으로
+  ['p0','p1','p2','p3','p4','p5','p6'].forEach(function(id,j){
+    var el = document.getElementById(id);
+    if(el) el.classList.toggle('on', i===j);
+  });
+  // 가계부 하단 네비
   var gbNav = document.getElementById('gb-nav');
-  if (gbNav) gbNav.style.display = (i===5) ? 'grid' : 'none';
-  if (i===5) {
-    // 가계부 초기화
-    if (typeof renderHome === 'function') renderHome();
+  if(gbNav) gbNav.style.display = (i===5) ? 'grid' : 'none';
+  // 각 탭 초기화
+  if(i===4) runSim();
+  if(i===5) {
+    if(typeof renderHome==='function') renderHome();
+    // page-home active 보장
+    var wrap = document.getElementById('gb-wrap');
+    if(wrap) {
+      var lastTab = '';
+      try{ lastTab = localStorage.getItem('lastTab')||'home'; }catch(e){ lastTab='home'; }
+      wrap.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+      var target = document.getElementById('page-'+lastTab) || document.getElementById('page-home');
+      if(target) target.classList.add('active');
+      // 하단 네비 버튼도 맞춰주기
+      document.querySelectorAll('#gb-nav .nb').forEach(function(b){ b.classList.remove('active'); });
+      var activeBtn = document.querySelector('#gb-nav .nb[onclick*="'+lastTab+'"]');
+      if(activeBtn) activeBtn.classList.add('active');
+      else { var firstBtn = document.querySelector('#gb-nav .nb'); if(firstBtn) firstBtn.classList.add('active'); }
+    }
   }
 }
 
