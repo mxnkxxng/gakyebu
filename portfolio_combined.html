@@ -541,7 +541,7 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
         <div style="font-size:13px;font-weight:600;margin-top:4px;color:var(--purple)" id="sim-d-out">3.0%</div>
       </div>
     </div>
-    <div style="font-size:11px;color:var(--txt3);margin-bottom:10px">현재 연금+ISA 총자산 2,090만원 포함 · 전액 재투자 가정</div>
+    <div id="sim-note" style="font-size:11px;color:var(--txt3);margin-bottom:10px">⚙ 데이터 로드 후 실제 자산이 반영됩니다 · 전액 재투자 가정</div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px" id="sim-results"></div>
     <div id="sim-roadmap"></div>
   </div>
@@ -933,6 +933,9 @@ async function loadPfData() {
     renderDashboard();
     renderHistory();
     renderPension();
+    runSim(); // ← pfTx 반영해서 시뮬레이터 START 재계산
+    // 가계부 자산탭도 같은 GAS URL로 시트 데이터 불러오기
+    if(typeof loadAssetFromSheet === 'function') loadAssetFromSheet();
     pfToast('로드 완료!');
   } else {
     pfToast('로드 실패 — Script URL 확인하세요','err');
@@ -1154,7 +1157,11 @@ function renderTodayTx() {
 function savePfConfig() {
   const url = document.getElementById('cfg-pf-url').value.trim();
   const pw  = document.getElementById('cfg-pw').value;
-  if(url) { try{ localStorage.setItem(PF_URL_KEY,url); }catch(e){} }
+  if(url) {
+    try{ localStorage.setItem(PF_URL_KEY, url); }catch(e){}
+    // 가계부 자산탭도 같은 GAS를 쓰므로 scriptUrl에도 동기화
+    try{ localStorage.setItem('scriptUrl', url); }catch(e){}
+  }
   if(pw)  { try{ localStorage.setItem(PF_PW_KEY,btoa(pw)); }catch(e){} }
   document.getElementById('cfg-msg').textContent = '저장 완료! 데이터를 불러옵니다...';
   setTimeout(()=>loadPfData(), 300);
@@ -1168,7 +1175,20 @@ function runSim() {
   document.getElementById('sim-m-out').textContent = monthly+'만원';
   document.getElementById('sim-r-out').textContent = rate.toFixed(1)+'%';
   document.getElementById('sim-d-out').textContent = divRate.toFixed(1)+'%';
-  const START=2090, mr=rate/100/12;
+  // 연금+ISA 계좌 입금 합계를 pfTx에서 실시간 계산 (없으면 0으로 시작)
+  const PEN_ISA_ACCS = ['삼성연금저축','미래연금저축','우리IRP','미래ISA'];
+  const startFromTx = pfTx.reduce((s,r) => {
+    if(r.type==='입금' && PEN_ISA_ACCS.includes(r.account))
+      return s + Math.abs(parseFloat(r.amount)||0);
+    return s;
+  }, 0);
+  const START = startFromTx > 0 ? Math.round(startFromTx/10000) : 0;
+  // 시뮬레이터 설명 텍스트 업데이트
+  const simNote = document.getElementById('sim-note');
+  if(simNote) simNote.textContent = START > 0
+    ? `현재 연금+ISA 총입금 ${START.toLocaleString()}만원 포함 · 전액 재투자 가정`
+    : '⚙ 데이터 로드 후 실제 자산이 반영됩니다 · 전액 재투자 가정';
+  const mr=rate/100/12;
   const project = y => { let a=START; for(let m=0;m<y*12;m++) a=a*(1+mr)+monthly; return {asset:Math.round(a), div:Math.round(a*divRate/100/12)}; };
   document.getElementById('sim-results').innerHTML = [5,10,15,20].map(y=>{
     const d=project(y);
@@ -1343,6 +1363,23 @@ try{
 }catch(e){}
 
 document.getElementById('gb-f-date').value=new Date().toISOString().split('T')[0];
+
+// ── 앱 시작 시 자산 시트 자동 로드 (연금·투자 현황) ──
+(function(){
+  // 가계부 URL 또는 주식 GAS URL 중 있는 것으로 시도
+  var url = localStorage.getItem('scriptUrl') || localStorage.getItem('pf_script_url') || '';
+  if(!url) return;
+  fetch(url+'?action=asset').then(function(r){return r.json();}).then(function(data){
+    if(!data.ok||!data.asset) return;
+    sheetAssetData = data.asset;
+    try{localStorage.setItem('sheetAssetData', JSON.stringify(sheetAssetData));}catch(e){}
+    // 자산 탭이 열려있으면 즉시 갱신
+    if(typeof renderAsset==='function') {
+      var p9 = document.getElementById('p9');
+      if(p9 && p9.classList.contains('active')) renderAsset();
+    }
+  }).catch(function(){});
+})();
 
 // ── 유틸 ──
 function fmt(n){return '\u20A9'+Math.abs(n).toLocaleString('ko-KR');}
@@ -2244,7 +2281,9 @@ function addMonthlyTemplates(){
 
 // ── 자산 시트 데이터 로드 ──
 function loadAssetFromSheet(){
-  var url=getScriptUrl();if(!url)return;
+  // 가계부 Script URL → 없으면 주식 GAS URL(getPfUrl) 시도
+  var url=getScriptUrl()||(typeof getPfUrl==='function'?getPfUrl():localStorage.getItem('pf_script_url')||'');
+  if(!url)return;
   fetch(url+'?action=asset').then(function(r){return r.json();}).then(function(data){
     if(!data.ok||!data.asset)return;
     sheetAssetData=data.asset;
@@ -2263,9 +2302,14 @@ function renderSetup(){
 }
 function saveSheetConfig(){
   var sid=document.getElementById('sheet-id2').value.trim(),surl=document.getElementById('script-url2').value.trim();
-  if(!surl){showToast('Script URL\uC744 \uC785\uB825\uD574\uC8FC\uC138\uC694');return;}
-  try{if(sid)localStorage.setItem('sheetId',sid);localStorage.setItem('scriptUrl',surl);}catch(e){}
-  renderSetup();showToast('\uC5F0\uB3D9 \uC124\uC815 \uC800\uC7A5\uB410\uC5B4\uC694!');
+  if(!surl){showToast('Script URL을 입력해주세요');return;}
+  try{
+    if(sid)localStorage.setItem('sheetId',sid);
+    localStorage.setItem('scriptUrl',surl);
+    // 주식 GAS URL도 동기화 (같은 GAS 사용)
+    localStorage.setItem('pf_script_url',surl);
+  }catch(e){}
+  renderSetup();showToast('연동 설정 저장됐어요!');
 }
 // ── 자동 동기화 (백그라운드, 조용히) ──
 // ── 자동 동기화 (읽기 전용 - 새 항목만 추가, 기존 데이터 절대 안건드림) ──
