@@ -1218,6 +1218,7 @@ function renderPlan() {
 
 // ── 시뮬레이터 ──
 function runSim() {
+  if(!document.getElementById('sim-monthly')) return; // p4 숨겨진 경우
   const monthly = parseInt(document.getElementById('sim-monthly').value);
   const rate    = parseFloat(document.getElementById('sim-rate').value);
   const divRate = parseFloat(document.getElementById('sim-div').value);
@@ -1427,8 +1428,8 @@ function changeMonth(d){
 // ── 내역 월 이동 ──
 function changeHistMonth(d){
   histViewAll=false;
-  document.getElementById('hist-all-btn').style.background='transparent';
-  document.getElementById('hist-all-btn').style.color='var(--sub)';
+  var _hab=document.getElementById('hist-all-btn');
+  if(_hab){_hab.style.background='transparent';_hab.style.color='var(--sub)';}
   if(!histMon)histMon=curMon;
   var p=histMon.split('-'),y=parseInt(p[0]),m=parseInt(p[1]);
   var nd=new Date(y,m-1+d,1);
@@ -1711,7 +1712,7 @@ function setFilter(f,btn){
   if(histFilter===f&&f!=='전체'){
     histFilter='전체';
     document.querySelectorAll('.ftab:not([id^="cf-"])').forEach(function(b){b.classList.remove('on');});
-    document.querySelector('.ftab[onclick*="전체"]').classList.add('on');
+    var _ftAll=document.querySelector('.ftab[onclick*="전체"]'); if(_ftAll) _ftAll.classList.add('on');
   } else {
     histFilter=f;
     document.querySelectorAll('.ftab:not([id^="cf-"])').forEach(function(b){b.classList.remove('on');});
@@ -1895,11 +1896,11 @@ function openEditModal(id){
   document.getElementById('edit-memo').value=e.memo||'';
   document.getElementById('edit-out-acct').value=e.outAcct||'';
   document.getElementById('edit-in-acct').value=e.inAcct||'';
-  document.getElementById('edit-modal').classList.remove('hidden');
+  var _em=document.getElementById('edit-modal'); if(_em) _em.classList.remove('hidden');
 }
 function closeEditModal(ev){
   if(ev&&ev.target!==document.getElementById('edit-modal'))return;
-  document.getElementById('edit-modal').classList.add('hidden');editingId=null;
+  var _em2=document.getElementById('edit-modal'); if(_em2) _em2.classList.add('hidden'); editingId=null;
 }
 function saveEdit(){
   if(!editingId)return;
@@ -1913,7 +1914,7 @@ function saveEdit(){
   entries[idx].inAcct=document.getElementById('edit-in-acct').value;
   saveEntries();
   // 로컬 저장 후 즉시 화면 갱신 (GAS 기다리지 않음)
-  document.getElementById('edit-modal').classList.add('hidden');editingId=null;
+  var _em2=document.getElementById('edit-modal'); if(_em2) _em2.classList.add('hidden'); editingId=null;
   showToast('수정됐어요!');renderHist();renderHome();
   // GAS 전송은 별도 비동기
   var url=getScriptUrl();
@@ -1922,7 +1923,7 @@ function saveEdit(){
 function deleteAndClose(){
   if(!editingId)return;var _id=editingId;
   entries=entries.filter(function(e){return String(e.id)!==String(_id);});saveEntries();
-  document.getElementById('edit-modal').classList.add('hidden');editingId=null;
+  var _em2=document.getElementById('edit-modal'); if(_em2) _em2.classList.add('hidden'); editingId=null;
   showToast('\uC0AD\uC81C\uB410\uC5B4\uC694');renderHist();renderHome();
   var url=getScriptUrl();if(url)fetch(url,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'deleteEntry',id:String(_id)})}).catch(function(){});
 }
@@ -2152,8 +2153,8 @@ function renderAsset(){
   var allSav=entries.filter(function(e){return e.type==='이동'&&savInvKeys.indexOf(e.inAcct)>=0;}).reduce(function(s,e){return s+e.amount;},0);
   var sr1=allInc>0?Math.round((allInc-allExp)/allInc*100):0;
   var sr2=allInc>0?Math.round(allSav/allInc*100):0;
-  var rEl=document.getElementById('ast-sav-rate');rEl.textContent=sr1+'%';rEl.style.color=sr1>=30?'var(--green)':sr1>=0?'var(--amber)':'var(--red)';
-  var r2El=document.getElementById('ast-sav-rate2');r2El.textContent=sr2+'%';r2El.style.color=sr2>=30?'var(--green)':sr2>=15?'var(--amber)':'var(--red)';
+  var rEl=document.getElementById('ast-sav-rate');if(rEl){rEl.textContent=sr1+'%';rEl.style.color=sr1>=30?'var(--green)':sr1>=0?'var(--amber)':'var(--red)';}
+  var r2El=document.getElementById('ast-sav-rate2');if(r2El){r2El.textContent=sr2+'%';r2El.style.color=sr2>=30?'var(--green)':sr2>=15?'var(--amber)':'var(--red)';}
   var allMons=[].concat.apply([],entries.map(function(e){return e.date?[e.date.slice(0,7)]:[];})).filter(function(v,i,a){return a.indexOf(v)===i;}).sort();
   document.getElementById('ast-trend').innerHTML=allMons.map(function(mon){
     var mI=entries.filter(function(e){return e.date&&e.date.indexOf(mon)===0&&e.type==='수입';}).reduce(function(s,e){return s+e.amount;},0);
@@ -2424,7 +2425,7 @@ function loadFromSheet(silent,overwrite){
       try{localStorage.setItem('gb_templates',JSON.stringify(templates));}catch(e){}
     }
     renderHome();renderHist();
-    if(document.getElementById('page-asset').classList.contains('active')){sheetAssetData=data.asset||sheetAssetData;renderAsset();}
+    var _p9=document.getElementById('p9'); if(_p9&&_p9.classList.contains('on')){sheetAssetData=data.asset||sheetAssetData;renderAsset();}
   }).catch(function(err){if(st)st.textContent='\uC2E4\uD328: '+err.message;if(!silent)showToast('\uBD88\uB7EC\uC624\uAE30 \uC2E4\uD328');});
 }
 function toggleCfgSec(id){
