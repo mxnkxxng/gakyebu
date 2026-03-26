@@ -739,8 +739,8 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <button onclick="saveSheetConfig()" style="padding:11px;background:var(--blue);color:#fff;border:none;border-radius:var(--rs);font-size:13px;font-weight:700;cursor:pointer">저장 &amp; 연결</button>
-      <button onclick="loadFromSheet()" style="padding:11px;background:var(--blue-bg);color:var(--blue);border:.5px solid var(--blue-lt);border-radius:var(--rs);font-size:13px;font-weight:700;cursor:pointer">&#128202; 시트에서 불러오기</button>
-      <button onclick="if(confirm('시트 데이터로 완전 덮어쓰기할까요? 현재 앱 데이터가 모두 삭제됩니다.'))loadFromSheet(false,true)" style="padding:11px;background:var(--red-bg);color:var(--red);border:.5px solid var(--red-lt);border-radius:var(--rs);font-size:13px;font-weight:700;cursor:pointer">시트로 덮어쓰기</button>
+      <button onclick="saveSheetConfig();loadFromSheet();" style="padding:11px;background:var(--blue-bg);color:var(--blue);border:.5px solid var(--blue-lt);border-radius:var(--rs);font-size:13px;font-weight:700;cursor:pointer">&#128202; 시트에서 불러오기</button>
+      <button onclick="if(confirm('시트 데이터로 완전 덮어쓰기할까요? 현재 앱 데이터가 모두 삭제됩니다.')){saveSheetConfig();loadFromSheet(false,true);}" style="padding:11px;background:var(--red-bg);color:var(--red);border:.5px solid var(--red-lt);border-radius:var(--rs);font-size:13px;font-weight:700;cursor:pointer">시트로 덮어쓰기</button>
     </div>
     <div id="sheet-load-status" style="margin-top:8px;font-size:12px;color:var(--sub)"></div>
   </div>
@@ -2773,48 +2773,7 @@ initMemo();
 // 가계부 초기화는 showTab(5) 진입 시 실행됨
 // 자동 시트 동기화 비활성화 - 수동 '시트에서 불러오기' 버튼만 사용
 
-// 새로고침 시 내역만 시트 기준으로 교체 (URL/설정/예산 절대 안 건드림)
-setTimeout(function(){
-  var url=getScriptUrl();
-  if(!url) return;
-  fetch(url+'?action=entries').then(function(r){return r.json();}).then(function(data){
-    if(!data.ok||!data.entries) return;
-    var allCardKeys=ACCTS.filter(function(a){return ACCTS_DEF.some(function(d){return d.key===a&&d.group==='debt';});});
-    var imported=data.entries.map(function(e){
-      var outAcct=e.outAcct||'',inAcct=e.inAcct||'';
-      if(e.type==='지출'&&!outAcct){
-        var guess=[String(e.sub||'').trim(),String(e.major||'').trim()];
-        for(var gi=0;gi<guess.length;gi++){if(allCardKeys.indexOf(guess[gi])>=0){outAcct=guess[gi];break;}}
-      }
-      return {id:String(e.id||''),date:String(e.date||'').slice(0,10),type:e.type,major:e.major||'',sub:e.sub||'',memo:e.memo||'',amount:parseFloat(e.amount)||0,inAcct:inAcct,outAcct:outAcct};
-    }).filter(function(e){return e.date.match(/^20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]/)&&['지출','수입','이동'].indexOf(e.type)>=0;});
-    imported.sort(function(a,b){return b.date.localeCompare(a.date);});
-    entries=imported;
-    saveEntries();
-    renderHome();
-    if(document.getElementById('entry-list')) renderHist();
-  }).catch(function(){});
-}, 800);
-
-
-
-// ── 가계부 goPage 래핑 (탭5 전용) ──
-function goPage(n, btn) {
-  const wrap = document.getElementById('gb-wrap');
-  if (!wrap) return;
-  wrap.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  const target = document.getElementById('page-' + n);
-  if (target) target.classList.add('active');
-}
-
-function saveGbConfig() {
-  var sid  = document.getElementById('gb-sheet-id').value.trim();
-  var surl = document.getElementById('gb-script-url').value.trim();
-  try { if(sid) localStorage.setItem('sheetId', sid); if(surl) localStorage.setItem('scriptUrl', surl); } catch(e){}
-  // 기존 가계부 saveSheetConfig 함수 호출
-  if(typeof saveSheetConfig === 'function') saveSheetConfig();
-  document.getElementById('gb-load-status').textContent = '저장됐어요! 시트에서 불러오기를 눌러주세요.';
-}
+// 자동 시트 동기화 비활성화 - 수동 '시트에서 불러오기' 버튼만 사용
 </script>
 
 </body>
