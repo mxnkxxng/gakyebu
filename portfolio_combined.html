@@ -626,6 +626,32 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
   </div>
 </div>
 
+<!-- 템플릿 불러오기 모달 -->
+<div id="tpl-modal" class="modal-bg hidden" onclick="closeTplModal(event)">
+  <div class="modal">
+    <div class="modal-title">템플릿 불러오기
+      <button class="modal-close" onclick="document.getElementById('tpl-modal').classList.add('hidden')">&#10005;</button>
+    </div>
+    <div id="tpl-list"></div>
+  </div>
+</div>
+
+<!-- 템플릿 저장 모달 -->
+<div id="save-tpl-modal" class="modal-bg hidden" onclick="closeSaveTplModal(event)">
+  <div class="modal">
+    <div class="modal-title">템플릿 저장
+      <button class="modal-close" onclick="document.getElementById('save-tpl-modal').classList.add('hidden')">&#10005;</button>
+    </div>
+    <div class="field"><label>템플릿 이름</label>
+      <input type="text" id="tpl-name-input" placeholder="예: 스타벅스, 지하철" style="width:100%"/>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button onclick="saveCurAsTpl()" style="flex:1;padding:13px;background:var(--blue);color:#fff;border:none;border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer">저장</button>
+      <button onclick="document.getElementById('save-tpl-modal').classList.add('hidden')" style="padding:13px 18px;background:var(--bg3);color:var(--sub);border:.5px solid var(--border-md);border-radius:var(--rs);font-size:14px;cursor:pointer">취소</button>
+    </div>
+  </div>
+</div>
+
 <div id="p8" class="panel gb-panel" style="max-width:480px;margin:0 auto;padding:16px 14px 40px">
   <div class="sgrid" style="margin-bottom:12px">
     <div class="sc" style="grid-column:span 2"><div class="sl">현금/예금 합계</div><div class="sv" style="color:var(--blue)" id="bal-cash-total">&#8361;0</div></div>
@@ -878,6 +904,7 @@ function showTab(i) {
   if(i===7) { setTimeout(function(){ if(typeof renderHist==='function') renderHist(); }, 50); }
   if(i===8) { setTimeout(function(){ if(typeof renderBalance==='function') renderBalance(); }, 50); }
   if(i===9) { setTimeout(function(){ if(typeof renderAsset==='function') renderAsset(); }, 50); }
+  if(i===10){ setTimeout(function(){ if(typeof renderSetup==='function') renderSetup(); }, 50); }
 }
 
 // ── 데이터 ──
@@ -2474,8 +2501,9 @@ function loadAssetFromSheet(){
 // ── 설정 ──
 function renderSetup(){
   var sid=localStorage.getItem('sheetId')||'',surl=localStorage.getItem('scriptUrl')||'';
-  if(sid)document.getElementById('sheet-id2').value=sid;
-  if(surl)document.getElementById('script-url2').value=surl;
+  var el1=document.getElementById('sheet-id2'),el2=document.getElementById('script-url2');
+  if(el1&&sid) el1.value=sid;
+  if(el2&&surl) el2.value=surl;
   var dot=document.getElementById('sheets-dot');if(dot)dot.style.background=(sid&&surl)?'var(--green)':'var(--hint)';
   renderCurrentConfig();
 }
@@ -2579,7 +2607,7 @@ function loadFromSheet(silent,overwrite){
       try{localStorage.setItem('gb_templates',JSON.stringify(templates));}catch(e){}
     }
     renderHome();if(document.getElementById('entry-list'))renderHist();
-    if(document.getElementById('page-asset').classList.contains('active')){sheetAssetData=data.asset||sheetAssetData;renderAsset();}
+    var _pa=document.getElementById('page-asset');if(_pa&&_pa.classList.contains('active')){sheetAssetData=data.asset||sheetAssetData;renderAsset();}
   }).catch(function(err){if(st)st.textContent='\uC2E4\uD328: '+err.message;if(!silent)showToast('\uBD88\uB7EC\uC624\uAE30 \uC2E4\uD328');});
 }
 function toggleCfgSec(id){
@@ -2770,6 +2798,8 @@ function initMemo(){
 // ── 초기화 ──
 setType('\uC9C0\uCD9C');
 initMemo();
+// 페이지 로드 시 설정값 복원 (설정 탭 열기 전에도 값이 채워지게)
+setTimeout(function(){ if(typeof renderSetup==='function') renderSetup(); }, 100);
 // 가계부 초기화는 showTab(5) 진입 시 실행됨
 // 자동 시트 동기화 비활성화 - 수동 '시트에서 불러오기' 버튼만 사용
 
