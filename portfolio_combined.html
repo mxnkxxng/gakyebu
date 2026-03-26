@@ -947,21 +947,22 @@ function showTab(i) {
   // 각 탭 초기화
   if(i===4) runSim();
   if(i===5) {
-    if(typeof renderHome==='function') renderHome();
-    // page-home active 보장
     var wrap = document.getElementById('gb-wrap');
     if(wrap) {
-      var lastTab = '';
-      try{ lastTab = localStorage.getItem('lastTab')||'home'; }catch(e){ lastTab='home'; }
+      // 모든 page 숨기고 home만 활성화
       wrap.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
-      var target = document.getElementById('page-'+lastTab) || document.getElementById('page-home');
-      if(target) target.classList.add('active');
-      // 하단 네비 버튼도 맞춰주기
-      document.querySelectorAll('#gb-nav .nb').forEach(function(b){ b.classList.remove('active'); });
-      var activeBtn = document.querySelector('#gb-nav .nb[onclick*="'+lastTab+'"]');
-      if(activeBtn) activeBtn.classList.add('active');
-      else { var firstBtn = document.querySelector('#gb-nav .nb'); if(firstBtn) firstBtn.classList.add('active'); }
+      var homeP = document.getElementById('page-home');
+      if(homeP) homeP.classList.add('active');
     }
+    // 하단 네비 첫 번째 버튼 active
+    document.querySelectorAll('#gb-nav .nb').forEach(function(b){ b.classList.remove('active'); });
+    var homeBtn = document.querySelector('#gb-nav .nb:first-child');
+    if(homeBtn) homeBtn.classList.add('active');
+    // 가계부 렌더링 (p5가 display:block 된 후 실행)
+    setTimeout(function(){
+      if(typeof renderHome==='function') renderHome();
+      if(typeof renderBalance==='function') renderBalance();
+    }, 50);
   }
 }
 
@@ -2658,10 +2659,7 @@ function initMemo(){
 // ── 초기화 ──
 setType('\uC9C0\uCD9C');
 initMemo();
-var _lt=localStorage.getItem('lastTab')||'home';
-var _nbs=document.querySelectorAll('.nb'),_lb=null;
-_nbs.forEach(function(b){if(b.getAttribute('onclick')&&b.getAttribute('onclick').indexOf("'"+_lt+"'")>=0)_lb=b;});
-if(_lb)goPage(_lt,_lb);else renderHome();
+// 가계부 초기화는 showTab(5) 진입 시 실행됨
 // 자동 시트 동기화 비활성화 - 수동 '시트에서 불러오기' 버튼만 사용
 
 // 새로고침 시 내역만 시트 기준으로 교체 (URL/설정/예산 절대 안 건드림)
