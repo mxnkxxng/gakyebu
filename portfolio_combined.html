@@ -287,6 +287,7 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
   <div class="topnav-tab"   onclick="showTab(2)">거래 내역</div>
   <div class="topnav-tab"   onclick="showTab(3)">연금·ISA</div>
   <div class="topnav-tab"   onclick="showTab(4)">투자 플랜</div>
+  <div class="topnav-tab"   onclick="showTab(11)">⚙ 연동설정</div>
   <div class="topnav-sep"></div>
   <div class="topnav-group-label">💰 가계부</div>
   <div class="topnav-tab"   onclick="showTab(5)">홈</div>
@@ -337,10 +338,7 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
     <div class="form-grid">
       <div class="form-group"><label>날짜</label><input type="date" id="f-date"></div>
       <div class="form-group"><label>계좌</label>
-        <select id="f-account">
-          <option>미래ISA</option><option>삼성연금저축</option><option>미래연금저축</option>
-          <option>우리IRP</option><option>미래종합</option><option>미래금현물</option>
-        </select>
+        <select id="f-account"><option value="">-- 계좌 선택 --</option></select>
       </div>
       <div class="form-group"><label>유형</label>
         <select id="f-type" onchange="toggleFields()">
@@ -383,8 +381,6 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
   <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
     <select id="filter-acc" onchange="renderHistory()" style="background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:8px 12px;color:var(--txt);font-size:13px;outline:none">
       <option value="">전체 계좌</option>
-      <option>미래ISA</option><option>삼성연금저축</option><option>미래연금저축</option>
-      <option>우리IRP</option><option>미래종합</option><option>미래금현물</option>
     </select>
     <select id="filter-type" onchange="renderHistory()" style="background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:8px 12px;color:var(--txt);font-size:13px;outline:none">
       <option value="">전체 유형</option>
@@ -426,128 +422,43 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
   탭 4 : 투자 플랜
 ═════════════════════════════════════════════ -->
 <div id="p4" class="panel">
-
-  <div class="sec">연금저축 (미래) — 월 50만원 · 25일 자동적립</div>
-  <div class="g2" style="margin-bottom:20px">
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-        <span style="font-size:13px;font-weight:700">배분 구조 · 3종목 단순화</span>
-        <span style="font-size:11px;color:var(--txt3)">삼성 연금저축 홀딩 유지</span>
-      </div>
-      <div class="alloc-h">
-        <div style="width:40%;background:#3182f6;height:100%"></div>
-        <div style="width:40%;background:#6c4ab0;height:100%"></div>
-        <div style="width:20%;background:#0b9e6a;height:100%"></div>
-      </div>
-      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;font-size:11px;color:var(--txt3)">
-        <span><span style="display:inline-block;width:7px;height:7px;border-radius:2px;background:#3182f6;margin-right:3px"></span>S&P500 40%</span>
-        <span><span style="display:inline-block;width:7px;height:7px;border-radius:2px;background:#6c4ab0;margin-right:3px"></span>배당다우존스 40%</span>
-        <span><span style="display:inline-block;width:7px;height:7px;border-radius:2px;background:#0b9e6a;margin-right:3px"></span>PLUS고배당 20%</span>
-      </div>
-      <table class="tbl">
-        <thead><tr><th>종목</th><th>역할</th><th class="num">금액</th><th class="num">비중</th></tr></thead>
-        <tbody>
-          <tr><td><b>TIGER 미국S&P500</b></td><td style="font-size:11px;color:var(--txt3)">복리 엔진</td><td class="num" style="color:var(--blue)">20만원</td><td class="num">40%</td></tr>
-          <tr><td><b>TIGER 미국배당다우존스</b></td><td style="font-size:11px;color:var(--txt3)">배당성장 · 지금+나중</td><td class="num" style="color:var(--purple)">20만원</td><td class="num">40%</td></tr>
-          <tr><td><b>PLUS 고배당주</b></td><td style="font-size:11px;color:var(--txt3)">당장 현금흐름 ~5%</td><td class="num" style="color:var(--green)">10만원</td><td class="num">20%</td></tr>
-          <tr class="sum"><td colspan="2">합계 · 나스닥 보유분 홀딩</td><td class="num">50만원</td><td class="num">100%</td></tr>
-        </tbody>
-      </table>
-      <div class="plan-info" style="background:rgba(108,74,176,.06);border:1px solid rgba(108,74,176,.15)">
-        분배금 전액 → TIGER 미국배당다우존스 즉시 재투자
-      </div>
-    </div>
-    <div class="card">
-      <div style="font-size:13px;font-weight:700;margin-bottom:14px">세액공제 플랜</div>
-      <div class="bar-row"><div class="bar-label">월 납입</div><div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--purple)"></div></div><div class="bar-val" style="color:var(--purple);font-weight:600">50만원</div></div>
-      <div class="bar-row"><div class="bar-label">연간 납입</div><div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--purple)"></div></div><div class="bar-val" style="color:var(--purple);font-weight:600">600만원</div></div>
-      <div class="bar-row"><div class="bar-label">한도 소진율</div><div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--green)"></div></div><div class="bar-val" style="color:var(--green);font-weight:600">100% ✓</div></div>
-      <div style="margin:14px 0;border-top:1px solid var(--bd)"></div>
-      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:8px"><span style="color:var(--txt2)">세액공제율</span><span style="font-weight:600">16.5%</span></div>
-      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:8px"><span style="color:var(--txt2)">연간 환급 예상</span><span style="font-weight:700;color:var(--blue)">약 99만원/년</span></div>
-      <div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:var(--txt2)">환급 재투자 시 실질 효과</span><span style="font-weight:700;color:var(--green)">~58만원/월</span></div>
-      <div class="plan-info" style="background:rgba(245,166,35,.07);border:1px solid rgba(245,166,35,.2)">
-        다음 단계: IRP 월 25만원 추가 → 연 900만원 → 환급 148만원/년
-      </div>
-    </div>
+  <!-- 연동 전 안내 -->
+  <div id="p4-nourl" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;gap:16px">
+    <div style="font-size:36px">📋</div>
+    <div style="font-size:15px;font-weight:700;color:var(--txt)">투자 플랜</div>
+    <div style="font-size:13px;color:var(--txt3);text-align:center;line-height:1.7">연동설정 탭에서 GAS URL을 입력하면<br>시트의 투자 플랜이 여기에 표시됩니다</div>
+    <button onclick="showTab(11)" style="padding:10px 24px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">연동설정으로 이동</button>
   </div>
-
-  <div class="sec">ISA (미래) — 월 40만원 · 25일 자동적립</div>
-  <div class="g2" style="margin-bottom:20px">
-    <div class="card">
-      <div class="alloc-h">
-        <div style="width:40%;background:#3182f6;height:100%"></div>
-        <div style="width:35%;background:#00b493;height:100%"></div>
-        <div style="width:25%;background:#6c4ab0;height:100%"></div>
-      </div>
-      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;font-size:11px;color:var(--txt3)">
-        <span><span style="display:inline-block;width:7px;height:7px;border-radius:2px;background:#3182f6;margin-right:3px"></span>S&P500 40%</span>
-        <span><span style="display:inline-block;width:7px;height:7px;border-radius:2px;background:#00b493;margin-right:3px"></span>KODEX200 35%</span>
-        <span><span style="display:inline-block;width:7px;height:7px;border-radius:2px;background:#6c4ab0;margin-right:3px"></span>배당다우존스 25%</span>
-      </div>
-      <table class="tbl">
-        <thead><tr><th>종목</th><th>역할</th><th class="num">금액</th><th class="num">비중</th></tr></thead>
-        <tbody>
-          <tr><td><b>TIGER 미국S&P500</b></td><td style="font-size:11px;color:var(--txt3)">복리 엔진</td><td class="num" style="color:var(--blue)">16만원</td><td class="num">40%</td></tr>
-          <tr><td><b>KODEX200</b></td><td style="font-size:11px;color:var(--txt3)">국내 배당 비과세</td><td class="num" style="color:var(--teal)">14만원</td><td class="num">35%</td></tr>
-          <tr><td><b>TIGER 미국배당다우존스</b></td><td style="font-size:11px;color:var(--txt3)">배당성장 · 비과세</td><td class="num" style="color:var(--purple)">10만원</td><td class="num">25%</td></tr>
-          <tr class="sum"><td colspan="2">합계</td><td class="num">40만원</td><td class="num">100%</td></tr>
-        </tbody>
-      </table>
-      <div class="plan-info" style="background:rgba(0,180,147,.06);border:1px solid rgba(0,180,147,.2)">
-        2029년 만기 → 연금저축 이전 → 추가 세액공제 300만원
-      </div>
+  <!-- 연동 후 플랜 내용 -->
+  <div id="p4-content" style="display:none">
+    <div id="p4-plan-area">
+      <!-- JS로 시트 데이터 기반 렌더링 -->
     </div>
-    <div class="card">
-      <div style="font-size:13px;font-weight:700;margin-bottom:14px">리밸런싱 원칙</div>
-      <div class="g3" style="margin-bottom:14px">
-        <div style="padding:10px;background:var(--bg3);border-radius:8px">
-          <div style="font-size:10px;font-weight:700;color:var(--blue);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px">언제</div>
-          <div style="font-size:12px;color:var(--txt2);line-height:1.7">1년에 한 번<br>연말에만<br>±15%p 이탈 시</div>
+    <div class="sec" style="margin-top:24px">장기 배당 시뮬레이터</div>
+    <div class="card" style="margin-bottom:20px">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:14px">
+        <div>
+          <label style="font-size:10px;color:var(--txt3);font-weight:700;letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:5px">총 월 적립 (만원)</label>
+          <input type="range" id="sim-monthly" min="50" max="200" step="10" value="90" oninput="runSim()" style="width:100%">
+          <div style="font-size:13px;font-weight:600;margin-top:4px;color:var(--blue)" id="sim-m-out">90만원</div>
         </div>
-        <div style="padding:10px;background:var(--bg3);border-radius:8px">
-          <div style="font-size:10px;font-weight:700;color:var(--green);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px">어떻게</div>
-          <div style="font-size:12px;color:var(--txt2);line-height:1.7">팔지 말고<br>사는 방향으로<br>신규매수 조정</div>
+        <div>
+          <label style="font-size:10px;color:var(--txt3);font-weight:700;letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:5px">연평균 수익률</label>
+          <input type="range" id="sim-rate" min="4" max="12" step="0.5" value="7" oninput="runSim()" style="width:100%">
+          <div style="font-size:13px;font-weight:600;margin-top:4px;color:var(--blue)" id="sim-r-out">7.0%</div>
         </div>
-        <div style="padding:10px;background:var(--bg3);border-radius:8px">
-          <div style="font-size:10px;font-weight:700;color:var(--red);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px">하지말것</div>
-          <div style="font-size:12px;color:var(--txt2);line-height:1.7">시장 출렁임에<br>비중 바꾸기 ✗<br>감정적 매도 ✗</div>
+        <div>
+          <label style="font-size:10px;color:var(--txt3);font-weight:700;letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:5px">평균 배당수익률</label>
+          <input type="range" id="sim-div" min="2" max="6" step="0.5" value="3" oninput="runSim()" style="width:100%">
+          <div style="font-size:13px;font-weight:600;margin-top:4px;color:var(--purple)" id="sim-d-out">3.0%</div>
         </div>
       </div>
-      <div style="font-size:13px;font-weight:700;margin-bottom:8px">나스닥 보유 원칙</div>
-      <div style="font-size:12px;color:var(--txt2);line-height:1.8">
-        신규 매수 스탑 — 보유분 홀딩 유지<br>
-        매도 기준: AI·빅테크 산업 자체 부정될 때만
-      </div>
+      <div id="sim-note" style="font-size:11px;color:var(--txt3);margin-bottom:10px">⚙ 데이터 로드 후 실제 자산이 반영됩니다 · 전액 재투자 가정</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px" id="sim-results"></div>
+      <div id="sim-roadmap"></div>
     </div>
   </div>
-
-  <div class="sec">장기 배당 시뮬레이터</div>
-  <div class="card" style="margin-bottom:20px">
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:14px">
-      <div>
-        <label style="font-size:10px;color:var(--txt3);font-weight:700;letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:5px">총 월 적립 (만원)</label>
-        <input type="range" id="sim-monthly" min="50" max="150" step="10" value="90" oninput="runSim()" style="width:100%">
-        <div style="font-size:13px;font-weight:600;margin-top:4px;color:var(--blue)" id="sim-m-out">90만원</div>
-      </div>
-      <div>
-        <label style="font-size:10px;color:var(--txt3);font-weight:700;letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:5px">연평균 수익률</label>
-        <input type="range" id="sim-rate" min="4" max="12" step="0.5" value="7" oninput="runSim()" style="width:100%">
-        <div style="font-size:13px;font-weight:600;margin-top:4px;color:var(--blue)" id="sim-r-out">7.0%</div>
-      </div>
-      <div>
-        <label style="font-size:10px;color:var(--txt3);font-weight:700;letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:5px">평균 배당수익률</label>
-        <input type="range" id="sim-div" min="2" max="6" step="0.5" value="3" oninput="runSim()" style="width:100%">
-        <div style="font-size:13px;font-weight:600;margin-top:4px;color:var(--purple)" id="sim-d-out">3.0%</div>
-      </div>
-    </div>
-    <div id="sim-note" style="font-size:11px;color:var(--txt3);margin-bottom:10px">⚙ 데이터 로드 후 실제 자산이 반영됩니다 · 전액 재투자 가정</div>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px" id="sim-results"></div>
-    <div id="sim-roadmap"></div>
-  </div>
-
 </div>
-
 <!-- ════════════════════════════════════════════
   탭 5 : 가계부 (기존 HTML 그대로)
 ═════════════════════════════════════════════ -->
@@ -711,7 +622,7 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
     <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:4px" id="ast-net-breakdown"></div>
   </div>
   <!-- 계약금 가용 현황 -->
-  <div class="card" style="margin-bottom:12px">
+  <div id="ast-contract-sec" class="card" style="margin-bottom:12px">
     <div class="brow-hd" onclick="toggleAstSec('contract')" style="cursor:pointer">
       <span class="ct" style="margin-bottom:0;flex:1">🏡 집 계약금 가용 현황</span>
       <span style="font-size:13px;font-weight:700;color:var(--blue);margin-right:6px" id="ast-contract-total">&#8361;0</span>
@@ -822,6 +733,33 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
 
 
 
+<!-- ════════════════════════════════════════════
+  탭 11 : 주식 연동설정
+═════════════════════════════════════════════ -->
+<div id="p11" class="panel" style="max-width:500px;margin:0 auto;padding:20px 16px 40px">
+  <div style="font-size:16px;font-weight:700;margin-bottom:6px">📈 주식·연금 구글시트 연동</div>
+  <div style="font-size:12px;color:var(--txt3);margin-bottom:20px">GAS 배포 URL을 입력하면 거래내역을 자동으로 불러옵니다</div>
+
+  <div class="card" style="margin-bottom:16px">
+    <div style="font-size:13px;font-weight:700;margin-bottom:12px">Script URL</div>
+    <input type="url" id="cfg-pf-url" placeholder="https://script.google.com/macros/s/..." 
+      style="width:100%;padding:10px 12px;background:var(--bg3);border:1px solid var(--bd);border-radius:8px;color:var(--txt);font-size:12px;outline:none;box-sizing:border-box;margin-bottom:10px">
+    <div style="font-size:13px;font-weight:700;margin-bottom:8px;margin-top:4px">비밀번호 변경 (선택)</div>
+    <input type="password" id="cfg-pw" placeholder="새 비밀번호 (비워두면 유지)"
+      style="width:100%;padding:10px 12px;background:var(--bg3);border:1px solid var(--bd);border-radius:8px;color:var(--txt);font-size:12px;outline:none;box-sizing:border-box;margin-bottom:12px">
+    <button onclick="savePfConfig()" style="width:100%;padding:12px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer">저장 &amp; 연결</button>
+    <div id="cfg-msg" style="font-size:12px;color:var(--green);margin-top:8px;text-align:center"></div>
+  </div>
+
+  <div class="card">
+    <div style="font-size:13px;font-weight:700;margin-bottom:10px">연결 상태</div>
+    <div id="pf-conn-status" style="font-size:12px;color:var(--txt3)">URL 미설정</div>
+    <button onclick="loadPfData();pfToast('불러오는 중...')" style="margin-top:12px;width:100%;padding:10px;background:var(--bg3);border:1px solid var(--bd);border-radius:8px;color:var(--txt);font-size:13px;cursor:pointer">↺ 데이터 새로고침</button>
+  </div>
+</div>
+
+
+
 <div id="pf-toast" class="toast"></div>
 
 <script>
@@ -855,16 +793,44 @@ function showTab(i) {
   // 탭 버튼 active
   document.querySelectorAll('.topnav-tab').forEach((t,j)=>t.classList.toggle('on',i===j));
   // 패널 전환 — 11개 패널 ID 직접 지정
-  ['p0','p1','p2','p3','p4','p5','p6','p7','p8','p9','p10'].forEach(function(id,j){
+  ['p0','p1','p2','p3','p4','p5','p6','p7','p8','p9','p10','p11'].forEach(function(id,j){
     var el = document.getElementById(id);
     if(el) el.classList.toggle('on', i===j);
   });
+  // 주식 탭(0~4) — GAS URL 없으면 설정 탭(11)으로 리다이렉트
+  if(i>=0 && i<=4) {
+    if(!getPfUrl()) {
+      ['p0','p1','p2','p3','p4'].forEach(function(id){ var el=document.getElementById(id); if(el) el.classList.remove('on'); });
+      var p11=document.getElementById('p11'); if(p11) p11.classList.add('on');
+      pfToast('먼저 GAS Script URL을 입력해주세요','err');
+      return;
+    }
+  }
   // 포트폴리오 탭별 초기화
-  if(i===4) runSim();
+  if(i===4) renderPlan();
   if(i===0) { if(pfTx.length) renderDashboard(); }
   // 가계부 탭 진입 시 렌더링
   if(i===5) { setTimeout(function(){ if(typeof renderHome==='function') renderHome(); }, 50); }
-  if(i===6) { setTimeout(function(){ if(typeof renderInput==='function') renderInput(); }, 50); }
+  if(i===6) {
+    // 가계부 미설정 시 안내
+    var p6=document.getElementById('p6');
+    if(p6) {
+      var configured = (typeof isConfigured==='function') ? isConfigured() : true;
+      var ov6=document.getElementById('p6-noconfig');
+      if(!configured) {
+        if(!ov6) {
+          var d=document.createElement('div');
+          d.id='p6-noconfig';
+          d.style.cssText='position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);z-index:10;gap:12px;';
+          d.innerHTML='<div style="font-size:32px">⚙️</div><div style="font-size:14px;font-weight:700;color:var(--txt)">설정이 필요해요</div><div style="font-size:12px;color:var(--txt3);text-align:center">설정 탭에서 파일을 불러오거나<br>예산을 입력해 주세요</div><button onclick="showTab(10)" style="margin-top:8px;padding:10px 24px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">설정으로 이동</button>';
+          p6.style.position='relative';
+          p6.appendChild(d);
+        }
+        return;
+      } else if(ov6) { ov6.remove(); }
+    }
+    setTimeout(function(){ if(typeof renderInput==='function') renderInput(); }, 50);
+  }
   if(i===7) { setTimeout(function(){ if(typeof renderHist==='function') renderHist(); }, 50); }
   if(i===8) { setTimeout(function(){ if(typeof renderBalance==='function') renderBalance(); }, 50); }
   if(i===9) { setTimeout(function(){ if(typeof renderAsset==='function') renderAsset(); }, 50); }
@@ -933,12 +899,30 @@ async function loadPfData() {
     renderDashboard();
     renderHistory();
     renderPension();
-    runSim(); // ← pfTx 반영해서 시뮬레이터 START 재계산
-    // 가계부 자산탭도 같은 GAS URL로 시트 데이터 불러오기
+    buildAcctSelects();
+    renderPlan();
     if(typeof loadAssetFromSheet === 'function') loadAssetFromSheet();
     pfToast('로드 완료!');
   } else {
     pfToast('로드 실패 — Script URL 확인하세요','err');
+  }
+}
+
+// ── 계좌 select 동적 생성 ──
+const PF_ACCTS_DEFAULT = ['미래ISA','삼성연금저축','미래연금저축','우리IRP','미래종합','미래금현물'];
+function buildAcctSelects() {
+  // pfTx에서 계좌 목록 추출, 없으면 기본값
+  let accs = [...new Set(pfTx.map(r=>r.account).filter(Boolean))].sort();
+  if(!accs.length) accs = PF_ACCTS_DEFAULT;
+  // 거래입력 f-account
+  const fa = document.getElementById('f-account');
+  if(fa) {
+    fa.innerHTML = accs.map(a=>`<option>${a}</option>`).join('');
+  }
+  // 거래내역 filter-acc
+  const flt = document.getElementById('filter-acc');
+  if(flt) {
+    flt.innerHTML = '<option value="">전체 계좌</option>' + accs.map(a=>`<option>${a}</option>`).join('');
   }
 }
 
@@ -1157,14 +1141,80 @@ function renderTodayTx() {
 function savePfConfig() {
   const url = document.getElementById('cfg-pf-url').value.trim();
   const pw  = document.getElementById('cfg-pw').value;
-  if(url) {
-    try{ localStorage.setItem(PF_URL_KEY, url); }catch(e){}
-    // 가계부 자산탭도 같은 GAS를 쓰므로 scriptUrl에도 동기화
-    try{ localStorage.setItem('scriptUrl', url); }catch(e){}
-  }
+  if(url) { try{ localStorage.setItem(PF_URL_KEY,url); }catch(e){} }
   if(pw)  { try{ localStorage.setItem(PF_PW_KEY,btoa(pw)); }catch(e){} }
   document.getElementById('cfg-msg').textContent = '저장 완료! 데이터를 불러옵니다...';
   setTimeout(()=>loadPfData(), 300);
+}
+
+// ── 투자 플랜 렌더링 ──
+function renderPlan() {
+  const nourl = document.getElementById('p4-nourl');
+  const cont  = document.getElementById('p4-content');
+  if(!getPfUrl()) {
+    if(nourl) nourl.style.display='flex';
+    if(cont)  cont.style.display='none';
+    return;
+  }
+  if(nourl) nourl.style.display='none';
+  if(cont)  cont.style.display='block';
+
+  // pfTx에서 플랜 데이터 계산
+  const planArea = document.getElementById('p4-plan-area');
+  if(!planArea) return;
+
+  // 계좌별 납입 집계
+  const accMap = {};
+  pfTx.forEach(r => {
+    if(r.type==='입금') {
+      if(!accMap[r.account]) accMap[r.account]={total:0,monthly:[]};
+      accMap[r.account].total += Math.abs(parseFloat(r.amount)||0);
+      const ym = (r.date||'').slice(0,7);
+      if(ym) accMap[r.account].monthly.push(ym);
+    }
+  });
+
+  const accs = Object.keys(accMap).sort();
+  if(!accs.length) {
+    planArea.innerHTML='<div style="text-align:center;padding:30px;color:var(--txt3)">거래내역 로드 후 플랜이 표시됩니다</div>';
+    return;
+  }
+
+  // 계좌별 카드 렌더링
+  const isPen = a => ['삼성연금저축','미래연금저축','우리IRP'].includes(a);
+  const isISA = a => a.includes('ISA');
+  const colors = {'삼성연금저축':'var(--purple)','미래연금저축':'var(--purple)','우리IRP':'var(--blue)','미래ISA':'var(--teal)','미래종합':'var(--green)','미래금현물':'var(--amber)'};
+
+  let html = '<div class="g2" style="margin-bottom:20px">';
+  accs.forEach(acc => {
+    const d = accMap[acc];
+    const months = [...new Set(d.monthly)].sort();
+    const monthCnt = months.length;
+    const avg = monthCnt > 0 ? Math.round(d.total/monthCnt/10000) : 0;
+    const col = colors[acc] || 'var(--txt2)';
+    const tag = isPen(acc)?'연금':isISA(acc)?'ISA':'종합';
+    html += `<div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <span style="font-size:13px;font-weight:700">${acc}</span>
+        <span style="font-size:10px;padding:2px 8px;border-radius:99px;background:${col}22;color:${col};font-weight:700">${tag}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px">
+        <span style="color:var(--txt3)">총 납입</span>
+        <span style="font-weight:700;color:${col}">${Math.round(d.total/10000).toLocaleString()}만원</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px">
+        <span style="color:var(--txt3)">월 평균</span>
+        <span style="font-weight:600">${avg.toLocaleString()}만원/월</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:12px">
+        <span style="color:var(--txt3)">납입 기간</span>
+        <span style="font-weight:600">${monthCnt}개월</span>
+      </div>
+    </div>`;
+  });
+  html += '</div>';
+  planArea.innerHTML = html;
+  runSim();
 }
 
 // ── 시뮬레이터 ──
@@ -1175,20 +1225,7 @@ function runSim() {
   document.getElementById('sim-m-out').textContent = monthly+'만원';
   document.getElementById('sim-r-out').textContent = rate.toFixed(1)+'%';
   document.getElementById('sim-d-out').textContent = divRate.toFixed(1)+'%';
-  // 연금+ISA 계좌 입금 합계를 pfTx에서 실시간 계산 (없으면 0으로 시작)
-  const PEN_ISA_ACCS = ['삼성연금저축','미래연금저축','우리IRP','미래ISA'];
-  const startFromTx = pfTx.reduce((s,r) => {
-    if(r.type==='입금' && PEN_ISA_ACCS.includes(r.account))
-      return s + Math.abs(parseFloat(r.amount)||0);
-    return s;
-  }, 0);
-  const START = startFromTx > 0 ? Math.round(startFromTx/10000) : 0;
-  // 시뮬레이터 설명 텍스트 업데이트
-  const simNote = document.getElementById('sim-note');
-  if(simNote) simNote.textContent = START > 0
-    ? `현재 연금+ISA 총입금 ${START.toLocaleString()}만원 포함 · 전액 재투자 가정`
-    : '⚙ 데이터 로드 후 실제 자산이 반영됩니다 · 전액 재투자 가정';
-  const mr=rate/100/12;
+  const START=2090, mr=rate/100/12;
   const project = y => { let a=START; for(let m=0;m<y*12;m++) a=a*(1+mr)+monthly; return {asset:Math.round(a), div:Math.round(a*divRate/100/12)}; };
   document.getElementById('sim-results').innerHTML = [5,10,15,20].map(y=>{
     const d=project(y);
@@ -1212,7 +1249,7 @@ window.addEventListener('DOMContentLoaded', ()=>{
   const savedUrl = getPfUrl();
   if(savedUrl) document.getElementById('cfg-pf-url').value = savedUrl;
   toggleFields();
-  runSim();
+  renderPlan();
   try{ if(sessionStorage.getItem('pf_auth')==='1') loadPfData(); }catch(e){}
 });
 </script>
@@ -1261,9 +1298,7 @@ var __HARD_ACCTS_DEF = [
   {key:'KB뱅크',label:'KB뱅크',group:'cash'},
   {key:'NH뱅크',label:'NH뱅크',group:'cash'},
   {key:'하나은행',label:'하나은행',group:'cash'},
-  // ── 계약금 ──
-  {key:'케이-집계약용',label:'집계약용',group:'contract',goal:1000000},
-  {key:'신한은행',label:'주택청약(신한)',group:'contract'},
+  // ── 계약금 (시트 initBalRaw에서 동적 추가) ──
   // ── 투자/저축 계좌 (시트 initBalRaw에서 동적 추가) ──
   // ── 부동산 ──
   {key:'전세 보증금',label:'전세 보증금',group:'estate'},
@@ -1287,9 +1322,7 @@ var ACCTS_DEF = [
   {key:'KB뱅크',label:'KB뱅크',group:'cash'},
   {key:'NH뱅크',label:'NH뱅크',group:'cash'},
   {key:'하나은행',label:'하나은행',group:'cash'},
-  // ── 계약금 ──
-  {key:'케이-집계약용',label:'집계약용',group:'contract',goal:1000000},
-  {key:'신한은행',label:'주택청약(신한)',group:'contract'},
+  // ── 계약금 (시트 initBalRaw에서 동적 추가) ──
   // ── 투자/저축 계좌 (시트 initBalRaw에서 동적 추가) ──
   // ── 부동산 ──
   {key:'전세 보증금',label:'전세 보증금',group:'estate'},
@@ -1363,23 +1396,6 @@ try{
 }catch(e){}
 
 document.getElementById('gb-f-date').value=new Date().toISOString().split('T')[0];
-
-// ── 앱 시작 시 자산 시트 자동 로드 (연금·투자 현황) ──
-(function(){
-  // 가계부 URL 또는 주식 GAS URL 중 있는 것으로 시도
-  var url = localStorage.getItem('scriptUrl') || localStorage.getItem('pf_script_url') || '';
-  if(!url) return;
-  fetch(url+'?action=asset').then(function(r){return r.json();}).then(function(data){
-    if(!data.ok||!data.asset) return;
-    sheetAssetData = data.asset;
-    try{localStorage.setItem('sheetAssetData', JSON.stringify(sheetAssetData));}catch(e){}
-    // 자산 탭이 열려있으면 즉시 갱신
-    if(typeof renderAsset==='function') {
-      var p9 = document.getElementById('p9');
-      if(p9 && p9.classList.contains('active')) renderAsset();
-    }
-  }).catch(function(){});
-})();
 
 // ── 유틸 ──
 function fmt(n){return '\u20A9'+Math.abs(n).toLocaleString('ko-KR');}
@@ -2088,9 +2104,16 @@ function renderAsset(){
     var v=cb(a.key);
     return '<div class="srow"><div><div class="sname">'+a.label+'</div>'+(a.goal?'<div style="font-size:10px;color:var(--sub)">월 목표 '+fmt(a.goal)+'</div>':'')+'</div><span class="samt" style="color:var(--blue)">'+fmt(v)+'</span></div>';
   }).join('');
-  document.getElementById('ast-contract').innerHTML=contractRows
-    +'<div class="div"></div><div class="trow"><span class="tlbl" style="font-weight:700">합계</span><span class="tval" style="color:var(--blue)">'+fmt(conT)+'</span></div>';
-  var conHdr=document.getElementById('ast-contract-total');if(conHdr)conHdr.textContent=fmt(conT);
+  // contract 항목이 없으면 섹션 통째로 숨김
+  var conSec=document.getElementById('ast-contract-sec');
+  if(conA.length===0) {
+    if(conSec) conSec.style.display='none';
+  } else {
+    if(conSec) conSec.style.display='';
+    document.getElementById('ast-contract').innerHTML=contractRows
+      +'<div class="div"></div><div class="trow"><span class="tlbl" style="font-weight:700">합계</span><span class="tval" style="color:var(--blue)">'+fmt(conT)+'</span></div>';
+    var conHdr=document.getElementById('ast-contract-total');if(conHdr)conHdr.textContent=fmt(conT);
+  }
 
   // ── 연금·투자 ──
   document.getElementById('ast-invest-total').textContent=fmt(invT);
@@ -2281,9 +2304,7 @@ function addMonthlyTemplates(){
 
 // ── 자산 시트 데이터 로드 ──
 function loadAssetFromSheet(){
-  // 가계부 Script URL → 없으면 주식 GAS URL(getPfUrl) 시도
-  var url=getScriptUrl()||(typeof getPfUrl==='function'?getPfUrl():localStorage.getItem('pf_script_url')||'');
-  if(!url)return;
+  var url=getScriptUrl();if(!url)return;
   fetch(url+'?action=asset').then(function(r){return r.json();}).then(function(data){
     if(!data.ok||!data.asset)return;
     sheetAssetData=data.asset;
@@ -2302,14 +2323,9 @@ function renderSetup(){
 }
 function saveSheetConfig(){
   var sid=document.getElementById('sheet-id2').value.trim(),surl=document.getElementById('script-url2').value.trim();
-  if(!surl){showToast('Script URL을 입력해주세요');return;}
-  try{
-    if(sid)localStorage.setItem('sheetId',sid);
-    localStorage.setItem('scriptUrl',surl);
-    // 주식 GAS URL도 동기화 (같은 GAS 사용)
-    localStorage.setItem('pf_script_url',surl);
-  }catch(e){}
-  renderSetup();showToast('연동 설정 저장됐어요!');
+  if(!surl){showToast('Script URL\uC744 \uC785\uB825\uD574\uC8FC\uC138\uC694');return;}
+  try{if(sid)localStorage.setItem('sheetId',sid);localStorage.setItem('scriptUrl',surl);}catch(e){}
+  renderSetup();showToast('\uC5F0\uB3D9 \uC124\uC815 \uC800\uC7A5\uB410\uC5B4\uC694!');
 }
 // ── 자동 동기화 (백그라운드, 조용히) ──
 // ── 자동 동기화 (읽기 전용 - 새 항목만 추가, 기존 데이터 절대 안건드림) ──
