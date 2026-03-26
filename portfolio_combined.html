@@ -1798,7 +1798,7 @@ function renderHist(){
     // 대표 카드만 (! 없는 기본 키)
     var baseCards=[...new Set(debtAccts.map(function(a){return a.key.replace(/[!\-]/g,'').replace('실미','');}).filter(function(k){return k;}))];
     cfEl.innerHTML=baseCards.map(function(k){
-      return '<button class="ftab" onclick="setCardFilter(''+k+'',this)">'+k+'</button>';
+      return '<button class="ftab" onclick="setCardFilter(\''+k+'\',this)">'+k+'</button>';
     }).join('');
   }
   var mon=histMon||curMon;
@@ -2652,9 +2652,12 @@ function goPage(n, btn) {
 }
 
 function saveGbConfig() {
+  var sid  = document.getElementById('gb-sheet-id').value.trim();
+  var surl = document.getElementById('gb-script-url').value.trim();
+  try { if(sid) localStorage.setItem('sheetId', sid); if(surl) localStorage.setItem('scriptUrl', surl); } catch(e){}
+  // 기존 가계부 saveSheetConfig 함수 호출
   if(typeof saveSheetConfig === 'function') saveSheetConfig();
-  var st = document.getElementById('sheet-load-status');
-  if(st) st.textContent = '저장됐어요! 시트에서 불러오기를 눌러주세요.';
+  document.getElementById('gb-load-status').textContent = '저장됐어요! 시트에서 불러오기를 눌러주세요.';
 }
 </script>
 
