@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>포트폴리오 · 가계부</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@300;400;500;700&family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@300;400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap');
 
 :root {
   --bg:#f9fafb; --bg2:#fff; --bg3:#f2f4f6;
@@ -16,7 +16,7 @@
   --yellow:#f5a623; --purple:#6c4ab0; --teal:#00b493;
 }
 * { margin:0; padding:0; box-sizing:border-box; }
-body { background:var(--bg); color:var(--txt); font-family:'IBM Plex Sans KR','Inter',sans-serif; font-size:13px; min-height:100vh; }
+body { background:var(--bg); color:var(--txt); font-family:'IBM Plex Sans KR',sans-serif; font-size:13px; min-height:100vh; }
 
 /* ── 비밀번호 ── */
 #lock { position:fixed; inset:0; background:#0f172a; display:flex; align-items:center; justify-content:center; z-index:9999; flex-direction:column; gap:20px; }
@@ -51,7 +51,7 @@ body { background:var(--bg); color:var(--txt); font-family:'IBM Plex Sans KR','I
 .kpi-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:10px; margin-bottom:20px; }
 .kpi { background:var(--bg2); border:1px solid var(--bd); border-radius:10px; padding:14px 16px; }
 .kpi-label { font-size:10px; color:var(--txt3); letter-spacing:.06em; text-transform:uppercase; margin-bottom:6px; }
-.kpi-val   { font-size:20px; font-weight:700; font-variant-numeric:tabular-nums; letter-spacing:-.3px; }
+.kpi-val   { font-variant-numeric:tabular-nums; font-size:20px; font-weight:600; }
 .kpi-sub   { font-size:11px; color:var(--txt2); margin-top:3px; }
 
 /* ── 색상 ── */
@@ -63,18 +63,18 @@ body { background:var(--bg); color:var(--txt); font-family:'IBM Plex Sans KR','I
 .tbl td { padding:9px 12px; border-bottom:1px solid var(--bd); vertical-align:middle; }
 .tbl tr:last-child td { border:none; }
 .tbl tr:hover td { background:var(--bg3); }
-.tbl .num { text-align:right; font-variant-numeric:tabular-nums; font-weight:600; }
+.tbl .num { text-align:right; font-variant-numeric:tabular-nums; }
 .tbl .sum td { background:var(--bg3); font-weight:700; border-top:1px solid var(--bd2); }
 
 /* ── 폼 ── */
 .form-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:16px; }
 .form-group { display:flex; flex-direction:column; gap:5px; }
 .form-group label { font-size:10px; color:var(--txt3); font-weight:700; letter-spacing:.06em; text-transform:uppercase; }
-.form-group input, .form-group select, .form-group textarea { background:var(--bg3); border:1px solid var(--bd); border-radius:8px; padding:9px 12px; color:var(--txt); font-size:13px; font-family:'IBM Plex Sans KR','Inter',sans-serif; outline:none; transition:border-color .15s; }
+.form-group input, .form-group select, .form-group textarea { background:var(--bg3); border:1px solid var(--bd); border-radius:8px; padding:9px 12px; color:var(--txt); font-size:13px; font-family:'IBM Plex Sans KR',sans-serif; outline:none; transition:border-color .15s; }
 .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color:var(--blue); }
 
 /* ── 버튼 ── */
-.btn { padding:9px 20px; border-radius:8px; border:none; font-size:13px; font-weight:500; cursor:pointer; font-family:'IBM Plex Sans KR','Inter',sans-serif; transition:all .15s; }
+.btn { padding:9px 20px; border-radius:8px; border:none; font-size:13px; font-weight:500; cursor:pointer; font-family:'IBM Plex Sans KR',sans-serif; transition:all .15s; }
 .btn-primary { background:var(--blue); color:#fff; } .btn-primary:hover { background:var(--blue2); }
 .btn-ghost   { background:var(--bg3); color:var(--txt2); border:1px solid var(--bd); }
 .btn-danger  { background:transparent; color:var(--red); border:1px solid var(--bd); }
@@ -94,10 +94,10 @@ body { background:var(--bg); color:var(--txt); font-family:'IBM Plex Sans KR','I
 
 /* ── 바 ── */
 .bar-row   { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
-.bar-label { width:72px; font-size:12px; color:var(--txt2); flex-shrink:0; white-space:nowrap; }
+.bar-label { width:130px; font-size:12px; color:var(--txt2); flex-shrink:0; }
 .bar-track { flex:1; min-width:0; height:6px; background:var(--bg3); border-radius:3px; overflow:hidden; }
 .bar-fill  { height:100%; border-radius:3px; transition:width .5s; }
-.bar-val   { width:80px; flex-shrink:0; text-align:right; font-size:11px; font-weight:600; color:var(--txt2); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.bar-val   { width:100px; flex-shrink:0; text-align:right; font-variant-numeric:tabular-nums; font-size:12px; font-weight:600; color:var(--txt2); white-space:nowrap; }
 
 /* ── 납입 진행바 ── */
 .prog { margin-bottom:14px; }
@@ -241,12 +241,12 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
 .acct-drop.open{display:block}
 .acct-item{padding:10px 12px;font-size:14px;cursor:pointer;border-bottom:.5px solid var(--border)}
 .acct-item:last-child{border-bottom:none}.acct-item:active{background:var(--bg)}
-.entry{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:.5px solid var(--border)}
-.ei{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.entry{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:.5px solid var(--border)}
+.ei{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
 .einfo{flex:1;min-width:0}
-.edesc{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.emeta{font-size:10px;color:var(--sub);margin-top:1px}
-.eamt{font-size:13px;font-weight:700;flex-shrink:0}
+.edesc{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.emeta{font-size:11px;color:var(--sub);margin-top:2px}
+.eamt{font-size:14px;font-weight:700;flex-shrink:0}
 .ap{color:var(--green)}.am2{color:var(--red)}.av{color:var(--blue)}
 .del{background:none;border:none;font-size:14px;cursor:pointer;color:var(--hint);padding:4px}
 .ftab{padding:6px 12px;border:.5px solid var(--border-md);border-radius:99px;font-size:12px;font-weight:600;cursor:pointer;background:transparent;color:var(--sub);white-space:nowrap;flex-shrink:0}
@@ -260,10 +260,6 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
 /* 가계부 패널은 포트폴리오 .panel 방식으로 동작 */
-
-/* 숫자 tabular 전역 */
-* { font-variant-numeric: normal; }
-.amt, .kpi-val, .bar-val, .num, .eamt, [data-num] { font-variant-numeric: tabular-nums; font-feature-settings: 'tnum'; }
 </style>
 </head>
 <body>
@@ -337,8 +333,7 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
   탭 1 : 거래 입력
 ═════════════════════════════════════════════ -->
 <div id="p1" class="panel">
-  <div style="max-width:900px;margin:0 auto">
-  <div class="card" style="margin-bottom:20px">
+  <div class="card" style="max-width:700px">
     <div class="sec">새 거래 입력 → 구글시트 저장</div>
     <div class="form-grid">
       <div class="form-group"><label>날짜</label><input type="date" id="f-date"></div>
@@ -351,13 +346,10 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
           <option>분배금</option><option>mmf</option><option>이용료</option><option>재투자</option>
         </select>
       </div>
-      <div class="form-group" id="fg-name"><label>종목명</label>
-        <div style="position:relative">
-          <input type="text" id="f-name" placeholder="예: TIGER미국S&P500" autocomplete="off"
-            oninput="showNameSug(this.value)" onfocus="showNameSug(this.value)" onblur="setTimeout(hideNameSug,200)"
-            style="width:100%;box-sizing:border-box">
-          <div id="name-sug" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:50;background:var(--bg2);border:1px solid var(--bd);border-radius:8px;max-height:160px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.1)"></div>
-        </div>
+      <div class="form-group" id="fg-name" style="position:relative"><label>종목명</label>
+        <input type="text" id="f-name" placeholder="예: TIGER미국S&P500" autocomplete="off"
+          oninput="showNameSug(this.value)" onfocus="showNameSug(this.value)" onblur="setTimeout(hideNameSug,200)">
+        <div id="name-sug" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:50;background:var(--bg2);border:1px solid var(--bd);border-radius:8px;max-height:160px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.1);margin-top:2px"></div>
       </div>
     </div>
     <div class="form-grid" id="price-fields">
@@ -375,13 +367,12 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
       <span id="save-msg" style="font-size:12px;color:var(--txt3)"></span>
     </div>
   </div>
-  <div class="sec" style="margin-top:0">오늘 입력한 거래</div>
-  <div class="card tbl-wrap" style="max-width:700px">
+  <div class="sec" style="margin-top:32px">오늘 입력한 거래</div>
+  <div class="card tbl-wrap">
     <table class="tbl">
       <thead><tr><th>계좌</th><th>유형</th><th>종목</th><th class="num">수량</th><th class="num">단가</th><th class="num">금액</th><th>메모</th></tr></thead>
       <tbody id="today-tx"><tr><td colspan="7" style="text-align:center;padding:20px;color:var(--txt3)">오늘 입력한 거래 없음</td></tr></tbody>
     </table>
-  </div>
   </div>
 </div>
 
@@ -592,6 +583,7 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
   <div id="entry-list"><div class="empty">아직 내역이 없어요</div></div>
 </div>
 
+
 <!-- ── 수정 모달 ── -->
 <div id="edit-modal" class="modal-bg hidden" onclick="closeEditModal(event)">
   <div class="modal">
@@ -625,7 +617,6 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
     </div>
   </div>
 </div>
-
 <div id="p8" class="panel gb-panel" style="max-width:480px;margin:0 auto;padding:16px 14px 40px">
   <div class="sgrid" style="margin-bottom:12px">
     <div class="sc" style="grid-column:span 2"><div class="sl">현금/예금 합계</div><div class="sv" style="color:var(--blue)" id="bal-cash-total">&#8361;0</div></div>
@@ -952,14 +943,6 @@ async function loadPfData() {
   }
 }
 
-// ── 종목명 자동완성 ──
-function getStockNames() {
-  return [...new Set(pfTx.map(r=>r.name).filter(Boolean))].sort();
-}
-
-function hideNameSug(){ const b=document.getElementById('name-sug'); if(b) b.style.display='none'; }
-function selectName(n){ const el=document.getElementById('f-name'); if(el) el.value=n; hideNameSug(); }
-
 // ── 계좌 select 동적 생성 ──
 const PF_ACCTS_DEFAULT = ['미래ISA','삼성연금저축','미래연금저축','우리IRP','미래종합','미래금현물'];
 function buildAcctSelects() {
@@ -979,27 +962,18 @@ function buildAcctSelects() {
 }
 
 // ── 종목명 자동완성 ──
-function showNameSug(q) {
-  const sug = document.getElementById('name-sug');
-  if(!sug) return;
-  const names = [...new Set(pfTx.map(r=>r.name).filter(Boolean))].sort();
-  const filtered = q ? names.filter(n=>n.toLowerCase().includes(q.toLowerCase())) : names;
-  if(!filtered.length) { sug.style.display='none'; return; }
+function showNameSug(q){
+  var sug=document.getElementById('name-sug'); if(!sug) return;
+  var names=[...new Set(pfTx.map(function(r){return r.name;}).filter(Boolean))].sort();
+  var filtered=q?names.filter(function(n){return n.toLowerCase().includes(q.toLowerCase());}):names;
+  if(!filtered.length){sug.style.display='none';return;}
   sug.style.display='block';
-  sug.innerHTML = filtered.map(n=>
-    `<div onclick="selectName('${n}')" style="padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:.5px solid var(--bd)"
-      onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">${n}</div>`
-  ).join('');
+  sug.innerHTML=filtered.map(function(n){
+    return '<div data-nm="'+n.replace(/"/g,'&quot;')+'" onclick="selectName(this.dataset.nm)" style="padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:.5px solid var(--bd)">'+n+'</div>';
+  }).join('');
 }
-function hideNameSug() {
-  const sug = document.getElementById('name-sug');
-  if(sug) sug.style.display='none';
-}
-function selectName(n) {
-  const el = document.getElementById('f-name');
-  if(el) el.value = n;
-  hideNameSug();
-}
+function hideNameSug(){ var s=document.getElementById('name-sug'); if(s) s.style.display='none'; }
+function selectName(n){ var el=document.getElementById('f-name'); if(el) el.value=n; hideNameSug(); }
 
 // ── 대시보드 ──
 function renderDashboard() {
@@ -1035,7 +1009,7 @@ function renderDashboard() {
       <div class="bar-row">
         <div class="bar-label" style="font-size:11px;min-width:80px"><span class="${accCol(acc)}">${acc}</span></div>
         <div class="bar-track"><div class="bar-fill" style="width:${v.in/maxIn*100}%;background:var(--blue)"></div></div>
-        <div style="width:80px;flex-shrink:0;text-align:right;font-size:11px;font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--txt2)">${fmtW(v.in)}</div>
+        <div style="width:90px;flex-shrink:0;text-align:right;font-size:12px;font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--txt2)">${fmtW(v.in)}</div>
       </div>`).join('') || '<div style="color:var(--txt3);font-size:12px;padding:8px">데이터 없음</div>';
 
   const PEN_ACCS = ['삼성연금저축','미래연금저축','우리IRP'];
@@ -1043,45 +1017,39 @@ function renderDashboard() {
   pfTx.forEach(r=>{
     if((r.date||'').slice(0,4)!=='2026'||r.type!=='입금') return;
     const amt=parseFloat(r.amount)||0;
-    const isReg = (r.name||r.memo||'').includes('정기납');
-    if(PEN_ACCS.includes(r.account)) { if(isReg) p26+=amt; else p26sp+=amt; }
-    if(r.account==='미래ISA') { if(isReg) i26+=amt; else i26sp+=amt; }
+    const isReg=(r.name||r.memo||'').includes('정기납');
+    if(PEN_ACCS.includes(r.account)){ if(isReg) p26+=amt; else p26sp+=amt; }
+    if(r.account==='미래ISA'){ if(isReg) i26+=amt; else i26sp+=amt; }
   });
   const penTotal=p26+p26sp, isaTotal=i26+i26sp;
-  const penPct  = Math.min(100,Math.round(penTotal/4800000*100));
-  const penRegPct= Math.min(100,Math.round(p26/4800000*100));
-  const isaPct  = Math.min(100,Math.round(isaTotal/5500000*100));
-  const isaRegPct= Math.min(100,Math.round(i26/5500000*100));
-  const mkBar = (reg, sp, total, pct, regPct, goal) => `
-    <div class="prog-track" style="position:relative">
-      <div style="position:absolute;left:0;top:0;height:100%;width:${regPct}%;background:var(--purple);border-radius:4px;transition:width .5s"></div>
-      <div style="position:absolute;left:${regPct}%;top:0;height:100%;width:${Math.min(pct-regPct,100-regPct)}%;background:rgba(108,74,176,.35);border-radius:0 4px 4px 0;transition:width .5s"></div>
-    </div>
-    <div style="display:flex;gap:12px;font-size:10px;color:var(--txt3);margin-top:4px">
-      <span>🔵 정기납 ${fmtW(reg)}</span><span style="color:rgba(108,74,176,.6)">○ 특별납 ${fmtW(sp)}</span>
-    </div>`;
-  const mkISABar = (reg, sp, total, pct, regPct) => `
-    <div class="prog-track" style="position:relative">
-      <div style="position:absolute;left:0;top:0;height:100%;width:${regPct}%;background:var(--teal);border-radius:4px;transition:width .5s"></div>
-      <div style="position:absolute;left:${regPct}%;top:0;height:100%;width:${Math.min(pct-regPct,100-regPct)}%;background:rgba(0,180,147,.3);border-radius:0 4px 4px 0;transition:width .5s"></div>
-    </div>
-    <div style="display:flex;gap:12px;font-size:10px;color:var(--txt3);margin-top:4px">
-      <span>🔵 정기납 ${fmtW(reg)}</span><span style="color:rgba(0,180,147,.7)">○ 특별납 ${fmtW(sp)}</span>
-    </div>`;
-  document.getElementById('pay-progress').innerHTML = `
-    <div class="prog" style="margin-bottom:14px">
-      <div class="prog-hd"><span style="color:var(--purple);font-weight:600">연금저축 (목표 480만)</span><span style="color:var(--txt2);font-variant-numeric:tabular-nums">${fmtW(penTotal)} · ${penPct}%</span></div>
-      ${mkBar(p26,p26sp,penTotal,penPct,penRegPct,4800000)}
-    </div>
-    <div class="prog">
-      <div class="prog-hd"><span style="color:var(--teal);font-weight:600">ISA (목표 550만)</span><span style="color:var(--txt2);font-variant-numeric:tabular-nums">${fmtW(isaTotal)} · ${isaPct}%</span></div>
-      ${mkISABar(i26,i26sp,isaTotal,isaPct,isaRegPct)}
-    </div>`;
+  const penPct=Math.min(100,Math.round(penTotal/4800000*100));
+  const penRegPct=Math.min(penPct,Math.round(p26/4800000*100));
+  const isaPct=Math.min(100,Math.round(isaTotal/5500000*100));
+  const isaRegPct=Math.min(isaPct,Math.round(i26/5500000*100));
+  document.getElementById('pay-progress').innerHTML =
+    '<div class="prog" style="margin-bottom:14px">'
+    +'<div class="prog-hd"><span style="color:var(--purple);font-weight:600">연금저축 (목표 480만)</span>'
+    +'<span style="color:var(--txt2);font-variant-numeric:tabular-nums">'+fmtW(penTotal)+' · '+penPct+'%</span></div>'
+    +'<div class="prog-track" style="position:relative">'
+    +'<div style="position:absolute;left:0;top:0;height:100%;width:'+penRegPct+'%;background:var(--purple);border-radius:4px"></div>'
+    +'<div style="position:absolute;left:'+penRegPct+'%;top:0;height:100%;width:'+(penPct-penRegPct)+'%;background:rgba(108,74,176,.3);border-radius:0 4px 4px 0"></div>'
+    +'</div>'
+    +'<div style="display:flex;gap:14px;font-size:10px;color:var(--txt3);margin-top:4px">'
+    +'<span>● 정기납 '+fmtW(p26)+'</span><span style="color:rgba(108,74,176,.6)">○ 특별납 '+fmtW(p26sp)+'</span></div></div>'
+    +'<div class="prog">'
+    +'<div class="prog-hd"><span style="color:var(--teal);font-weight:600">ISA (목표 550만)</span>'
+    +'<span style="color:var(--txt2);font-variant-numeric:tabular-nums">'+fmtW(isaTotal)+' · '+isaPct+'%</span></div>'
+    +'<div class="prog-track" style="position:relative">'
+    +'<div style="position:absolute;left:0;top:0;height:100%;width:'+isaRegPct+'%;background:var(--teal);border-radius:4px"></div>'
+    +'<div style="position:absolute;left:'+isaRegPct+'%;top:0;height:100%;width:'+(isaPct-isaRegPct)+'%;background:rgba(0,180,147,.3);border-radius:0 4px 4px 0"></div>'
+    +'</div>'
+    +'<div style="display:flex;gap:14px;font-size:10px;color:var(--txt3);margin-top:4px">'
+    +'<span>● 정기납 '+fmtW(i26)+'</span><span style="color:rgba(0,180,147,.6)">○ 특별납 '+fmtW(i26sp)+'</span></div></div>';
 
   document.getElementById('recent-tx').innerHTML =
     pfTx.slice(0,10).map(r=>`
       <tr>
-        <td style="font-size:11px;color:var(--txt3);font-variant-numeric:tabular-nums">${r.date}</td>
+        <td style="font-variant-numeric:tabular-nums;font-size:11px;color:var(--txt3)">${r.date}</td>
         <td><span class="${accCol(r.account)}">${r.account}</span></td>
         <td>${typeTag(r.type)}</td>
         <td>${r.name||'—'}</td>
@@ -1105,7 +1073,7 @@ function renderHistory() {
   document.getElementById('history-tx').innerHTML = rows.length
     ? rows.map(r=>`
         <tr>
-          <td style="font-size:11px;color:var(--txt3);font-variant-numeric:tabular-nums">${r.date}</td>
+          <td style="font-variant-numeric:tabular-nums;font-size:11px;color:var(--txt3)">${r.date}</td>
           <td><span class="${accCol(r.account)}">${r.account}</span></td>
           <td>${typeTag(r.type)}</td>
           <td>${r.name||'—'}</td>
@@ -1138,12 +1106,16 @@ function renderPension() {
 
   const years  = Object.keys(penByYear).sort().reverse();
   const maxPen = Math.max(...Object.values(penByYear),1);
-  document.getElementById('pension-years').innerHTML = years.map(yr=>`
-    <div class="bar-row">
+  document.getElementById('pension-years').innerHTML = years.map(yr=>{
+    const v = penByYear[yr];
+    const w = Math.round(v/10000);
+    const disp = w >= 10000 ? (v/100000000).toFixed(1)+'억' : w.toLocaleString()+'만';
+    return `<div class="bar-row">
       <div class="bar-label" style="min-width:36px">${yr}년</div>
-      <div class="bar-track"><div class="bar-fill" style="width:${penByYear[yr]/maxPen*100}%;background:var(--purple)"></div></div>
-      <div style="width:100px;flex-shrink:0;text-align:right;font-size:12px;font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--txt2)">${(penByYear[yr]/10000).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g,',')}만원</div>
-    </div>`).join('') || '<div style="color:var(--txt3);font-size:12px">데이터 없음</div>';
+      <div class="bar-track"><div class="bar-fill" style="width:${v/maxPen*100}%;background:var(--purple)"></div></div>
+      <div style="width:80px;flex-shrink:0;text-align:right;font-size:12px;font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--txt2)">${disp}</div>
+    </div>`;
+  }).join('') || '<div style="color:var(--txt3);font-size:12px">데이터 없음</div>';
 
   const divItems = Object.entries(divByName).sort((a,b)=>b[1].total-a[1].total);
   document.getElementById('div-list').innerHTML = divItems.length ? `
@@ -1864,11 +1836,10 @@ function renderEntryRow(e){
   var ii=e.type==='\uC218\uC785',im=e.type==='\uC774\uB3D9';
   var bg=ii?'var(--green-bg)':im?'var(--blue-bg)':'var(--red-bg)';
   var cl=ii?'ap':im?'av':(e.amount<0?'ap':'am2');var sg=ii?'+':im?'<->':( e.amount<0?'+':'-');
-  // 이모지가 있으면 아이콘으로 분리, 없으면 type 기반 이모지
-  var _parts=e.major?e.major.split(' '):[];
-  var _hasEmoji=_parts.length>0&&/\p{Emoji}/u.test(_parts[0]);
-  var icon=_hasEmoji?_parts[0]:(e.type==='수입'?'💰':e.type==='이동'?'🔄':'💸');
-  var desc=_hasEmoji?(_parts.slice(1).join(' ')||e.major):(e.major||(e.memo||'이동'));
+  var _mp=e.major?e.major.split(' '):[];
+  var _hasEmoji=_mp.length>0&&/\u00a9|\u00ae|[\u2000-\u3300]|[\ud83c-\udfff][\ud83c-\udfff]|[\ud83c-\udfff]/u.test(_mp[0]);
+  var icon=_hasEmoji?_mp[0]:(e.type==='\uC218\uC785'?'\uD83D\uDCB0':e.type==='\uC774\uB3D9'?'\uD83D\uDD04':'\uD83D\uDCB8');
+  var desc=_hasEmoji?(_mp.slice(1).join(' ')||e.major):(e.major||(e.memo||'\uC774\uB3D9'));
   var meta=[e.memo,e.outAcct&&('\uCD9C: '+e.outAcct),e.inAcct&&('\uC785: '+e.inAcct)].filter(Boolean).join(' / ');
   var sid=String(e.id);
   if(bulkMode){
@@ -1986,72 +1957,70 @@ function delEntry(id){
 }
 
 // ── 수정 모달 ──
-var editMajor='', editSub='';
+var _editType='지출', _editMajor='', _editSub='';
+
 function setEditType(t){
-  editType=t;
+  _editType=t;
   ['out','in','mv'].forEach(function(k){
     var el=document.getElementById('edit-tb-'+k);
-    if(el) el.style.background='';el&&(el.style.color='');
+    if(!el) return;
+    if((t==='지출'&&k==='out')||(t==='수입'&&k==='in')||(t==='이동'&&k==='mv')){
+      el.style.background='var(--blue)'; el.style.color='#fff';
+    } else { el.style.background=''; el.style.color=''; }
   });
-  var map={'지출':'out','수입':'in','이동':'mv'};
-  var sel=document.getElementById('edit-tb-'+map[t]);
-  if(sel){sel.style.background='var(--blue)';sel.style.color='#fff';}
-  // 출금/입금 wrap 표시
   var ow=document.getElementById('edit-out-wrap'), iw=document.getElementById('edit-in-wrap');
   if(ow) ow.style.display=(t==='수입')?'none':'';
   if(iw) iw.style.display=(t==='지출')?'none':'';
-  buildEditMajorGrid();
+  _buildEditMajor();
 }
-function buildEditMajorGrid(){
-  var keys=editType==='지출'?CAT_OUT_KEYS:editType==='수입'?CAT_IN_KEYS:CAT_MV_KEYS;
-  var labels=editType==='지출'?CAT_OUT_LABELS:editType==='수입'?CAT_IN_LABELS:CAT_MV_LABELS;
-  var grid=document.getElementById('edit-major-grid');
-  if(!grid) return;
-  grid.innerHTML=keys.map(function(k){
-    var icon=labels[k]?labels[k].split(' ')[0]:'';
-    var label=labels[k]?(labels[k].split(' ').slice(1).join(' ')||labels[k]):k;
-    var sel=editMajor===k;
-    return '<button class="cbtn'+(sel?' cs':'')+'" onclick="selectEditMajor(''+k+'')">'+icon+'<br><span style="font-size:10px">'+label+'</span></button>';
+function _buildEditMajor(){
+  var keys=_editType==='지출'?CAT_OUT_KEYS:_editType==='수입'?CAT_IN_KEYS:CAT_MV_KEYS;
+  var labels=_editType==='지출'?CAT_OUT_LABELS:_editType==='수입'?CAT_IN_LABELS:CAT_MV_LABELS;
+  var g=document.getElementById('edit-major-grid'); if(!g) return;
+  g.innerHTML=keys.map(function(k){
+    var parts=(labels[k]||k).split(' ');
+    var emoji=parts[0], lbl=parts.slice(1).join(' ')||k;
+    var sel=_editMajor===k;
+    return '<button class="cbtn'+(sel?' cs':'')+'" data-k="'+k+'" onclick="_selEditMajor(this.dataset.k)" style="font-size:10px">'+emoji+'<br>'+lbl+'</button>';
   }).join('');
-  buildEditSubGrid();
+  _buildEditSub();
 }
-function selectEditMajor(k){
-  editMajor=k; editSub='';
-  buildEditMajorGrid(); buildEditSubGrid();
-}
-function buildEditSubGrid(){
-  var subs=editType==='지출'?CAT_OUT_SUBS:editType==='수입'?CAT_IN_SUBS:CAT_MV_SUBS;
-  var ss=subs[editMajor]||[];
-  var sec=document.getElementById('edit-sub-sec'), grid=document.getElementById('edit-sub-grid');
-  if(!sec||!grid) return;
-  if(!ss.length){sec.style.display='none';return;}
+function _selEditMajor(k){ _editMajor=k; _editSub=''; _buildEditMajor(); }
+function _buildEditSub(){
+  var subs=(_editType==='지출'?CAT_OUT_SUBS:_editType==='수입'?CAT_IN_SUBS:CAT_MV_SUBS)[_editMajor]||[];
+  var sec=document.getElementById('edit-sub-sec'), g=document.getElementById('edit-sub-grid');
+  if(!sec||!g) return;
+  if(!subs.length){sec.style.display='none'; return;}
   sec.style.display='block';
-  grid.innerHTML=ss.map(function(s){
-    return '<button class="sbtn'+(editSub===s?' sel':'')+'" onclick="selectEditSub(''+s+'')">'+s+'</button>';
-  }).join('');
+  var h='';
+  subs.forEach(function(s){
+    var cls='sbtn'+(_editSub===s?' sel':'');
+    h+='<button class="'+cls+'" data-s="'+s+'" onclick="_selEditSub(this.dataset.s)">'+s+'</button>';
+  });
+  g.innerHTML=h;
 }
-function selectEditSub(s){ editSub=s; buildEditSubGrid(); }
-var editType='지출';
+function _selEditSub(s){ _editSub=s; _buildEditSub(); }
+
+function closeEditModalBtn(){
+  var m=document.getElementById('edit-modal'); if(m) m.classList.add('hidden'); editingId=null;
+}
 function openEditModal(id){
-  var e=entries.find(function(x){return String(x.id)===String(id);});if(!e)return;
+  var e=entries.find(function(x){return String(x.id)===String(id);}); if(!e) return;
   editingId=id;
-  editType=e.type||'지출';
-  editMajor=e.major||'';
-  editSub=e.sub||'';
+  _editType=e.type||'지출';
+  _editMajor=e.major||'';
+  _editSub=e.sub||'';
   document.getElementById('edit-date').value=e.date;
   document.getElementById('edit-amount').value=e.amount;
   document.getElementById('edit-memo').value=e.memo||'';
   document.getElementById('edit-out-acct').value=e.outAcct||'';
   document.getElementById('edit-in-acct').value=e.inAcct||'';
-  setEditType(editType);
-  var _em=document.getElementById('edit-modal'); if(_em) _em.classList.remove('hidden');
-}
-function closeEditModalBtn(){
-  var _em=document.getElementById('edit-modal'); if(_em) _em.classList.add('hidden'); editingId=null;
+  setEditType(_editType);
+  var m=document.getElementById('edit-modal'); if(m) m.classList.remove('hidden');
 }
 function closeEditModal(ev){
   if(ev&&ev.target!==document.getElementById('edit-modal'))return;
-  var _em=document.getElementById('edit-modal'); if(_em) _em.classList.add('hidden'); editingId=null;
+  var m=document.getElementById('edit-modal'); if(m) m.classList.add('hidden'); editingId=null;
 }
 function saveEdit(){
   if(!editingId)return;
@@ -2059,16 +2028,16 @@ function saveEdit(){
   var amt=parseFloat(document.getElementById('edit-amount').value)||0;
   entries[idx].date=document.getElementById('edit-date').value;
   entries[idx].amount=amt;
-  entries[idx].type=editType;
-  entries[idx].major=editMajor||entries[idx].major;
-  entries[idx].sub=editSub||'';
+  entries[idx].type=_editType;
+  if(_editMajor) entries[idx].major=_editMajor;
+  entries[idx].sub=_editSub||'';
   if(amt!==0&&entries[idx].isTpl)delete entries[idx].isTpl;
   entries[idx].memo=document.getElementById('edit-memo').value;
   entries[idx].outAcct=document.getElementById('edit-out-acct').value;
   entries[idx].inAcct=document.getElementById('edit-in-acct').value;
   saveEntries();
   // 로컬 저장 후 즉시 화면 갱신 (GAS 기다리지 않음)
-  document.getElementById('edit-modal').classList.add('hidden');editingId=null;
+  var _em=document.getElementById('edit-modal');if(_em)_em.classList.add('hidden');editingId=null;
   showToast('수정됐어요!');renderHist();renderHome();
   // GAS 전송은 별도 비동기
   var url=getScriptUrl();
@@ -2077,7 +2046,7 @@ function saveEdit(){
 function deleteAndClose(){
   if(!editingId)return;var _id=editingId;
   entries=entries.filter(function(e){return String(e.id)!==String(_id);});saveEntries();
-  document.getElementById('edit-modal').classList.add('hidden');editingId=null;
+  var _em=document.getElementById('edit-modal');if(_em)_em.classList.add('hidden');editingId=null;
   showToast('\uC0AD\uC81C\uB410\uC5B4\uC694');renderHist();renderHome();
   var url=getScriptUrl();if(url)fetch(url,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'deleteEntry',id:String(_id)})}).catch(function(){});
 }
