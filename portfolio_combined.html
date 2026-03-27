@@ -393,7 +393,7 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
   </div>
   <div class="card tbl-wrap">
     <table class="tbl">
-      <thead><tr><th>날짜</th><th>계좌</th><th>유형</th><th>종목</th><th class="num">수량</th><th class="num">단가</th><th class="num">금액</th><th>메모</th></tr></thead>
+      <thead><tr><th>날짜</th><th>계좌</th><th>유형</th><th>종목</th><th class="num">수량</th><th class="num">단가</th><th class="num">금액</th><th>메모</th><th style="width:80px;text-align:center">수정/삭제</th></tr></thead>
       <tbody id="history-tx"><tr><td colspan="8" class="loading">로딩 중...</td></tr></tbody>
     </table>
   </div>
@@ -869,6 +869,8 @@ function showTab(i) {
   if(i===7) { setTimeout(function(){ if(typeof renderHist==='function') renderHist(); }, 50); }
   if(i===8) { setTimeout(function(){ if(typeof renderBalance==='function') renderBalance(); }, 50); }
   if(i===9) { setTimeout(function(){ if(typeof renderAsset==='function') renderAsset(); }, 50); }
+  if(i===10) { setTimeout(function(){ if(typeof renderSetup==="function") renderSetup(); }, 50); }
+  if(i===11) { var _pfu=document.getElementById("cfg-pf-url"); if(_pfu){ var _sv=getPfUrl(); if(_sv) _pfu.value=_sv; } }
 }
 
 // ── 데이터 ──
@@ -1081,8 +1083,12 @@ function renderHistory() {
           <td class="num">${r.price>0?fmtW(r.price):'—'}</td>
           <td class="num">${fmtW(r.amount)}</td>
           <td style="color:var(--txt3);font-size:11px">${r.memo||''}</td>
+          <td style="text-align:center;white-space:nowrap">
+            <button onclick="openPfEditModal(${r.rowIndex})" style="padding:3px 8px;font-size:11px;background:var(--bg3);border:1px solid var(--bd);border-radius:5px;cursor:pointer;color:var(--txt2);margin-right:2px">수정</button>
+            <button onclick="deletePfTx(${r.rowIndex})" style="padding:3px 8px;font-size:11px;background:transparent;border:1px solid var(--bd);border-radius:5px;cursor:pointer;color:var(--red)">삭제</button>
+          </td>
         </tr>`).join('')
-    : '<tr><td colspan="8" style="text-align:center;color:var(--txt3);padding:20px">해당하는 거래 없음</td></tr>';
+    : '<tr><td colspan="9" style="text-align:center;color:var(--txt3);padding:20px">해당하는 거래 없음</td></tr>';
 }
 
 // ── 연금·ISA ──
@@ -1309,6 +1315,77 @@ function runSim() {
       <div style="font-size:12px;color:var(--txt2);line-height:1.7;padding-top:5px">${s.desc}</div>
     </div>`).join('');
 }
+
+
+// ── 주식 거래 수정/삭제 ──
+var _pfEditRowIndex = null;
+
+function openPfEditModal(rowIndex) {
+  var r = pfTx.find(function(x){ return x.rowIndex === rowIndex; });
+  if(!r) { pfToast('해당 거래를 찾을 수 없어요','err'); return; }
+  _pfEditRowIndex = rowIndex;
+  document.getElementById('pfe-date').value    = r.date || '';
+  document.getElementById('pfe-account').value = r.account || '';
+  document.getElementById('pfe-type').value    = r.type || '매수';
+  document.getElementById('pfe-name').value    = r.name || '';
+  document.getElementById('pfe-qty').value     = r.qty || '';
+  document.getElementById('pfe-price').value   = r.price || '';
+  document.getElementById('pfe-amount').value  = r.amount || '';
+  document.getElementById('pfe-fee').value     = r.fee || '';
+  document.getElementById('pfe-memo').value    = r.memo || '';
+  var m = document.getElementById('pf-edit-modal');
+  m.style.display = 'flex';
+}
+
+function closePfEditModal() {
+  document.getElementById('pf-edit-modal').style.display = 'none';
+  _pfEditRowIndex = null;
+}
+
+async function savePfEdit() {
+  if(_pfEditRowIndex === null) return;
+  var url = getPfUrl();
+  if(!url) { pfToast('Script URL을 먼저 설정하세요','err'); return; }
+
+  // 1) 기존 행 삭제
+  var delOk = await pfPost({ action:'pf_deleteTx', rowIndex: _pfEditRowIndex });
+  if(!delOk) { pfToast('삭제 실패','err'); return; }
+
+  // 2) 수정된 내용으로 새 행 추가
+  var addOk = await pfPost({
+    action:   'pf_addTx',
+    date:     document.getElementById('pfe-date').value,
+    account:  document.getElementById('pfe-account').value,
+    type:     document.getElementById('pfe-type').value,
+    name:     document.getElementById('pfe-name').value,
+    qty:      parseFloat(document.getElementById('pfe-qty').value) || '',
+    price:    parseFloat(document.getElementById('pfe-price').value) || '',
+    amount:   parseFloat(document.getElementById('pfe-amount').value) || '',
+    fee:      parseFloat(document.getElementById('pfe-fee').value) || '',
+    memo:     document.getElementById('pfe-memo').value,
+  });
+  if(!addOk) { pfToast('저장 실패','err'); return; }
+
+  closePfEditModal();
+  pfToast('수정됐어요!');
+  await loadPfData();
+}
+
+async function deletePfTx(rowIndex) {
+  if(!confirm('이 거래를 삭제할까요?')) return;
+  var ok = await pfPost({ action:'pf_deleteTx', rowIndex: rowIndex });
+  if(ok) {
+    pfToast('삭제됐어요!');
+    await loadPfData();
+  } else {
+    pfToast('삭제 실패','err');
+  }
+}
+
+// 모달 바깥 클릭시 닫기
+document.getElementById('pf-edit-modal').addEventListener('click', function(e){
+  if(e.target === this) closePfEditModal();
+});
 
 // ── 초기화 ──
 window.addEventListener('DOMContentLoaded', ()=>{
@@ -2323,9 +2400,22 @@ function loadTemplatesFromSheet(){
   }).catch(function(){});
 }
 function openTplModal(){
-  loadTemplatesFromSheet();
-  renderTplList();
-  document.getElementById('tpl-modal').classList.remove('hidden');
+  var url=getScriptUrl();
+  if(url){
+    var list=document.getElementById('tpl-list');
+    if(list) list.innerHTML='<div class="empty" style="padding:20px;text-align:center;color:var(--txt3)">불러오는 중...</div>';
+    document.getElementById('tpl-modal').classList.remove('hidden');
+    fetch(url+'?action=templates').then(function(r){return r.json();}).then(function(data){
+      if(data.ok&&data.templates&&data.templates.length){
+        templates=data.templates;
+        try{localStorage.setItem('gb_templates',JSON.stringify(templates));}catch(e){}
+      }
+      renderTplList();
+    }).catch(function(){renderTplList();});
+  } else {
+    renderTplList();
+    document.getElementById('tpl-modal').classList.remove('hidden');
+  }
 }
 function renderTplList(){
   var list=document.getElementById('tpl-list');
@@ -2786,5 +2876,38 @@ function saveGbConfig() {
 }
 </script>
 
+
+<!-- ── 주식 거래 수정 모달 ── -->
+<div id="pf-edit-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;align-items:center;justify-content:center">
+  <div style="background:var(--bg2);border-radius:14px;padding:24px;width:92%;max-width:420px;box-shadow:0 8px 32px rgba(0,0,0,.2)">
+    <div style="font-size:15px;font-weight:700;margin-bottom:16px">거래 수정</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div><label style="font-size:10px;color:var(--txt3);font-weight:700;letter-spacing:.06em;display:block;margin-bottom:4px">날짜</label>
+        <input id="pfe-date" type="date" style="width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--bd);border-radius:7px;color:var(--txt);font-size:13px;outline:none;box-sizing:border-box"></div>
+      <div><label style="font-size:10px;color:var(--txt3);font-weight:700;letter-spacing:.06em;display:block;margin-bottom:4px">계좌</label>
+        <input id="pfe-account" type="text" style="width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--bd);border-radius:7px;color:var(--txt);font-size:13px;outline:none;box-sizing:border-box"></div>
+      <div><label style="font-size:10px;color:var(--txt3);font-weight:700;letter-spacing:.06em;display:block;margin-bottom:4px">유형</label>
+        <select id="pfe-type" style="width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--bd);border-radius:7px;color:var(--txt);font-size:13px;outline:none;box-sizing:border-box">
+          <option>매수</option><option>매도</option><option>입금</option><option>출금</option><option>분배금</option>
+        </select></div>
+      <div><label style="font-size:10px;color:var(--txt3);font-weight:700;letter-spacing:.06em;display:block;margin-bottom:4px">종목명</label>
+        <input id="pfe-name" type="text" style="width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--bd);border-radius:7px;color:var(--txt);font-size:13px;outline:none;box-sizing:border-box"></div>
+      <div><label style="font-size:10px;color:var(--txt3);font-weight:700;letter-spacing:.06em;display:block;margin-bottom:4px">수량</label>
+        <input id="pfe-qty" type="number" step="any" style="width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--bd);border-radius:7px;color:var(--txt);font-size:13px;outline:none;box-sizing:border-box"></div>
+      <div><label style="font-size:10px;color:var(--txt3);font-weight:700;letter-spacing:.06em;display:block;margin-bottom:4px">단가</label>
+        <input id="pfe-price" type="number" step="any" style="width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--bd);border-radius:7px;color:var(--txt);font-size:13px;outline:none;box-sizing:border-box"></div>
+      <div><label style="font-size:10px;color:var(--txt3);font-weight:700;letter-spacing:.06em;display:block;margin-bottom:4px">금액</label>
+        <input id="pfe-amount" type="number" step="any" style="width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--bd);border-radius:7px;color:var(--txt);font-size:13px;outline:none;box-sizing:border-box"></div>
+      <div><label style="font-size:10px;color:var(--txt3);font-weight:700;letter-spacing:.06em;display:block;margin-bottom:4px">수수료</label>
+        <input id="pfe-fee" type="number" step="any" style="width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--bd);border-radius:7px;color:var(--txt);font-size:13px;outline:none;box-sizing:border-box"></div>
+    </div>
+    <div style="margin-bottom:14px"><label style="font-size:10px;color:var(--txt3);font-weight:700;letter-spacing:.06em;display:block;margin-bottom:4px">메모</label>
+      <input id="pfe-memo" type="text" style="width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--bd);border-radius:7px;color:var(--txt);font-size:13px;outline:none;box-sizing:border-box"></div>
+    <div style="display:flex;gap:8px">
+      <button onclick="savePfEdit()" style="flex:1;padding:11px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">저장</button>
+      <button onclick="closePfEditModal()" style="flex:1;padding:11px;background:var(--bg3);color:var(--txt2);border:1px solid var(--bd);border-radius:8px;font-size:13px;cursor:pointer">취소</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
