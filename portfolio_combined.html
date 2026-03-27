@@ -626,32 +626,6 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
   </div>
 </div>
 
-<!-- 템플릿 불러오기 모달 -->
-<div id="tpl-modal" class="modal-bg hidden" onclick="closeTplModal(event)">
-  <div class="modal">
-    <div class="modal-title">템플릿 불러오기
-      <button class="modal-close" onclick="document.getElementById('tpl-modal').classList.add('hidden')">&#10005;</button>
-    </div>
-    <div id="tpl-list"></div>
-  </div>
-</div>
-
-<!-- 템플릿 저장 모달 -->
-<div id="save-tpl-modal" class="modal-bg hidden" onclick="closeSaveTplModal(event)">
-  <div class="modal">
-    <div class="modal-title">템플릿 저장
-      <button class="modal-close" onclick="document.getElementById('save-tpl-modal').classList.add('hidden')">&#10005;</button>
-    </div>
-    <div class="field"><label>템플릿 이름</label>
-      <input type="text" id="tpl-name-input" placeholder="예: 스타벅스, 지하철" style="width:100%"/>
-    </div>
-    <div style="display:flex;gap:10px;margin-top:16px">
-      <button onclick="saveCurAsTpl()" style="flex:1;padding:13px;background:var(--blue);color:#fff;border:none;border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer">저장</button>
-      <button onclick="document.getElementById('save-tpl-modal').classList.add('hidden')" style="padding:13px 18px;background:var(--bg3);color:var(--sub);border:.5px solid var(--border-md);border-radius:var(--rs);font-size:14px;cursor:pointer">취소</button>
-    </div>
-  </div>
-</div>
-
 <div id="p8" class="panel gb-panel" style="max-width:480px;margin:0 auto;padding:16px 14px 40px">
   <div class="sgrid" style="margin-bottom:12px">
     <div class="sc" style="grid-column:span 2"><div class="sl">현금/예금 합계</div><div class="sv" style="color:var(--blue)" id="bal-cash-total">&#8361;0</div></div>
@@ -765,8 +739,8 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <button onclick="saveSheetConfig()" style="padding:11px;background:var(--blue);color:#fff;border:none;border-radius:var(--rs);font-size:13px;font-weight:700;cursor:pointer">저장 &amp; 연결</button>
-      <button onclick="saveSheetConfig();loadFromSheet();" style="padding:11px;background:var(--blue-bg);color:var(--blue);border:.5px solid var(--blue-lt);border-radius:var(--rs);font-size:13px;font-weight:700;cursor:pointer">&#128202; 시트에서 불러오기</button>
-      <button onclick="if(confirm('시트 데이터로 완전 덮어쓰기할까요? 현재 앱 데이터가 모두 삭제됩니다.')){saveSheetConfig();loadFromSheet(false,true);}" style="padding:11px;background:var(--red-bg);color:var(--red);border:.5px solid var(--red-lt);border-radius:var(--rs);font-size:13px;font-weight:700;cursor:pointer">시트로 덮어쓰기</button>
+      <button onclick="loadFromSheet()" style="padding:11px;background:var(--blue-bg);color:var(--blue);border:.5px solid var(--blue-lt);border-radius:var(--rs);font-size:13px;font-weight:700;cursor:pointer">&#128202; 시트에서 불러오기</button>
+      <button onclick="if(confirm('시트 데이터로 완전 덮어쓰기할까요? 현재 앱 데이터가 모두 삭제됩니다.'))loadFromSheet(false,true)" style="padding:11px;background:var(--red-bg);color:var(--red);border:.5px solid var(--red-lt);border-radius:var(--rs);font-size:13px;font-weight:700;cursor:pointer">시트로 덮어쓰기</button>
     </div>
     <div id="sheet-load-status" style="margin-top:8px;font-size:12px;color:var(--sub)"></div>
   </div>
@@ -904,7 +878,6 @@ function showTab(i) {
   if(i===7) { setTimeout(function(){ if(typeof renderHist==='function') renderHist(); }, 50); }
   if(i===8) { setTimeout(function(){ if(typeof renderBalance==='function') renderBalance(); }, 50); }
   if(i===9) { setTimeout(function(){ if(typeof renderAsset==='function') renderAsset(); }, 50); }
-  if(i===10){ setTimeout(function(){ if(typeof renderSetup==='function') renderSetup(); }, 50); }
 }
 
 // ── 데이터 ──
@@ -1834,7 +1807,7 @@ function setFilter(f,btn){
   if(histFilter===f&&f!=='전체'){
     histFilter='전체';
     document.querySelectorAll('.ftab:not([id^="cf-"])').forEach(function(b){b.classList.remove('on');});
-    var allTab=document.querySelector('.ftab[onclick*="전체"]');if(allTab)allTab.classList.add('on');
+    document.querySelector('.ftab[onclick*="전체"]').classList.add('on');
   } else {
     histFilter=f;
     document.querySelectorAll('.ftab:not([id^="cf-"])').forEach(function(b){b.classList.remove('on');});
@@ -2038,7 +2011,7 @@ function buildEditMajorGrid(){
     var icon=labels[k]?labels[k].split(' ')[0]:'';
     var label=labels[k]?(labels[k].split(' ').slice(1).join(' ')||labels[k]):k;
     var sel=editMajor===k;
-    return '<button class="cbtn'+(sel?' cs':'')+'" onclick="selectEditMajor(\x27"+k+"\x27)">'+icon+'<br><span style="font-size:10px">'+label+'</span></button>';
+    return '<button class="cbtn'+(sel?' cs':'')+'" onclick="selectEditMajor(''+k+'')">'+icon+'<br><span style="font-size:10px">'+label+'</span></button>';
   }).join('');
   buildEditSubGrid();
 }
@@ -2054,7 +2027,7 @@ function buildEditSubGrid(){
   if(!ss.length){sec.style.display='none';return;}
   sec.style.display='block';
   grid.innerHTML=ss.map(function(s){
-    return '<button class="sbtn'+(editSub===s?' sel':'')+'" onclick="selectEditSub(\x27"+s+"\x27)">'+s+'</button>';
+    return '<button class="sbtn'+(editSub===s?' sel':'')+'" onclick="selectEditSub(''+s+'')">'+s+'</button>';
   }).join('');
 }
 function selectEditSub(s){ editSub=s; buildEditSubGrid(); }
@@ -2501,9 +2474,8 @@ function loadAssetFromSheet(){
 // ── 설정 ──
 function renderSetup(){
   var sid=localStorage.getItem('sheetId')||'',surl=localStorage.getItem('scriptUrl')||'';
-  var el1=document.getElementById('sheet-id2'),el2=document.getElementById('script-url2');
-  if(el1&&sid) el1.value=sid;
-  if(el2&&surl) el2.value=surl;
+  if(sid)document.getElementById('sheet-id2').value=sid;
+  if(surl)document.getElementById('script-url2').value=surl;
   var dot=document.getElementById('sheets-dot');if(dot)dot.style.background=(sid&&surl)?'var(--green)':'var(--hint)';
   renderCurrentConfig();
 }
@@ -2550,7 +2522,6 @@ function loadFromSheet(silent,overwrite){
   var url=getScriptUrl();if(!url){if(!silent)showToast('Script URL\uC744 \uBA3C\uC800 \uC124\uC815\uD574\uC8FC\uC138\uC694');return;}
   var st=document.getElementById('sheet-load-status');if(st&&!silent)st.textContent='\uBD88\uB7EC\uC624\uB294 \uC911...';
   fetch(url+'?action=all').then(function(r){return r.json();}).then(function(data){
-    try{
     if(!data.ok)throw new Error(data.error||'\uC624\uB958');
     if(overwrite){entries=[];saveEntries();}
     // config 처리 (예산, 카드예산, 저축목표, 초기잔고+그룹)
@@ -2607,12 +2578,9 @@ function loadFromSheet(silent,overwrite){
       templates=data.templates;
       try{localStorage.setItem('gb_templates',JSON.stringify(templates));}catch(e){}
     }
-    try{renderHome();}catch(e){console.error('renderHome error:',e);}
-    if(document.getElementById('entry-list')){try{renderHist();}catch(e){console.error('renderHist error:',e);}}
-    var _pa=document.getElementById('page-asset');if(_pa&&_pa.classList.contains('active')){sheetAssetData=data.asset||sheetAssetData;renderAsset();}
-    if(st)st.textContent=entries.length+'\uAC74 \uBD88\uB7EC\uC654\uC5B4\uC694 \u2713';
-    }catch(innerErr){console.error('loadFromSheet inner error:',innerErr);if(st)st.textContent='\uC2E4\uD328: '+innerErr.message;if(!silent)showToast('\uBD88\uB7EC\uC624\uAE30 \uC2E4\uD328');}
-  }).catch(function(err){console.error('loadFromSheet fetch error:',err);if(st)st.textContent='\uC2E4\uD328(\uB124\uD2B8\uC6CC\uD06C): '+err.message;if(!silent)showToast('\uBD88\uB7EC\uC624\uAE30 \uC2E4\uD328');});
+    renderHome();renderHist();
+    if(document.getElementById('page-asset').classList.contains('active')){sheetAssetData=data.asset||sheetAssetData;renderAsset();}
+  }).catch(function(err){if(st)st.textContent='\uC2E4\uD328: '+err.message;if(!silent)showToast('\uBD88\uB7EC\uC624\uAE30 \uC2E4\uD328');});
 }
 function toggleCfgSec(id){
   var b=document.getElementById('cfg-body-'+id),a=document.getElementById('cfg-arr-'+id);
@@ -2802,12 +2770,51 @@ function initMemo(){
 // ── 초기화 ──
 setType('\uC9C0\uCD9C');
 initMemo();
-// 페이지 로드 시 설정값 복원 (설정 탭 열기 전에도 값이 채워지게)
-setTimeout(function(){ if(typeof renderSetup==='function') renderSetup(); }, 100);
 // 가계부 초기화는 showTab(5) 진입 시 실행됨
 // 자동 시트 동기화 비활성화 - 수동 '시트에서 불러오기' 버튼만 사용
 
-// 자동 시트 동기화 비활성화 - 수동 '시트에서 불러오기' 버튼만 사용
+// 새로고침 시 내역만 시트 기준으로 교체 (URL/설정/예산 절대 안 건드림)
+setTimeout(function(){
+  var url=getScriptUrl();
+  if(!url) return;
+  fetch(url+'?action=entries').then(function(r){return r.json();}).then(function(data){
+    if(!data.ok||!data.entries) return;
+    var allCardKeys=ACCTS.filter(function(a){return ACCTS_DEF.some(function(d){return d.key===a&&d.group==='debt';});});
+    var imported=data.entries.map(function(e){
+      var outAcct=e.outAcct||'',inAcct=e.inAcct||'';
+      if(e.type==='지출'&&!outAcct){
+        var guess=[String(e.sub||'').trim(),String(e.major||'').trim()];
+        for(var gi=0;gi<guess.length;gi++){if(allCardKeys.indexOf(guess[gi])>=0){outAcct=guess[gi];break;}}
+      }
+      return {id:String(e.id||''),date:String(e.date||'').slice(0,10),type:e.type,major:e.major||'',sub:e.sub||'',memo:e.memo||'',amount:parseFloat(e.amount)||0,inAcct:inAcct,outAcct:outAcct};
+    }).filter(function(e){return e.date.match(/^20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]/)&&['지출','수입','이동'].indexOf(e.type)>=0;});
+    imported.sort(function(a,b){return b.date.localeCompare(a.date);});
+    entries=imported;
+    saveEntries();
+    renderHome();
+    if(document.getElementById('entry-list')) renderHist();
+  }).catch(function(){});
+}, 800);
+
+
+
+// ── 가계부 goPage 래핑 (탭5 전용) ──
+function goPage(n, btn) {
+  const wrap = document.getElementById('gb-wrap');
+  if (!wrap) return;
+  wrap.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const target = document.getElementById('page-' + n);
+  if (target) target.classList.add('active');
+}
+
+function saveGbConfig() {
+  var sid  = document.getElementById('gb-sheet-id').value.trim();
+  var surl = document.getElementById('gb-script-url').value.trim();
+  try { if(sid) localStorage.setItem('sheetId', sid); if(surl) localStorage.setItem('scriptUrl', surl); } catch(e){}
+  // 기존 가계부 saveSheetConfig 함수 호출
+  if(typeof saveSheetConfig === 'function') saveSheetConfig();
+  document.getElementById('gb-load-status').textContent = '저장됐어요! 시트에서 불러오기를 눌러주세요.';
+}
 </script>
 
 </body>
