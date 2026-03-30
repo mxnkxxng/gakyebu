@@ -763,6 +763,8 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
       <button onclick="if(confirm('시트 데이터로 완전 덮어쓰기할까요? 현재 앱 데이터가 모두 삭제됩니다.'))loadFromSheet(false,true)" style="padding:11px;background:var(--red-bg);color:var(--red);border:.5px solid var(--red-lt);border-radius:var(--rs);font-size:13px;font-weight:700;cursor:pointer">시트로 덮어쓰기</button>
     </div>
     <div id="sheet-load-status" style="margin-top:8px;font-size:12px;color:var(--sub)"></div>
+    <div id="sub-budget-debug" style="margin-top:8px;font-size:11px;color:var(--sub);display:none"></div>
+    <button onclick="showSubBudgetDebug()" style="margin-top:6px;font-size:10px;padding:4px 10px;background:transparent;border:.5px solid var(--border-md);border-radius:99px;color:var(--sub);cursor:pointer">소분류 예산 확인</button>
   </div>
   <div class="card">
     <div class="ct">파일 가져오기 (CSV / Excel)</div>
@@ -2850,6 +2852,20 @@ function renderSetup(){
   var dot=document.getElementById('sheets-dot');if(dot)dot.style.background=(sid&&surl)?'var(--green)':'var(--hint)';
   renderCurrentConfig();
 }
+
+function showSubBudgetDebug(){
+  var el=document.getElementById('sub-budget-debug');
+  if(!el) return;
+  var keys=Object.keys(SUB_BUDGET||{});
+  if(!keys.length){
+    el.innerHTML='<b style="color:var(--red)">SUB_BUDGET 비어있음</b> — 시트에서 불러오기를 다시 해보세요';
+  } else {
+    el.innerHTML='<b>SUB_BUDGET 키:</b> '+keys.join(', ')+'<br>'
+      +'<b>BUDGET 키:</b> '+Object.keys(BUDGET||{}).join(', ');
+  }
+  el.style.display='block';
+}
+
 function saveSheetConfig(){
   var sid=document.getElementById('sheet-id2').value.trim(),surl=document.getElementById('script-url2').value.trim();
   if(!surl){showToast('Script URL\uC744 \uC785\uB825\uD574\uC8FC\uC138\uC694');return;}
@@ -2951,6 +2967,8 @@ function loadFromSheet(silent,overwrite){
     }
     renderHome();renderHist();
     var _pa=document.getElementById('p9');if(_pa&&_pa.classList.contains('on')){sheetAssetData=data.asset||sheetAssetData;renderAsset();}
+    // 소분류 예산 포함 설정 화면 갱신
+    if(typeof renderSetup==='function') renderSetup();
   }).catch(function(err){if(st)st.textContent='\uC2E4\uD328: '+err.message;if(!silent)showToast('\uBD88\uB7EC\uC624\uAE30 \uC2E4\uD328');});
 }
 function toggleCfgSec(id){
@@ -3001,8 +3019,19 @@ function renderCurrentConfig(){
         +'<span class="sname" style="font-size:11px;font-weight:600">'+lbl+'</span>'
         +'<span class="samt" style="font-size:11px;color:'+(kv[1]>0?'var(--blue)':'var(--hint)')+'">'+( kv[1]>0?fmt(kv[1]):'미설정')+'</span>'
         +'</div>';
-      if(SUB_BUDGET&&SUB_BUDGET[kv[0]]){
-        Object.entries(SUB_BUDGET[kv[0]]).forEach(function(skv){
+      // SUB_BUDGET 키 매칭: 직접 키 또는 trim된 키로 검색
+      var _subKey=kv[0];
+      var _subData=SUB_BUDGET&&(SUB_BUDGET[_subKey]||SUB_BUDGET[_subKey.trim()]);
+      if(!_subData&&SUB_BUDGET){
+        // fallback: 이모지 제거 후 비교
+        var _stripped=_subKey.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]\s*/gu,'').trim();
+        _subData=Object.entries(SUB_BUDGET).reduce(function(acc,e){
+          var ek=e[0].replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]\s*/gu,'').trim();
+          return ek===_stripped?e[1]:acc;
+        },null);
+      }
+      if(_subData){
+        Object.entries(_subData).forEach(function(skv){
           if(skv[1]>0){
             bH+='<div class="srow" style="padding-left:16px;background:var(--bg3)">'
               +'<span class="sname" style="font-size:10px;color:var(--txt3)">└ '+skv[0]+'</span>'
