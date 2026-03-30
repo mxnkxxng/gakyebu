@@ -285,8 +285,7 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
   <div class="topnav-tab on" onclick="showTab(0)">대시보드</div>
   <div class="topnav-tab"   onclick="showTab(1)">거래 입력</div>
   <div class="topnav-tab"   onclick="showTab(2)">거래 내역</div>
-  <div class="topnav-tab"   onclick="showTab(3)">연금·ISA</div>
-  <div class="topnav-tab"   onclick="showTab(4)">투자 플랜</div>
+  <div class="topnav-tab"   onclick="showTab(3)">📊 연금·ISA 리뷰</div>
   <div class="topnav-tab"   onclick="showTab(11)">⚙ 연동설정</div>
   <div class="topnav-sep"></div>
   <div class="topnav-group-label">💰 가계부</div>
@@ -401,67 +400,96 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
 </div>
 
 <!-- ════════════════════════════════════════════
-  탭 3 : 연금·ISA
+  탭 3 : 연금·ISA 통합 리뷰
 ═════════════════════════════════════════════ -->
 <div id="p3" class="panel">
+
+  <!-- ① 핵심 수치 KPI -->
+  <div class="kpi-grid" id="rv-kpi" style="grid-template-columns:repeat(5,1fr);margin-bottom:20px">
+    <div class="kpi"><div class="kpi-label">연금 총자산</div><div class="kpi-val" style="color:var(--purple)" id="rv-k-pen">—</div></div>
+    <div class="kpi"><div class="kpi-label">ISA 총자산</div><div class="kpi-val" style="color:var(--teal)" id="rv-k-isa">—</div></div>
+    <div class="kpi"><div class="kpi-label">누적 수익</div><div class="kpi-val pos" id="rv-k-gain">—</div></div>
+    <div class="kpi"><div class="kpi-label">세액공제 환급예상</div><div class="kpi-val" style="color:var(--purple)" id="rv-k-tax">—</div><div class="kpi-sub" id="rv-k-tax-sub">연금저축 납입 기준</div></div>
+    <div class="kpi"><div class="kpi-label">누적 분배금</div><div class="kpi-val" style="color:var(--purple)" id="rv-k-div">—</div></div>
+  </div>
+
+  <!-- ② 납입 한도 체크 -->
   <div class="g2" style="margin-bottom:20px">
     <div class="card">
-      <div class="sec">연금 납입 현황 (연도별)</div>
-      <div id="pension-years"><div class="loading">로딩 중...</div></div>
-      <div style="margin-top:12px;font-size:11px;color:var(--txt3)">세액공제 한도 600만(연금저축) · 환급율 16.5%</div>
+      <div class="sec">2026 납입 한도 체크</div>
+      <div id="rv-limit"><div class="loading">로딩 중...</div></div>
     </div>
     <div class="card">
-      <div class="sec">배당·분배금 내역</div>
+      <div class="sec">계좌별 납입 현황 (연도별)</div>
+      <div id="pension-years"><div class="loading">로딩 중...</div></div>
+    </div>
+  </div>
+
+  <!-- ③ 보유 종목 & 리밸런싱 -->
+  <div class="g2" style="margin-bottom:20px">
+    <div class="card">
+      <div class="sec">⚖️ 섹터 비중 (리밸런싱 체크)</div>
+      <div id="rv-sector"><div class="loading">로딩 중...</div></div>
+    </div>
+    <div class="card">
+      <div class="sec">📈 계좌별 수익률 현황</div>
+      <div id="rv-acc-perf"><div class="loading">로딩 중...</div></div>
+      <div style="margin-top:8px;font-size:10px;color:var(--txt3)">* 거래내역 기반 근사치 · 실시간 평가금액은 구글시트 참조</div>
+    </div>
+  </div>
+
+  <!-- ④ 분배금 흐름 -->
+  <div class="g2" style="margin-bottom:20px">
+    <div class="card">
+      <div class="sec">💰 월별 분배금 흐름</div>
+      <div id="rv-div-monthly"><div class="loading">로딩 중...</div></div>
+    </div>
+    <div class="card">
+      <div class="sec">🏆 종목별 누적 분배금</div>
       <div id="div-list"><div class="loading">로딩 중...</div></div>
     </div>
   </div>
-  <div class="card">
-    <div class="sec">계좌별 연도별 입금</div>
-    <div id="acc-detail"><div class="loading">로딩 중...</div></div>
+
+  <!-- ⑤ 실현손익 -->
+  <div class="card" style="margin-bottom:20px">
+    <div class="sec">📋 실현손익 내역</div>
+    <div id="rv-realized"><div class="loading">로딩 중...</div></div>
   </div>
+
+  <!-- ⑥ 장기 시뮬레이터 (구 투자플랜) -->
+  <div class="card" style="margin-bottom:20px">
+    <div class="sec">🔮 장기 적립 시뮬레이터</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:14px">
+      <div>
+        <label style="font-size:10px;color:var(--txt3);font-weight:700;letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:5px">총 월 적립 (만원)</label>
+        <input type="range" id="sim-monthly" min="50" max="200" step="10" value="90" oninput="runSim()" style="width:100%">
+        <div style="font-size:13px;font-weight:600;margin-top:4px;color:var(--blue)" id="sim-m-out">90만원</div>
+      </div>
+      <div>
+        <label style="font-size:10px;color:var(--txt3);font-weight:700;letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:5px">연평균 수익률</label>
+        <input type="range" id="sim-rate" min="4" max="12" step="0.5" value="7" oninput="runSim()" style="width:100%">
+        <div style="font-size:13px;font-weight:600;margin-top:4px;color:var(--blue)" id="sim-r-out">7.0%</div>
+      </div>
+      <div>
+        <label style="font-size:10px;color:var(--txt3);font-weight:700;letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:5px">평균 배당수익률</label>
+        <input type="range" id="sim-div" min="2" max="6" step="0.5" value="3" oninput="runSim()" style="width:100%">
+        <div style="font-size:13px;font-weight:600;margin-top:4px;color:var(--purple)" id="sim-d-out">3.0%</div>
+      </div>
+    </div>
+    <div id="sim-note" style="font-size:11px;color:var(--txt3);margin-bottom:10px">⚙ 데이터 로드 후 실제 자산이 반영됩니다 · 전액 재투자 가정</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px" id="sim-results"></div>
+    <div id="sim-roadmap"></div>
+  </div>
+
+  <!-- ⑦ 투자 일지 -->
+  <div class="card">
+    <div class="sec">📓 투자 일지</div>
+    <div id="rv-journal"><div style="color:var(--txt3);font-size:12px;padding:8px">데이터 로드 후 표시됩니다</div></div>
+  </div>
+
 </div>
 
-<!-- ════════════════════════════════════════════
-  탭 4 : 투자 플랜
-═════════════════════════════════════════════ -->
-<div id="p4" class="panel">
-  <!-- 연동 전 안내 -->
-  <div id="p4-nourl" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;gap:16px">
-    <div style="font-size:36px">📋</div>
-    <div style="font-size:15px;font-weight:700;color:var(--txt)">투자 플랜</div>
-    <div style="font-size:13px;color:var(--txt3);text-align:center;line-height:1.7">연동설정 탭에서 GAS URL을 입력하면<br>시트의 투자 플랜이 여기에 표시됩니다</div>
-    <button onclick="showTab(11)" style="padding:10px 24px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">연동설정으로 이동</button>
-  </div>
-  <!-- 연동 후 플랜 내용 -->
-  <div id="p4-content" style="display:none">
-    <div id="p4-plan-area">
-      <!-- JS로 시트 데이터 기반 렌더링 -->
-    </div>
-    <div class="sec" style="margin-top:24px">장기 배당 시뮬레이터</div>
-    <div class="card" style="margin-bottom:20px">
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:14px">
-        <div>
-          <label style="font-size:10px;color:var(--txt3);font-weight:700;letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:5px">총 월 적립 (만원)</label>
-          <input type="range" id="sim-monthly" min="50" max="200" step="10" value="90" oninput="runSim()" style="width:100%">
-          <div style="font-size:13px;font-weight:600;margin-top:4px;color:var(--blue)" id="sim-m-out">90만원</div>
-        </div>
-        <div>
-          <label style="font-size:10px;color:var(--txt3);font-weight:700;letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:5px">연평균 수익률</label>
-          <input type="range" id="sim-rate" min="4" max="12" step="0.5" value="7" oninput="runSim()" style="width:100%">
-          <div style="font-size:13px;font-weight:600;margin-top:4px;color:var(--blue)" id="sim-r-out">7.0%</div>
-        </div>
-        <div>
-          <label style="font-size:10px;color:var(--txt3);font-weight:700;letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:5px">평균 배당수익률</label>
-          <input type="range" id="sim-div" min="2" max="6" step="0.5" value="3" oninput="runSim()" style="width:100%">
-          <div style="font-size:13px;font-weight:600;margin-top:4px;color:var(--purple)" id="sim-d-out">3.0%</div>
-        </div>
-      </div>
-      <div id="sim-note" style="font-size:11px;color:var(--txt3);margin-bottom:10px">⚙ 데이터 로드 후 실제 자산이 반영됩니다 · 전액 재투자 가정</div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px" id="sim-results"></div>
-      <div id="sim-roadmap"></div>
-    </div>
-  </div>
-</div>
+<!-- p4 통합됨 → p3 연금ISA 리뷰 탭 -->
 <!-- ════════════════════════════════════════════
   탭 5 : 가계부 (기존 HTML 그대로)
 ═════════════════════════════════════════════ -->
@@ -846,7 +874,6 @@ function showTab(i) {
     }
   }
   // 포트폴리오 탭별 초기화
-  if(i===4) renderPlan();
   if(i===0) { if(pfTx.length) renderDashboard(); }
   // 가계부 탭(5~9) — scriptUrl 없으면 설정 탭(10)으로 리다이렉트
   if(i>=5 && i<=9) {
@@ -869,6 +896,7 @@ function showTab(i) {
   if(i===6) { setTimeout(function(){ if(typeof renderInput==='function') renderInput(); }, 50); }
   if(i===7) { setTimeout(function(){ if(typeof renderHist==='function') renderHist(); }, 50); }
   if(i===8) { setTimeout(function(){ if(typeof renderBalance==='function') renderBalance(); }, 50); }
+  if(i===3) { setTimeout(function(){ if(typeof renderReview==='function') renderReview(); }, 50); }
   if(i===9) { setTimeout(function(){ if(typeof renderAsset==='function') renderAsset(); }, 50); }
   if(i===10) { setTimeout(function(){ if(typeof renderSetup==="function") renderSetup(); }, 50); }
   if(i===11) { var _pfu=document.getElementById("cfg-pf-url"); if(_pfu){ var _sv=getPfUrl(); if(_sv) _pfu.value=_sv; } }
@@ -1145,74 +1173,299 @@ function renderHistory() {
     : '<tr><td colspan="11" style="text-align:center;color:var(--txt3);padding:20px">해당하는 거래 없음</td></tr>';
 }
 
-// ── 연금·ISA ──
-function renderPension() {
+// ── 연금·ISA 통합 리뷰 ──
+function renderPension() { renderReview(); }
+function renderReview() {
   const PEN_ACCS = ['삼성연금저축','미래연금저축','우리IRP'];
-  const penByYear={}, divByName={}, accIn={};
+  const ISA_ACCS = ['미래ISA'];
+  // ── 집계 ──
+  const accIn={}, accBuy={}, accSell={}, accDiv={}, accFee={};
+  const divByName={}, divByMonth={}, realizedByAcc={};
+  const sectorMap={};
   pfTx.forEach(r=>{
-    const yr=( r.date||'').slice(0,4);
-    const amt=parseFloat(r.amount)||0;
+    const yr=(r.date||'').slice(0,4);
+    const ym=(r.date||'').slice(0,7);
+    const amt=Math.abs(parseFloat(r.amount)||0);
     const acc=r.account||'';
+    if(!accIn[acc])  accIn[acc]={};
+    if(!accBuy[acc]) accBuy[acc]=0;
+    if(!accSell[acc])accSell[acc]=0;
+    if(!accDiv[acc]) accDiv[acc]=0;
+    if(!accFee[acc]) accFee[acc]=0;
     if(r.type==='입금'){
-      if(!accIn[acc]) accIn[acc]={};
       accIn[acc][yr]=(accIn[acc][yr]||0)+amt;
-      if(PEN_ACCS.includes(acc)) penByYear[yr]=(penByYear[yr]||0)+amt;
     }
-    if(r.type==='분배금'&&r.name){
-      if(!divByName[r.name]) divByName[r.name]={total:0,cnt:0,acc};
-      divByName[r.name].total+=amt; divByName[r.name].cnt++;
+    if(r.type==='매수'||r.type==='매수.') accBuy[acc]+=amt;
+    if(r.type==='매도'||r.type==='매도.'){ accSell[acc]+=amt; realizedByAcc[acc]=(realizedByAcc[acc]||0)+(amt - (accBuy[acc]*amt/(accBuy[acc]||1))); }
+    if(r.type==='분배금'){
+      accDiv[acc]+=amt;
+      if(r.name){ if(!divByName[r.name]) divByName[r.name]={total:0,cnt:0,acc}; divByName[r.name].total+=amt; divByName[r.name].cnt++; }
+      divByMonth[ym]=(divByMonth[ym]||0)+amt;
     }
+    if(r.fee) accFee[acc]+=(parseFloat(r.fee)||0);
   });
 
-  const years  = Object.keys(penByYear).sort().reverse();
-  const maxPen = Math.max(...Object.values(penByYear),1);
-  document.getElementById('pension-years').innerHTML = years.map(yr=>{
-    const v = penByYear[yr];
-    const w = Math.round(v/10000);
-    const disp = w >= 10000 ? (v/100000000).toFixed(1)+'억' : w.toLocaleString()+'만';
-    return `<div class="bar-row">
-      <div class="bar-label" style="min-width:36px">${yr}년</div>
-      <div class="bar-track"><div class="bar-fill" style="width:${v/maxPen*100}%;background:var(--purple)"></div></div>
-      <div style="width:80px;flex-shrink:0;text-align:right;font-size:12px;font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--txt2)">${disp}</div>
-    </div>`;
-  }).join('') || '<div style="color:var(--txt3);font-size:12px">데이터 없음</div>';
+  const penAccs = PEN_ACCS.filter(a=>accIn[a]);
+  const isaAccs = ISA_ACCS.filter(a=>accIn[a]);
+  const penIn  = penAccs.reduce((s,a)=>s+Object.values(accIn[a]).reduce((x,v)=>x+v,0),0);
+  const isaIn  = isaAccs.reduce((s,a)=>s+Object.values(accIn[a]||{}).reduce((x,v)=>x+v,0),0);
+  const penDiv = penAccs.reduce((s,a)=>s+(accDiv[a]||0),0);
+  const isaDiv = isaAccs.reduce((s,a)=>s+(accDiv[a]||0),0);
+  const totalDiv = Object.values(accDiv).reduce((s,v)=>s+v,0);
+  // 2026 연금저축 납입 (세액공제 기준)
+  const pen26 = penAccs.reduce((s,a)=>s+((accIn[a]||{})['2026']||0),0);
+  const taxRefund = Math.round(Math.min(pen26,6000000)*0.165);
+  // 총 수익 근사 (분배금 + 매도 - 수수료)
+  const totalSell = Object.values(accSell).reduce((s,v)=>s+v,0);
+  const totalBuyAmt = Object.values(accBuy).reduce((s,v)=>s+v,0);
+  const totalFee = Object.values(accFee).reduce((s,v)=>s+v,0);
+  const approxGain = totalSell - totalBuyAmt + totalDiv - totalFee;
 
-  const divItems = Object.entries(divByName).sort((a,b)=>b[1].total-a[1].total);
-  document.getElementById('div-list').innerHTML = divItems.length ? `
+  // ① KPI
+  const setKpi=(id,v)=>{ const el=document.getElementById(id); if(el)el.textContent=v; };
+  setKpi('rv-k-pen', fmtW(penIn));
+  setKpi('rv-k-isa', fmtW(isaIn));
+  setKpi('rv-k-gain', (approxGain>=0?'+':'')+fmtW(approxGain));
+  setKpi('rv-k-tax', taxRefund>0 ? fmtW(taxRefund) : '—');
+  setKpi('rv-k-div', fmtW(totalDiv));
+  const sub=document.getElementById('rv-k-tax-sub');
+  if(sub) sub.textContent='2026 연금 납입 '+fmtW(pen26);
+
+  // ② 납입 한도 체크 (2026)
+  const penLimit=4800000, isaLimit=5500000, irpLimit=1800000;
+  const isa26  = isaAccs.reduce((s,a)=>s+((accIn[a]||{})['2026']||0),0);
+  const irp26  = (accIn['우리IRP']||{})['2026']||0;
+  const penPs26= ((accIn['삼성연금저축']||{})['2026']||0)+((accIn['미래연금저축']||{})['2026']||0);
+  function limitBar(label, cur, limit, color){
+    const pct=Math.min(100,Math.round(cur/limit*100));
+    const remain=Math.max(0,limit-cur);
+    const warn=pct>=90?'⚠️ ':pct>=100?'✅ ':'';
+    return `<div style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+        <span style="font-weight:600">${warn}${label}</span>
+        <span style="font-variant-numeric:tabular-nums;color:var(--txt3)">${fmtW(cur)} / ${fmtW(limit)} · <b style="color:${color}">${pct}%</b></span>
+      </div>
+      <div class="prog-track" style="position:relative;height:8px">
+        <div style="position:absolute;left:0;top:0;height:100%;width:${pct}%;background:${color};border-radius:4px;transition:width .5s"></div>
+      </div>
+      <div style="font-size:10px;color:var(--txt3);margin-top:3px">잔여 ${fmtW(remain)}${remain===0?' · 🎉 한도 달성!':''}</div>
+    </div>`;
+  }
+  const limitEl=document.getElementById('rv-limit');
+  if(limitEl) limitEl.innerHTML =
+    limitBar('연금저축 세액공제 (600만 한도)', penPs26, 6000000, 'var(--purple)')
+    +limitBar('연금저축 전체 납입 (480만 목표)', pen26, penLimit, 'var(--purple)')
+    +limitBar('ISA 납입 (550만 목표)', isa26, isaLimit, 'var(--teal)')
+    +limitBar('IRP 추가납입 (180만 한도)', irp26, irpLimit, 'var(--blue)')
+    +`<div style="font-size:10px;color:var(--txt3);padding-top:4px;border-top:.5px solid var(--bd)">세액공제 환급 예상 <b style="color:var(--purple)">${fmtW(taxRefund)}</b> · 환급율 16.5%</div>`;
+
+  // ③ 계좌별 납입 현황 (연도별)
+  const allAccsList = Object.keys(accIn).sort();
+  const allYears = [...new Set(Object.values(accIn).flatMap(v=>Object.keys(v)))].sort().reverse();
+  const penYrMap={};
+  penAccs.forEach(a=>{ Object.entries(accIn[a]).forEach(([yr,v])=>{ penYrMap[yr]=(penYrMap[yr]||0)+v; }); });
+  const maxPen2=Math.max(...Object.values(penYrMap),1);
+  const pyEl=document.getElementById('pension-years');
+  if(pyEl) pyEl.innerHTML = [
+    `<table class="tbl" style="margin-bottom:10px"><thead><tr><th>계좌</th>${allYears.map(y=>`<th class="num">${y}년</th>`).join('')}<th class="num">합계</th></tr></thead><tbody>`,
+    ...allAccsList.map(acc=>{
+      const total=Object.values(accIn[acc]).reduce((s,v)=>s+v,0);
+      const isPenAcc=PEN_ACCS.includes(acc);
+      return `<tr${isPenAcc?' style="background:rgba(108,74,176,.04)"':''}>
+        <td><span class="${accCol(acc)}">${acc}</span></td>
+        ${allYears.map(y=>`<td class="num" style="font-size:11px">${accIn[acc][y]?fmtW(accIn[acc][y]):'—'}</td>`).join('')}
+        <td class="num" style="font-weight:700">${fmtW(total)}</td>
+      </tr>`;
+    }),
+    '</tbody></table>',
+    `<div style="font-size:10px;color:var(--txt3)">세액공제 한도 600만(연금저축) · 환급율 16.5%</div>`
+  ].join('');
+
+  // ④ 섹터 비중 (매수 기준)
+  const sectorBuy={};
+  const SECTOR_MAP={
+    'TIGER미국S&P500':'미국(S&P500)', 'ACE미국S&P500':'미국(S&P500)',
+    'KODEX미국S&P500':'미국(S&P500)', 'ACE미국S&P500미국채혼합50액티브':'미국(S&P500혼합)',
+    'ACE미국나스닥100':'미국(나스닥)', 'TIGER미국배당다우존스':'미국(배당)',
+    'ACE미국배당다우존스':'미국(배당)', 'TIGER미국배당다우존스타겟커버드콜2호':'미국(커버드콜)',
+    'KODEX200':'국내ETF', 'PLUS고배당주채권혼합':'국내(배당혼합)',
+    'KODEX200미국채혼합':'국내(혼합)', 'PLUS고배당주':'국내(배당)',
+    '현대차2우B':'국내주식', '삼성전자':'국내주식', 'SK하이닉스':'국내주식',
+  };
+  const TARGET_SECTOR={ '미국(S&P500)':35, '미국(나스닥)':15, '미국(배당)':20, '국내ETF':15, '국내주식':10, '기타':5 };
+  pfTx.forEach(r=>{
+    if(r.type!=='매수'&&r.type!=='매수.') return;
+    const sector=SECTOR_MAP[r.name]||'기타';
+    sectorBuy[sector]=(sectorBuy[sector]||0)+Math.abs(parseFloat(r.amount)||0);
+  });
+  const totalBuySec=Object.values(sectorBuy).reduce((s,v)=>s+v,1);
+  const sectorEl=document.getElementById('rv-sector');
+  const TARGET_COLOR={'미국(S&P500)':'var(--blue)','미국(나스닥)':'#3b82f6','미국(배당)':'var(--purple)','미국(S&P500혼합)':'#8b5cf6','국내ETF':'var(--teal)','국내(배당혼합)':'var(--teal)','국내(배당)':'var(--teal)','국내(혼합)':'var(--teal)','국내주식':'var(--yellow)','기타':'var(--txt3)'};
+  if(sectorEl) sectorEl.innerHTML = Object.entries(sectorBuy).sort((a,b)=>b[1]-a[1]).map(([sec,v])=>{
+    const pct=Math.round(v/totalBuySec*100);
+    const tgt=TARGET_SECTOR[sec]||0;
+    const diff=pct-tgt;
+    const diffStr=tgt?`<span style="font-size:10px;color:${diff>5?'var(--red)':diff<-5?'var(--blue)':'var(--green)'};margin-left:4px">${diff>0?'+':''}${diff}%p</span>`:'';
+    const col=TARGET_COLOR[sec]||'var(--txt3)';
+    return `<div style="margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+        <span style="font-size:11px;font-weight:600">${sec}${diffStr}</span>
+        <span style="font-size:11px;font-variant-numeric:tabular-nums">${pct}%${tgt?` <span style="color:var(--txt3);font-size:10px">목표 ${tgt}%</span>`:''}</span>
+      </div>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${col}"></div></div>
+    </div>`;
+  }).join('')+`<div style="font-size:10px;color:var(--txt3);margin-top:8px;padding-top:6px;border-top:.5px solid var(--bd)">
+    매수금액 기준 · 빨강=비중 초과 5%p↑ · 파랑=부족 5%p↓ · 목표 비중 수정 필요시 JS 코드 수정
+  </div>` || '<div style="color:var(--txt3);font-size:12px">거래내역 없음</div>';
+
+  // ⑤ 계좌별 수익률 현황
+  const perfEl=document.getElementById('rv-acc-perf');
+  if(perfEl){
+    const perfAccs=Object.keys(accIn).sort();
+    perfEl.innerHTML=`<table class="tbl"><thead><tr><th>계좌</th><th class="num">납입</th><th class="num">분배금</th><th class="num">실현손익근사</th></tr></thead><tbody>`
+      +perfAccs.map(acc=>{
+        const totalIn=Object.values(accIn[acc]).reduce((s,v)=>s+v,0);
+        const div=accDiv[acc]||0;
+        const realized=(accSell[acc]||0)-(accBuy[acc]||0)+div-(accFee[acc]||0);
+        const col=realized>=0?'var(--green)':'var(--red)';
+        return `<tr>
+          <td><span class="${accCol(acc)}">${acc}</span></td>
+          <td class="num" style="font-size:11px">${fmtW(totalIn)}</td>
+          <td class="num" style="color:var(--purple);font-size:11px">${div>0?fmtW(div):'—'}</td>
+          <td class="num" style="color:${col};font-size:11px;font-weight:600">${realized>=0?'+':''}${fmtW(realized)}</td>
+        </tr>`;
+      }).join('')+`</tbody></table>`;
+  }
+
+  // ⑥ 월별 분배금
+  const divMonEl=document.getElementById('rv-div-monthly');
+  if(divMonEl){
+    const months=Object.keys(divByMonth).sort();
+    const maxDiv=Math.max(...Object.values(divByMonth),1);
+    if(months.length){
+      divMonEl.innerHTML=months.slice(-12).map(ym=>{
+        const v=divByMonth[ym];
+        return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <div style="width:60px;font-size:10px;color:var(--txt3);flex-shrink:0">${ym}</div>
+          <div class="bar-track" style="flex:1"><div class="bar-fill" style="width:${v/maxDiv*100}%;background:var(--purple)"></div></div>
+          <div style="width:70px;text-align:right;font-size:11px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--purple)">${fmtW(v)}</div>
+        </div>`;
+      }).join('');
+    } else divMonEl.innerHTML='<div style="color:var(--txt3);font-size:12px">분배금 데이터 없음</div>';
+  }
+
+  // ⑦ 종목별 누적 분배금
+  const divItems=Object.entries(divByName).sort((a,b)=>b[1].total-a[1].total);
+  const divEl=document.getElementById('div-list');
+  if(divEl) divEl.innerHTML=divItems.length?`
     <table class="tbl">
       <thead><tr><th>종목</th><th>계좌</th><th class="num">누적배당</th><th class="num">횟수</th></tr></thead>
       <tbody>
-        ${divItems.map(([nm,v])=>`
-          <tr>
-            <td><b>${nm}</b></td>
-            <td><span class="${accCol(v.acc)}">${v.acc}</span></td>
-            <td class="num" style="color:var(--purple)">${fmtW(v.total)}</td>
-            <td class="num">${v.cnt}회</td>
-          </tr>`).join('')}
-        <tr class="sum">
-          <td colspan="2">합계</td>
+        ${divItems.map(([nm,v])=>`<tr>
+          <td><b style="font-size:12px">${nm}</b></td>
+          <td><span class="${accCol(v.acc)}">${v.acc}</span></td>
+          <td class="num" style="color:var(--purple)">${fmtW(v.total)}</td>
+          <td class="num">${v.cnt}회</td>
+        </tr>`).join('')}
+        <tr class="sum"><td colspan="2">합계</td>
           <td class="num" style="color:var(--purple)">${fmtW(divItems.reduce((s,[,v])=>s+v.total,0))}</td>
           <td class="num">${divItems.reduce((s,[,v])=>s+v.cnt,0)}회</td>
         </tr>
       </tbody>
-    </table>` : '<div style="color:var(--txt3);font-size:12px">배당 데이터 없음</div>';
+    </table>`:'<div style="color:var(--txt3);font-size:12px">배당 데이터 없음</div>';
 
-  const allAccs  = Object.keys(accIn).sort();
-  const allYears = [...new Set(Object.values(accIn).flatMap(v=>Object.keys(v)))].sort().reverse();
-  document.getElementById('acc-detail').innerHTML = `
-    <table class="tbl">
-      <thead><tr><th>계좌</th>${allYears.map(y=>`<th class="num">${y}년</th>`).join('')}<th class="num">합계</th></tr></thead>
-      <tbody>
-        ${allAccs.map(acc=>{
-          const total=Object.values(accIn[acc]).reduce((s,v)=>s+v,0);
-          return `<tr>
-            <td><span class="${accCol(acc)}">${acc}</span></td>
-            ${allYears.map(y=>`<td class="num">${accIn[acc][y]?fmtW(accIn[acc][y]):'—'}</td>`).join('')}
-            <td class="num" style="font-weight:700">${fmtW(total)}</td>
-          </tr>`;
-        }).join('')}
-      </tbody>
-    </table>`;
+  // ⑧ 실현손익 내역
+  const realEl=document.getElementById('rv-realized');
+  if(realEl){
+    const sells=pfTx.filter(r=>r.type==='매도'||r.type==='매도.').sort((a,b)=>b.date.localeCompare(a.date));
+    realEl.innerHTML=sells.length?`
+      <table class="tbl">
+        <thead><tr><th>날짜</th><th>계좌</th><th>종목</th><th class="num">수량</th><th class="num">금액</th><th class="num">수수료</th><th class="num">세금</th></tr></thead>
+        <tbody>${sells.map(r=>`<tr>
+          <td style="font-size:11px;color:var(--txt3)">${r.date}</td>
+          <td><span class="${accCol(r.account)}">${r.account}</span></td>
+          <td style="font-size:12px">${r.name||'—'}</td>
+          <td class="num" style="font-size:11px">${r.qty>0?r.qty+'주':'—'}</td>
+          <td class="num" style="color:var(--green);font-weight:600">${fmtW(r.amount)}</td>
+          <td class="num" style="font-size:11px;color:var(--txt3)">${r.fee>0?fmtW(r.fee):'—'}</td>
+          <td class="num" style="font-size:11px;color:var(--txt3)">${r.tax>0?fmtW(r.tax):'—'}</td>
+        </tr>`).join('')}</tbody>
+      </table>`:'<div style="color:var(--txt3);font-size:12px">매도 내역 없음</div>';
+  }
+
+  // ⑨ 투자 일지 (pfTx에 메모+일지 타입 없으므로 localStorage 기반)
+  const jEl=document.getElementById('rv-journal');
+  if(jEl){
+    try {
+      const logs=JSON.parse(localStorage.getItem('pf_journal')||'[]');
+      if(logs.length){
+        jEl.innerHTML=`<div style="margin-bottom:10px;text-align:right">
+          <button onclick="openJournalModal()" style="padding:6px 14px;background:var(--blue);color:#fff;border:none;border-radius:7px;font-size:12px;cursor:pointer">+ 일지 추가</button>
+        </div>`
+        +logs.slice().reverse().map((l,i)=>`
+          <div style="border:.5px solid var(--bd);border-radius:10px;padding:14px;margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+              <span style="font-size:13px;font-weight:700">${l.title||'—'}</span>
+              <div style="display:flex;gap:6px;align-items:center">
+                <span style="font-size:11px;color:var(--txt3)">${l.date||''}</span>
+                <button onclick="deleteJournal(${logs.length-1-i})" style="padding:2px 8px;font-size:10px;background:transparent;border:.5px solid var(--bd);border-radius:5px;color:var(--red);cursor:pointer">삭제</button>
+              </div>
+            </div>
+            ${l.good?`<div style="font-size:12px;margin-bottom:5px"><span style="color:var(--green);font-weight:600">✅ 잘한 것</span> <span style="color:var(--txt2)">${l.good}</span></div>`:''}
+            ${l.bad?`<div style="font-size:12px;margin-bottom:5px"><span style="color:var(--red);font-weight:600">😅 반성</span> <span style="color:var(--txt2)">${l.bad}</span></div>`:''}
+            ${l.next?`<div style="font-size:12px"><span style="color:var(--blue);font-weight:600">📋 다음 계획</span> <span style="color:var(--txt2)">${l.next}</span></div>`:''}
+          </div>`).join('');
+      } else {
+        jEl.innerHTML=`<div style="text-align:center;padding:20px">
+          <div style="color:var(--txt3);font-size:12px;margin-bottom:12px">아직 작성된 일지가 없어요</div>
+          <button onclick="openJournalModal()" style="padding:8px 20px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer">+ 첫 일지 작성</button>
+        </div>`;
+      }
+    } catch(e) {
+      jEl.innerHTML='<div style="color:var(--txt3);font-size:12px">일지 불러오기 실패</div>';
+    }
+  }
+
+  runSim();
+}
+
+
+// ── 투자일지 ──
+function openJournalModal(){
+  var m=document.getElementById('journal-modal');
+  if(!m) return;
+  m.style.display='flex';
+  document.getElementById('jm-date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('jm-title').value='';
+  document.getElementById('jm-good').value='';
+  document.getElementById('jm-bad').value='';
+  document.getElementById('jm-next').value='';
+}
+function closeJournalModal(){
+  var m=document.getElementById('journal-modal'); if(m) m.style.display='none';
+}
+function saveJournal(){
+  var logs=[];
+  try{ logs=JSON.parse(localStorage.getItem('pf_journal')||'[]'); }catch(e){}
+  logs.push({
+    date: document.getElementById('jm-date').value,
+    title: document.getElementById('jm-title').value.trim(),
+    good:  document.getElementById('jm-good').value.trim(),
+    bad:   document.getElementById('jm-bad').value.trim(),
+    next:  document.getElementById('jm-next').value.trim(),
+  });
+  try{ localStorage.setItem('pf_journal',JSON.stringify(logs)); }catch(e){}
+  closeJournalModal();
+  pfToast('일지 저장됐어요!');
+  renderReview();
+}
+function deleteJournal(idx){
+  if(!confirm('이 일지를 삭제할까요?')) return;
+  var logs=[];
+  try{ logs=JSON.parse(localStorage.getItem('pf_journal')||'[]'); }catch(e){}
+  logs.splice(idx,1);
+  try{ localStorage.setItem('pf_journal',JSON.stringify(logs)); }catch(e){}
+  renderReview();
 }
 
 // ── 거래 입력 ──
@@ -2987,6 +3240,29 @@ function saveGbConfig() {
     <div style="display:flex;gap:8px">
       <button onclick="savePfEdit()" style="flex:1;padding:11px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">저장</button>
       <button onclick="closePfEditModal()" style="flex:1;padding:11px;background:var(--bg3);color:var(--txt2);border:1px solid var(--bd);border-radius:8px;font-size:13px;cursor:pointer">취소</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── 투자일지 입력 모달 ── -->
+<div id="journal-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;align-items:center;justify-content:center">
+  <div style="background:var(--bg2);border-radius:14px;padding:24px;width:92%;max-width:480px;box-shadow:0 8px 32px rgba(0,0,0,.2)">
+    <div style="font-size:15px;font-weight:700;margin-bottom:16px">📓 투자 일지 작성</div>
+    <div style="display:grid;grid-template-columns:1fr 2fr;gap:10px;margin-bottom:10px">
+      <div><label style="font-size:10px;color:var(--txt3);font-weight:700;display:block;margin-bottom:4px">날짜</label>
+        <input id="jm-date" type="date" style="width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--bd);border-radius:7px;color:var(--txt);font-size:13px;outline:none;box-sizing:border-box"></div>
+      <div><label style="font-size:10px;color:var(--txt3);font-weight:700;display:block;margin-bottom:4px">제목</label>
+        <input id="jm-title" type="text" placeholder="예: 3월 점검" style="width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--bd);border-radius:7px;color:var(--txt);font-size:13px;outline:none;box-sizing:border-box"></div>
+    </div>
+    <div style="margin-bottom:10px"><label style="font-size:10px;color:var(--green);font-weight:700;display:block;margin-bottom:4px">✅ 잘한 것</label>
+      <textarea id="jm-good" rows="2" style="width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--bd);border-radius:7px;color:var(--txt);font-size:12px;outline:none;box-sizing:border-box;resize:vertical"></textarea></div>
+    <div style="margin-bottom:10px"><label style="font-size:10px;color:var(--red);font-weight:700;display:block;margin-bottom:4px">😅 반성·실수</label>
+      <textarea id="jm-bad" rows="2" style="width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--bd);border-radius:7px;color:var(--txt);font-size:12px;outline:none;box-sizing:border-box;resize:vertical"></textarea></div>
+    <div style="margin-bottom:14px"><label style="font-size:10px;color:var(--blue);font-weight:700;display:block;margin-bottom:4px">📋 다음 계획</label>
+      <textarea id="jm-next" rows="2" style="width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--bd);border-radius:7px;color:var(--txt);font-size:12px;outline:none;box-sizing:border-box;resize:vertical"></textarea></div>
+    <div style="display:flex;gap:8px">
+      <button onclick="saveJournal()" style="flex:1;padding:11px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">저장</button>
+      <button onclick="closeJournalModal()" style="flex:1;padding:11px;background:var(--bg3);color:var(--txt2);border:1px solid var(--bd);border-radius:8px;font-size:13px;cursor:pointer">취소</button>
     </div>
   </div>
 </div>
