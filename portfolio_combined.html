@@ -356,9 +356,10 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
       <div class="form-group"><label>수량 (주)</label><input type="number" id="f-qty" placeholder="0"></div>
       <div class="form-group"><label>단가 (원)</label><input type="number" id="f-price" placeholder="0" oninput="calcAmt()"></div>
       <div class="form-group"><label>금액 (원)</label><input type="number" id="f-amount" placeholder="자동계산"></div>
-      <div class="form-group"><label>수수료</label><input type="number" id="f-fee" placeholder="0"></div>
     </div>
-    <div class="form-grid" style="grid-template-columns:1fr">
+    <div class="form-grid" style="grid-template-columns:1fr 1fr 2fr">
+      <div class="form-group"><label>수수료</label><input type="number" id="f-fee" placeholder="0"></div>
+      <div class="form-group"><label>세금</label><input type="number" id="f-tax" placeholder="0"></div>
       <div class="form-group"><label>메모</label><input type="text" id="f-memo" placeholder="선택사항"></div>
     </div>
     <div style="display:flex;gap:10px;align-items:center">
@@ -370,8 +371,8 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
   <div class="sec" style="margin-top:32px">오늘 입력한 거래</div>
   <div class="card tbl-wrap">
     <table class="tbl">
-      <thead><tr><th>계좌</th><th>유형</th><th>종목</th><th class="num">수량</th><th class="num">단가</th><th class="num">금액</th><th>메모</th></tr></thead>
-      <tbody id="today-tx"><tr><td colspan="7" style="text-align:center;padding:20px;color:var(--txt3)">오늘 입력한 거래 없음</td></tr></tbody>
+      <thead><tr><th>계좌</th><th>유형</th><th>종목</th><th class="num">수량</th><th class="num">단가</th><th class="num">금액</th><th class="num">수수료</th><th class="num">세금</th><th>메모</th></tr></thead>
+      <tbody id="today-tx"><tr><td colspan="9" style="text-align:center;padding:20px;color:var(--txt3)">오늘 입력한 거래 없음</td></tr></tbody>
     </table>
   </div>
 </div>
@@ -393,8 +394,8 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
   </div>
   <div class="card tbl-wrap">
     <table class="tbl">
-      <thead><tr><th>날짜</th><th>계좌</th><th>유형</th><th>종목</th><th class="num">수량</th><th class="num">단가</th><th class="num">금액</th><th>메모</th><th style="width:80px;text-align:center">수정/삭제</th></tr></thead>
-      <tbody id="history-tx"><tr><td colspan="8" class="loading">로딩 중...</td></tr></tbody>
+      <thead><tr><th>날짜</th><th>계좌</th><th>유형</th><th>종목</th><th class="num">수량</th><th class="num">단가</th><th class="num">금액</th><th class="num">수수료</th><th class="num">세금</th><th>메모</th><th style="width:80px;text-align:center">수정/삭제</th></tr></thead>
+      <tbody id="history-tx"><tr><td colspan="11" class="loading">로딩 중...</td></tr></tbody>
     </table>
   </div>
 </div>
@@ -1006,47 +1007,98 @@ function renderDashboard() {
   document.getElementById('k-tax').textContent    = taxRefund ? taxRefund.toLocaleString()+'원' : '—';
 
   const maxIn = Math.max(...Object.values(accMap).map(v=>v.in), 1);
+  // 계좌별 수익 = 분배금 + 실현손익(매도-매수 단순 근사) - 수수료
   document.getElementById('acc-summary').innerHTML =
-    Object.entries(accMap).filter(([,v])=>v.in>0).sort((a,b)=>b[1].in-a[1].in).map(([acc,v])=>`
-      <div class="bar-row">
-        <div class="bar-label" style="font-size:11px;min-width:80px"><span class="${accCol(acc)}">${acc}</span></div>
-        <div class="bar-track"><div class="bar-fill" style="width:${v.in/maxIn*100}%;background:var(--blue)"></div></div>
-        <div style="width:90px;flex-shrink:0;text-align:right;font-size:12px;font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--txt2)">${fmtW(v.in)}</div>
-      </div>`).join('') || '<div style="color:var(--txt3);font-size:12px;padding:8px">데이터 없음</div>';
+    Object.entries(accMap).filter(([,v])=>v.in>0).sort((a,b)=>b[1].in-a[1].in).map(([acc,v])=>{
+      const realizedApprox = v.sell - v.buy + v.div - v.fee;
+      const gainColor = realizedApprox>0?'var(--green)':realizedApprox<0?'var(--red)':'var(--txt3)';
+      const gainSign  = realizedApprox>0?'+':'';
+      return `<div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">
+          <span class="${accCol(acc)}" style="font-size:12px;font-weight:600">${acc}</span>
+          <span style="font-size:11px;color:var(--txt3)">납입 ${fmtW(v.in)}</span>
+        </div>
+        <div class="bar-track" style="margin-bottom:3px"><div class="bar-fill" style="width:${v.in/maxIn*100}%;background:var(--blue)"></div></div>
+        <div style="display:flex;gap:10px;font-size:10px;font-variant-numeric:tabular-nums">
+          <span style="color:var(--txt3)">배당 <b style="color:var(--purple)">${fmtW(v.div)}</b></span>
+          <span style="color:var(--txt3)">매도차익 <b style="color:${gainColor}">${gainSign}${fmtW(realizedApprox)}</b></span>
+          ${v.fee>0?`<span style="color:var(--txt3)">수수료 <b>${fmtW(v.fee)}</b></span>`:''}
+        </div>
+      </div>`;
+    }).join('') || '<div style="color:var(--txt3);font-size:12px;padding:8px">데이터 없음</div>';
 
   const PEN_ACCS = ['삼성연금저축','미래연금저축','우리IRP'];
   let p26=0, p26sp=0, i26=0, i26sp=0;
+  const penMonthly={}, isaMonthly={};
   pfTx.forEach(r=>{
     if((r.date||'').slice(0,4)!=='2026'||r.type!=='입금') return;
     const amt=parseFloat(r.amount)||0;
     const isReg=(r.name||r.memo||'').includes('정기납');
-    if(PEN_ACCS.includes(r.account)){ if(isReg) p26+=amt; else p26sp+=amt; }
-    if(r.account==='미래ISA'){ if(isReg) i26+=amt; else i26sp+=amt; }
+    const ym=(r.date||'').slice(0,7);
+    if(PEN_ACCS.includes(r.account)){
+      if(isReg){ p26+=amt; penMonthly[ym]=(penMonthly[ym]||0)+amt; }
+      else p26sp+=amt;
+    }
+    if(r.account==='미래ISA'){
+      if(isReg){ i26+=amt; isaMonthly[ym]=(isaMonthly[ym]||0)+amt; }
+      else i26sp+=amt;
+    }
   });
   const penTotal=p26+p26sp, isaTotal=i26+i26sp;
-  const penPct=Math.min(100,Math.round(penTotal/4800000*100));
-  const penRegPct=Math.min(penPct,Math.round(p26/4800000*100));
-  const isaPct=Math.min(100,Math.round(isaTotal/5500000*100));
-  const isaRegPct=Math.min(isaPct,Math.round(i26/5500000*100));
+  const penLimit=4800000, isaLimit=5500000;
+  const penPct=Math.min(100,Math.round(penTotal/penLimit*100));
+  const penRegPct=Math.min(penPct,Math.round(p26/penLimit*100));
+  const isaPct=Math.min(100,Math.round(isaTotal/isaLimit*100));
+  const isaRegPct=Math.min(isaPct,Math.round(i26/isaLimit*100));
+  // 월별 정기납 테이블 생성
+  function monthlyTable(monthMap, color){
+    const months=Object.keys(monthMap).sort();
+    if(!months.length) return '';
+    let cum=0, rows='';
+    months.forEach(m=>{
+      cum+=monthMap[m];
+      rows+=`<tr><td style="padding:3px 6px;color:var(--txt3);font-size:10px">${m}</td>`
+        +`<td style="padding:3px 6px;text-align:right;font-size:10px;font-variant-numeric:tabular-nums">${fmtW(monthMap[m])}</td>`
+        +`<td style="padding:3px 6px;text-align:right;font-size:10px;font-variant-numeric:tabular-nums;color:${color};font-weight:600">${fmtW(cum)}</td></tr>`;
+    });
+    return `<table style="width:100%;border-collapse:collapse;margin-top:6px">
+      <thead><tr>
+        <th style="padding:3px 6px;font-size:9px;color:var(--txt3);font-weight:700;text-align:left;border-bottom:1px solid var(--bd)">월</th>
+        <th style="padding:3px 6px;font-size:9px;color:var(--txt3);font-weight:700;text-align:right;border-bottom:1px solid var(--bd)">월납입</th>
+        <th style="padding:3px 6px;font-size:9px;color:var(--txt3);font-weight:700;text-align:right;border-bottom:1px solid var(--bd)">누적</th>
+      </tr></thead><tbody>${rows}</tbody></table>`;
+  }
   document.getElementById('pay-progress').innerHTML =
-    '<div class="prog" style="margin-bottom:14px">'
-    +'<div class="prog-hd"><span style="color:var(--purple);font-weight:600">연금저축 (목표 480만)</span>'
-    +'<span style="color:var(--txt2);font-variant-numeric:tabular-nums">'+fmtW(penTotal)+' · '+penPct+'%</span></div>'
-    +'<div class="prog-track" style="position:relative">'
-    +'<div style="position:absolute;left:0;top:0;height:100%;width:'+penRegPct+'%;background:var(--purple);border-radius:4px"></div>'
-    +'<div style="position:absolute;left:'+penRegPct+'%;top:0;height:100%;width:'+(penPct-penRegPct)+'%;background:rgba(108,74,176,.3);border-radius:0 4px 4px 0"></div>'
-    +'</div>'
-    +'<div style="display:flex;gap:14px;font-size:10px;color:var(--txt3);margin-top:4px">'
-    +'<span>● 정기납 '+fmtW(p26)+'</span><span style="color:rgba(108,74,176,.6)">○ 특별납 '+fmtW(p26sp)+'</span></div></div>'
-    +'<div class="prog">'
-    +'<div class="prog-hd"><span style="color:var(--teal);font-weight:600">ISA (목표 550만)</span>'
-    +'<span style="color:var(--txt2);font-variant-numeric:tabular-nums">'+fmtW(isaTotal)+' · '+isaPct+'%</span></div>'
-    +'<div class="prog-track" style="position:relative">'
-    +'<div style="position:absolute;left:0;top:0;height:100%;width:'+isaRegPct+'%;background:var(--teal);border-radius:4px"></div>'
-    +'<div style="position:absolute;left:'+isaRegPct+'%;top:0;height:100%;width:'+(isaPct-isaRegPct)+'%;background:rgba(0,180,147,.3);border-radius:0 4px 4px 0"></div>'
-    +'</div>'
-    +'<div style="display:flex;gap:14px;font-size:10px;color:var(--txt3);margin-top:4px">'
-    +'<span>● 정기납 '+fmtW(i26)+'</span><span style="color:rgba(0,180,147,.6)">○ 특별납 '+fmtW(i26sp)+'</span></div></div>';
+    // 연금저축
+    `<div class="prog" style="margin-bottom:16px">
+      <div class="prog-hd"><span style="color:var(--purple);font-weight:600">🏦 연금저축 (한도 480만)</span>
+        <span style="color:var(--txt2);font-variant-numeric:tabular-nums">${fmtW(penTotal)} · ${penPct}%</span></div>
+      <div class="prog-track" style="position:relative">
+        <div style="position:absolute;left:0;top:0;height:100%;width:${penRegPct}%;background:var(--purple);border-radius:4px"></div>
+        <div style="position:absolute;left:${penRegPct}%;top:0;height:100%;width:${penPct-penRegPct}%;background:rgba(108,74,176,.3);border-radius:0 4px 4px 0"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--txt3);margin-top:4px">
+        <span>● 정기납 <b style="color:var(--purple)">${fmtW(p26)}</b></span>
+        <span style="color:rgba(108,74,176,.6)">특별납 <b>${fmtW(p26sp)}</b></span>
+        <span>잔여 <b>${fmtW(Math.max(0,penLimit-penTotal))}</b></span>
+      </div>
+      ${monthlyTable(penMonthly,'var(--purple)')}
+    </div>`
+    // ISA
+    +`<div class="prog">
+      <div class="prog-hd"><span style="color:var(--teal);font-weight:600">📈 ISA (한도 550만)</span>
+        <span style="color:var(--txt2);font-variant-numeric:tabular-nums">${fmtW(isaTotal)} · ${isaPct}%</span></div>
+      <div class="prog-track" style="position:relative">
+        <div style="position:absolute;left:0;top:0;height:100%;width:${isaRegPct}%;background:var(--teal);border-radius:4px"></div>
+        <div style="position:absolute;left:${isaRegPct}%;top:0;height:100%;width:${isaPct-isaRegPct}%;background:rgba(0,180,147,.3);border-radius:0 4px 4px 0"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--txt3);margin-top:4px">
+        <span>● 정기납 <b style="color:var(--teal)">${fmtW(i26)}</b></span>
+        <span style="color:rgba(0,180,147,.6)">특별납 <b>${fmtW(i26sp)}</b></span>
+        <span>잔여 <b>${fmtW(Math.max(0,isaLimit-isaTotal))}</b></span>
+      </div>
+      ${monthlyTable(isaMonthly,'var(--teal)')}
+    </div>`;
 
   document.getElementById('recent-tx').innerHTML =
     pfTx.slice(0,10).map(r=>`
@@ -1082,13 +1134,15 @@ function renderHistory() {
           <td class="num">${r.qty>0?r.qty+'주':'—'}</td>
           <td class="num">${r.price>0?fmtW(r.price):'—'}</td>
           <td class="num">${fmtW(r.amount)}</td>
+          <td class="num" style="color:var(--txt3)">${r.fee>0?fmtW(r.fee):'—'}</td>
+          <td class="num" style="color:var(--txt3)">${r.tax>0?fmtW(r.tax):'—'}</td>
           <td style="color:var(--txt3);font-size:11px">${r.memo||''}</td>
           <td style="text-align:center;white-space:nowrap">
             <button onclick="openPfEditModal(${r.rowIndex})" style="padding:3px 8px;font-size:11px;background:var(--bg3);border:1px solid var(--bd);border-radius:5px;cursor:pointer;color:var(--txt2);margin-right:2px">수정</button>
             <button onclick="deletePfTx(${r.rowIndex})" style="padding:3px 8px;font-size:11px;background:transparent;border:1px solid var(--bd);border-radius:5px;cursor:pointer;color:var(--red)">삭제</button>
           </td>
         </tr>`).join('')
-    : '<tr><td colspan="9" style="text-align:center;color:var(--txt3);padding:20px">해당하는 거래 없음</td></tr>';
+    : '<tr><td colspan="11" style="text-align:center;color:var(--txt3);padding:20px">해당하는 거래 없음</td></tr>';
 }
 
 // ── 연금·ISA ──
@@ -1184,6 +1238,7 @@ async function saveTx() {
     price:  parseFloat(document.getElementById('f-price').value)||0,
     amount: parseFloat(document.getElementById('f-amount').value)||0,
     fee:    parseFloat(document.getElementById('f-fee').value)||0,
+    tax:    parseFloat(document.getElementById('f-tax').value)||0,
     memo:   document.getElementById('f-memo').value.trim(),
   });
   if(ok){ pfToast('저장 완료!'); resetForm(); await loadPfData(); renderTodayTx(); }
@@ -1191,7 +1246,7 @@ async function saveTx() {
 }
 function resetForm() {
   document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
-  ['f-name','f-qty','f-price','f-amount','f-fee','f-memo'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  ['f-name','f-qty','f-price','f-amount','f-fee','f-tax','f-memo'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
 }
 function renderTodayTx() {
   const today = new Date().toISOString().split('T')[0];
@@ -1205,9 +1260,11 @@ function renderTodayTx() {
           <td class="num">${r.qty>0?r.qty+'주':'—'}</td>
           <td class="num">${r.price>0?fmtW(r.price):'—'}</td>
           <td class="num">${fmtW(r.amount)}</td>
-          <td style="color:var(--txt3)">${r.memo||''}</td>
+          <td class="num" style="color:var(--txt3)">${r.fee>0?fmtW(r.fee):'—'}</td>
+          <td class="num" style="color:var(--txt3)">${r.tax>0?fmtW(r.tax):'—'}</td>
+          <td style="color:var(--txt3);font-size:11px">${r.memo||''}</td>
         </tr>`).join('')
-    : '<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--txt3)">오늘 입력한 거래 없음</td></tr>';
+    : '<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--txt3)">오늘 입력한 거래 없음</td></tr>';
 }
 
 // ── 설정 저장 ──
@@ -1332,6 +1389,7 @@ function openPfEditModal(rowIndex) {
   document.getElementById('pfe-price').value   = r.price || '';
   document.getElementById('pfe-amount').value  = r.amount || '';
   document.getElementById('pfe-fee').value     = r.fee || '';
+  document.getElementById('pfe-tax').value     = r.tax || '';
   document.getElementById('pfe-memo').value    = r.memo || '';
   var m = document.getElementById('pf-edit-modal');
   m.style.display = 'flex';
@@ -1362,6 +1420,7 @@ async function savePfEdit() {
     price:    parseFloat(document.getElementById('pfe-price').value) || '',
     amount:   parseFloat(document.getElementById('pfe-amount').value) || '',
     fee:      parseFloat(document.getElementById('pfe-fee').value) || '',
+    tax:      parseFloat(document.getElementById('pfe-tax').value) || '',
     memo:     document.getElementById('pfe-memo').value,
   });
   if(!addOk) { pfToast('저장 실패','err'); return; }
@@ -2681,7 +2740,27 @@ function renderCurrentConfig(){
   var hB=Object.keys(BUDGET).length>0,hC=Object.values(CARD_BUDGET).some(function(v){return v>0;}),hG=SAVE_GOALS.length>0,hI=Object.values(init).some(function(v){return v!==0;});
   if(!hB&&!hC&&!hG&&!hI){card.style.display='none';return;}
   card.style.display='block';var h='';
-  if(hB){var bH='';Object.entries(BUDGET).forEach(function(kv){var lbl=getCatLabel('지출',kv[0]);bH+='<div class="srow"><span class="sname" style="font-size:11px">'+lbl+'</span><span class="samt" style="font-size:11px;color:'+(kv[1]>0?'var(--blue)':'var(--hint)')+'">'+( kv[1]>0?fmt(kv[1]):'\uBBF8\uC124\uC815')+'</span></div>';});h+=cfgSec('budget','\uCE74\uD14C\uACE0\uB9AC \uC608\uC0B0',bH);}
+  if(hB){
+    var bH='';
+    Object.entries(BUDGET).forEach(function(kv){
+      var lbl=getCatLabel('지출',kv[0]);
+      bH+='<div class="srow" style="border-bottom:.5px solid var(--border)">'
+        +'<span class="sname" style="font-size:11px;font-weight:600">'+lbl+'</span>'
+        +'<span class="samt" style="font-size:11px;color:'+(kv[1]>0?'var(--blue)':'var(--hint)')+'">'+( kv[1]>0?fmt(kv[1]):'미설정')+'</span>'
+        +'</div>';
+      if(SUB_BUDGET&&SUB_BUDGET[kv[0]]){
+        Object.entries(SUB_BUDGET[kv[0]]).forEach(function(skv){
+          if(skv[1]>0){
+            bH+='<div class="srow" style="padding-left:16px;background:var(--bg3)">'
+              +'<span class="sname" style="font-size:10px;color:var(--txt3)">└ '+skv[0]+'</span>'
+              +'<span class="samt" style="font-size:10px;color:var(--blue)">'+fmt(skv[1])+'</span>'
+              +'</div>';
+          }
+        });
+      }
+    });
+    h+=cfgSec('budget','카테고리 예산',bH);
+  }
   if(hC){var cH='';Object.entries(CARD_BUDGET).filter(function(kv){return kv[1]>0;}).forEach(function(kv){cH+='<div class="srow"><span class="sname" style="font-size:11px">'+kv[0]+'</span><span class="samt" style="font-size:11px;color:var(--blue)">'+fmt(kv[1])+'</span></div>';});h+=cfgSec('card','\uCE74\uB4DC \uC608\uC0B0',cH);}
   if(hG){var gH='';SAVE_GOALS.forEach(function(g){gH+='<div class="srow"><span class="sname" style="font-size:11px">'+g.n+'</span><span class="samt" style="font-size:11px;color:var(--blue)">\uC6D4 '+fmt(g.g)+'</span></div>';});h+=cfgSec('goals','\uC800\uCD95 \uBAA9\uD45C',gH);}
   if(hI){var iH='';Object.entries(init).filter(function(kv){return kv[1]!==0;}).forEach(function(kv){var def=ACCTS_DEF.find(function(a){return a.key===kv[0];});iH+='<div class="srow"><span class="sname" style="font-size:11px">'+(def?def.label:kv[0])+'</span><span class="samt" style="font-size:11px;color:'+(kv[1]<0?'var(--red)':'var(--text)')+'">'+fmt(kv[1])+'</span></div>';});h+=cfgSec('initbal','\uCD08\uAE30 \uC7D8\uACE0',iH);}
@@ -2900,6 +2979,8 @@ function saveGbConfig() {
         <input id="pfe-amount" type="number" step="any" style="width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--bd);border-radius:7px;color:var(--txt);font-size:13px;outline:none;box-sizing:border-box"></div>
       <div><label style="font-size:10px;color:var(--txt3);font-weight:700;letter-spacing:.06em;display:block;margin-bottom:4px">수수료</label>
         <input id="pfe-fee" type="number" step="any" style="width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--bd);border-radius:7px;color:var(--txt);font-size:13px;outline:none;box-sizing:border-box"></div>
+      <div><label style="font-size:10px;color:var(--txt3);font-weight:700;letter-spacing:.06em;display:block;margin-bottom:4px">세금</label>
+        <input id="pfe-tax" type="number" step="any" style="width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--bd);border-radius:7px;color:var(--txt);font-size:13px;outline:none;box-sizing:border-box"></div>
     </div>
     <div style="margin-bottom:14px"><label style="font-size:10px;color:var(--txt3);font-weight:700;letter-spacing:.06em;display:block;margin-bottom:4px">메모</label>
       <input id="pfe-memo" type="text" style="width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--bd);border-radius:7px;color:var(--txt);font-size:13px;outline:none;box-sizing:border-box"></div>
