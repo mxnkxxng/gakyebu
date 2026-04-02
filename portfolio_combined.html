@@ -283,6 +283,7 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
   <div class="topnav-logo">portfolio.db</div>
   <div class="topnav-group-label">📈 주식·연금</div>
   <div class="topnav-tab on" onclick="showTab(0)">대시보드</div>
+  <div class="topnav-tab"   onclick="showTab(4)">📋 현황</div>
   <div class="topnav-tab"   onclick="showTab(1)">거래 입력</div>
   <div class="topnav-tab"   onclick="showTab(2)">거래 내역</div>
   <div class="topnav-tab"   onclick="showTab(3)">📊 연금·ISA 리뷰</div>
@@ -329,7 +330,112 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
 </div>
 
 <!-- ════════════════════════════════════════════
-  탭 1 : 거래 입력
+  탭 4 : 현황 (시트 연동)
+═════════════════════════════════════════════ -->
+<div id="p4" class="panel">
+
+  <!-- ① 전체 요약 KPI -->
+  <div id="ov-kpi" class="kpi-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:20px">
+    <div class="kpi"><div class="kpi-label">총 납입원금</div><div class="kpi-val neu" id="ov-k-in">—</div></div>
+    <div class="kpi"><div class="kpi-label">현재 총자산</div><div class="kpi-val pos" id="ov-k-asset">—</div></div>
+    <div class="kpi"><div class="kpi-label">누적 수익</div><div class="kpi-val" id="ov-k-profit">—</div></div>
+    <div class="kpi"><div class="kpi-label">수익률</div><div class="kpi-val" id="ov-k-rate">—</div></div>
+    <div class="kpi"><div class="kpi-label">누적 배당</div><div class="kpi-val" style="color:var(--purple)" id="ov-k-div">—</div></div>
+  </div>
+
+  <!-- ② 자산 유형별 -->
+  <div class="g3" style="margin-bottom:20px">
+    <div class="card" id="ov-pen-card">
+      <div class="sec">🏦 연금</div>
+      <div id="ov-pen"></div>
+    </div>
+    <div class="card" id="ov-isa-card">
+      <div class="sec">📈 주식 (ISA·일반)</div>
+      <div id="ov-stock"></div>
+    </div>
+    <div class="card">
+      <div class="sec">🥇 금</div>
+      <div id="ov-gold"></div>
+    </div>
+  </div>
+
+  <!-- ③ 계좌별 요약 -->
+  <div class="sec">계좌별 요약</div>
+  <div class="card tbl-wrap" style="margin-bottom:20px">
+    <table class="tbl">
+      <thead><tr>
+        <th>계좌</th><th>성격</th>
+        <th class="num">①납입원금</th>
+        <th class="num">②평가금액</th>
+        <th class="num">③예수금</th>
+        <th class="num">④총자산</th>
+        <th class="num">⑤누적수익</th>
+        <th class="num">수익률</th>
+        <th class="num">배당</th>
+        <th class="num">실현손익</th>
+      </tr></thead>
+      <tbody id="ov-acc-tbody"><tr><td colspan="10" class="loading">시트 데이터 로딩 전</td></tr></tbody>
+    </table>
+  </div>
+
+  <!-- ④ 보유종목 -->
+  <div class="sec">보유종목</div>
+  <div class="card tbl-wrap" style="margin-bottom:20px">
+    <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+      <button class="btn btn-ghost" style="font-size:11px;padding:5px 10px" onclick="ovFilterHolding('')" id="hf-all">전체</button>
+      <button class="btn btn-ghost" style="font-size:11px;padding:5px 10px" onclick="ovFilterHolding('연금')" id="hf-pen">연금</button>
+      <button class="btn btn-ghost" style="font-size:11px;padding:5px 10px" onclick="ovFilterHolding('ISA')" id="hf-isa">ISA</button>
+      <button class="btn btn-ghost" style="font-size:11px;padding:5px 10px" onclick="ovFilterHolding('일반')" id="hf-gen">일반</button>
+    </div>
+    <table class="tbl">
+      <thead><tr>
+        <th>종목명</th><th>계좌</th><th>섹터</th>
+        <th class="num">보유수량</th>
+        <th class="num">평균단가</th>
+        <th class="num">투자원금</th>
+        <th class="num">현재가</th>
+        <th class="num">평가금액</th>
+        <th class="num">손익</th>
+        <th class="num">수익률</th>
+      </tr></thead>
+      <tbody id="ov-hold-tbody"><tr><td colspan="10" class="loading">시트 데이터 로딩 전</td></tr></tbody>
+    </table>
+  </div>
+
+  <!-- ⑤ 실현손익 -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+    <div class="sec" style="margin:0">실현손익</div>
+    <div style="display:flex;gap:6px">
+      <button class="btn btn-ghost" style="font-size:11px;padding:5px 10px" onclick="ovRealizedView('list')" id="rv-list-btn">내역</button>
+      <button class="btn btn-ghost" style="font-size:11px;padding:5px 10px" onclick="ovRealizedView('acc')"  id="rv-acc-btn">계좌별</button>
+      <button class="btn btn-ghost" style="font-size:11px;padding:5px 10px" onclick="ovRealizedView('name')" id="rv-name-btn">종목별</button>
+    </div>
+  </div>
+  <div class="card tbl-wrap" style="margin-bottom:20px" id="ov-realized-wrap">
+    <div id="ov-realized"><div class="loading">시트 데이터 로딩 전</div></div>
+  </div>
+
+  <!-- ⑥ ISA·연금 한도 현황 -->
+  <div class="sec">ISA · 연금 한도 현황</div>
+  <div class="g2" style="margin-bottom:20px">
+    <div class="card">
+      <div style="font-size:12px;font-weight:700;color:var(--txt2);margin-bottom:12px">🏦 연금 세액공제</div>
+      <div id="ov-pension-limit"></div>
+    </div>
+    <div class="card">
+      <div style="font-size:12px;font-weight:700;color:var(--txt2);margin-bottom:12px">📈 ISA 납입한도</div>
+      <div id="ov-isa-limit"></div>
+    </div>
+  </div>
+
+  <!-- 새로고침 버튼 -->
+  <div style="text-align:center;margin-bottom:24px">
+    <button onclick="loadOvData(true)" class="btn btn-ghost" style="font-size:12px">↺ 시트에서 새로고침</button>
+    <div id="ov-last-update" style="font-size:10px;color:var(--txt3);margin-top:6px"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
 ═════════════════════════════════════════════ -->
 <div id="p1" class="panel">
   <div class="card" style="max-width:700px">
@@ -897,10 +1003,7 @@ function showTab(i) {
     if(match) t.classList.toggle('on', parseInt(match[1])===i);
   });
   // 패널 전환 — 11개 패널 ID 직접 지정
-  ['p0','p1','p2','p3','p4','p5','p6','p7','p8','p9','p10','p11'].forEach(function(id,j){
-    var el = document.getElementById(id);
-    if(el) el.classList.toggle('on', i===j);
-  });
+  ['p0','p1','p2','p3','p4','p5','p6','p7','p8','p9','p10','p11'].forEach(function(id,j){\n    var el = document.getElementById(id);\n    if(el) el.classList.toggle('on', i===j);\n  });
   // 주식 탭(0~4) — GAS URL 없으면 설정 탭(11)으로 리다이렉트
   if(i>=0 && i<=4) {
     if(!getPfUrl()) {
@@ -934,6 +1037,7 @@ function showTab(i) {
   if(i===7) { setTimeout(function(){ if(typeof renderHist==='function') renderHist(); }, 50); }
   if(i===8) { setTimeout(function(){ if(typeof renderBalance==='function') renderBalance(); }, 50); }
   if(i===3) { setTimeout(function(){ if(typeof renderReview==='function') renderReview(); }, 50); }
+  if(i===4) { setTimeout(function(){ if(typeof loadOvData==='function') loadOvData(); }, 50); }
   if(i===9) { setTimeout(function(){ if(typeof renderAsset==='function') renderAsset(); }, 50); }
   if(i===10) { setTimeout(function(){ if(typeof renderSetup==="function") renderSetup(); }, 50); }
   if(i===11) { var _pfu=document.getElementById("cfg-pf-url"); if(_pfu){ var _sv=getPfUrl(); if(_sv) _pfu.value=_sv; } }
@@ -1191,6 +1295,415 @@ function renderDashboard() {
 }
 
 // ── 거래 내역 ──
+// ════════════════════════════════════════════════════════════════
+//  탭 4 : 현황 — 시트 연동 데이터 기반
+// ════════════════════════════════════════════════════════════════
+
+let ovSummary = null;   // 계좌요약
+let ovHoldings = [];    // 보유종목
+let ovRealized = [];    // 실현손익
+let ovHoldFilter = '';
+let ovRealizedMode = 'list';
+
+// ── 데이터 로드 ──
+async function loadOvData(force) {
+  const url = getPfUrl();
+  if (!url) {
+    loadOvSample();
+    return;
+  }
+  const cached = !force && localStorage.getItem('ov_cache_ts');
+  if (cached && Date.now() - parseInt(cached) < 300000) { // 5분 캐시
+    try {
+      ovSummary  = JSON.parse(localStorage.getItem('ov_summary')||'null');
+      ovHoldings = JSON.parse(localStorage.getItem('ov_holdings')||'[]');
+      ovRealized = JSON.parse(localStorage.getItem('ov_realized')||'[]');
+      if (ovSummary) { renderOv(); return; }
+    } catch(e) {}
+  }
+  document.getElementById('ov-last-update').textContent = '불러오는 중...';
+  try {
+    const [rs, rh, rr] = await Promise.all([
+      pfFetch('pf_summary'),
+      pfFetch('pf_holdings'),
+      pfFetch('pf_realized'),
+    ]);
+    if (rs && rs.data) ovSummary  = rs.data;
+    if (rh && rh.data) ovHoldings = rh.data;
+    if (rr && rr.data) ovRealized = rr.data;
+    localStorage.setItem('ov_summary',  JSON.stringify(ovSummary));
+    localStorage.setItem('ov_holdings', JSON.stringify(ovHoldings));
+    localStorage.setItem('ov_realized', JSON.stringify(ovRealized));
+    localStorage.setItem('ov_cache_ts', String(Date.now()));
+    renderOv();
+  } catch(e) {
+    document.getElementById('ov-last-update').textContent = '로드 실패: ' + e.message;
+  }
+}
+
+function renderOv() {
+  if (!ovSummary) return;
+  renderOvKpi();
+  renderOvTypeSplit();
+  renderOvAccTable();
+  renderOvHoldings();
+  renderOvRealized();
+  renderOvLimits();
+  const now = new Date();
+  document.getElementById('ov-last-update').textContent =
+    `마지막 업데이트: ${now.getMonth()+1}/${now.getDate()} ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
+}
+
+// ── ① KPI ──
+function renderOvKpi() {
+  const s = ovSummary;
+  const setKpiEl = (id, val, pos) => {
+    const el = document.getElementById(id); if (!el) return;
+    el.textContent = val;
+    el.style.color = pos === true ? 'var(--green)' : pos === false ? 'var(--red)' : '';
+  };
+  setKpiEl('ov-k-in',     fmtW(s.totalIn));
+  setKpiEl('ov-k-asset',  fmtW(s.totalAsset), s.totalAsset >= s.totalIn);
+  const profit = s.totalProfit;
+  setKpiEl('ov-k-profit', (profit>=0?'+':'')+fmtW(profit), profit>=0);
+  setKpiEl('ov-k-rate',   (s.totalRate>=0?'+':'')+s.totalRate+'%', s.totalRate>=0);
+  setKpiEl('ov-k-div',    fmtW(s.totalDiv));
+}
+
+// ── ② 유형별 카드 ──
+function renderOvTypeSplit() {
+  const s = ovSummary;
+  const typeCard = (data) => {
+    if (!data) return '<div style="color:var(--txt3);font-size:12px">데이터 없음</div>';
+    const profitColor = data.profit >= 0 ? 'var(--green)' : 'var(--red)';
+    const sign = data.profit >= 0 ? '+' : '';
+    return `
+      <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:.5px solid var(--border)">
+        <span style="font-size:12px;color:var(--txt2)">납입원금</span>
+        <span style="font-size:13px;font-weight:600">${fmtW(data.in)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:.5px solid var(--border)">
+        <span style="font-size:12px;color:var(--txt2)">현재 총자산</span>
+        <span style="font-size:13px;font-weight:700;color:var(--blue)">${fmtW(data.asset)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:.5px solid var(--border)">
+        <span style="font-size:12px;color:var(--txt2)">누적 수익</span>
+        <span style="font-size:13px;font-weight:700;color:${profitColor}">${sign}${fmtW(data.profit)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:.5px solid var(--border)">
+        <span style="font-size:12px;color:var(--txt2)">수익률</span>
+        <span style="font-size:13px;font-weight:700;color:${profitColor}">${sign}${data.rate}%</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:6px 0">
+        <span style="font-size:12px;color:var(--txt2)">누적 배당</span>
+        <span style="font-size:13px;color:var(--purple);font-weight:600">${fmtW(data.div)}</span>
+      </div>`;
+  };
+  document.getElementById('ov-pen').innerHTML   = typeCard(s.pension);
+  document.getElementById('ov-stock').innerHTML = typeCard(s.stock);
+  document.getElementById('ov-gold').innerHTML  = typeCard(s.gold);
+}
+
+// ── ③ 계좌별 테이블 ──
+function renderOvAccTable() {
+  const accs = ovSummary.accounts || [];
+  const tbody = document.getElementById('ov-acc-tbody');
+  if (!accs.length) { tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--txt3);padding:16px">데이터 없음</td></tr>'; return; }
+  tbody.innerHTML = accs.map(a => {
+    const profitCol = a.profit >= 0 ? 'var(--green)' : 'var(--red)';
+    const sign = a.profit >= 0 ? '+' : '';
+    const realCol = a.realized > 0 ? 'var(--green)' : a.realized < 0 ? 'var(--red)' : 'var(--txt3)';
+    return `<tr>
+      <td style="font-weight:600">${a.name}</td>
+      <td><span style="font-size:11px;color:var(--txt3)">${a.type||''}</span></td>
+      <td class="num">${fmtW(a.in)}</td>
+      <td class="num" style="color:var(--blue)">${fmtW(a.eval)}</td>
+      <td class="num" style="color:var(--txt3)">${a.cash > 0 ? fmtW(a.cash) : '—'}</td>
+      <td class="num" style="font-weight:700">${fmtW(a.asset)}</td>
+      <td class="num" style="color:${profitCol};font-weight:700">${sign}${fmtW(a.profit)}</td>
+      <td class="num" style="color:${profitCol};font-weight:600">${sign}${a.rate}%</td>
+      <td class="num" style="color:var(--purple)">${a.div > 0 ? fmtW(a.div) : '—'}</td>
+      <td class="num" style="color:${realCol};font-weight:600">${a.realized !== 0 ? (a.realized>0?'+':'')+fmtW(a.realized) : '—'}</td>
+    </tr>`;
+  }).join('') +
+  `<tr class="sum">
+    <td colspan="2">전체 합계</td>
+    <td class="num">${fmtW(ovSummary.totalIn)}</td>
+    <td class="num" style="color:var(--blue)">${fmtW(ovSummary.totalEval)}</td>
+    <td class="num">${fmtW(ovSummary.totalCash)}</td>
+    <td class="num" style="font-weight:700">${fmtW(ovSummary.totalAsset)}</td>
+    <td class="num" style="color:${ovSummary.totalProfit>=0?'var(--green)':'var(--red)'};font-weight:700">${ovSummary.totalProfit>=0?'+':''}${fmtW(ovSummary.totalProfit)}</td>
+    <td class="num" style="color:${ovSummary.totalRate>=0?'var(--green)':'var(--red)'}">${ovSummary.totalRate>=0?'+':''}${ovSummary.totalRate}%</td>
+    <td class="num" style="color:var(--purple)">${fmtW(ovSummary.totalDiv)}</td>
+    <td class="num" style="color:${ovSummary.totalRealized>=0?'var(--green)':'var(--red)'}">${ovSummary.totalRealized>=0?'+':''}${fmtW(ovSummary.totalRealized)}</td>
+  </tr>`;
+}
+
+// ── ④ 보유종목 ──
+function ovFilterHolding(f) {
+  ovHoldFilter = f;
+  ['all','pen','isa','gen'].forEach(k => {
+    const btn = document.getElementById('hf-'+k);
+    if (btn) btn.style.background = '';
+  });
+  const map = {'':'all','연금':'pen','ISA':'isa','일반':'gen'};
+  const activeBtn = document.getElementById('hf-'+(map[f]||'all'));
+  if (activeBtn) activeBtn.style.background = 'var(--blue)'; activeBtn && (activeBtn.style.color='#fff');
+  renderOvHoldings();
+}
+
+function renderOvHoldings() {
+  const tbody = document.getElementById('ov-hold-tbody');
+  let rows = ovHoldings;
+  if (ovHoldFilter) rows = rows.filter(r => (r.accType||'').includes(ovHoldFilter));
+  if (!rows.length) { tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--txt3);padding:16px">보유종목 없음</td></tr>'; return; }
+
+  // 섹터 소계용
+  let totalInvest = 0, totalEval = 0, totalPnl = 0;
+  tbody.innerHTML = rows.map(r => {
+    const pnl = r.pnl || 0;
+    const pnlColor = pnl > 0 ? 'var(--green)' : pnl < 0 ? 'var(--red)' : 'var(--txt3)';
+    const rateColor = (r.rate||0) > 0 ? 'var(--green)' : (r.rate||0) < 0 ? 'var(--red)' : 'var(--txt3)';
+    totalInvest += r.invest || 0;
+    totalEval   += r.eval || 0;
+    totalPnl    += pnl;
+    return `<tr>
+      <td style="font-weight:600;font-size:12px">${r.name}</td>
+      <td style="font-size:11px;color:var(--txt3)">${r.account}</td>
+      <td><span style="font-size:10px;padding:2px 6px;border-radius:4px;background:var(--bg3);color:var(--txt2)">${r.sector||'—'}</span></td>
+      <td class="num">${r.qty > 0 ? r.qty+'주' : '—'}</td>
+      <td class="num" style="font-size:11px">${r.avgPrice > 0 ? fmtW(r.avgPrice) : '—'}</td>
+      <td class="num">${fmtW(r.invest)}</td>
+      <td class="num" style="color:var(--blue)">${r.curPrice > 0 ? fmtW(r.curPrice) : '—'}</td>
+      <td class="num" style="font-weight:600">${fmtW(r.eval)}</td>
+      <td class="num" style="color:${pnlColor};font-weight:700">${pnl>=0?'+':''}${fmtW(pnl)}</td>
+      <td class="num" style="color:${rateColor};font-weight:600">${(r.rate||0)>=0?'+':''}${r.rate||0}%</td>
+    </tr>`;
+  }).join('') +
+  `<tr class="sum">
+    <td colspan="5">합계</td>
+    <td class="num">${fmtW(totalInvest)}</td>
+    <td class="num">—</td>
+    <td class="num" style="font-weight:700">${fmtW(totalEval)}</td>
+    <td class="num" style="color:${totalPnl>=0?'var(--green)':'var(--red)'};font-weight:700">${totalPnl>=0?'+':''}${fmtW(totalPnl)}</td>
+    <td class="num" style="color:${totalPnl>=0?'var(--green)':'var(--red)'}">
+      ${totalInvest > 0 ? (totalPnl>=0?'+':'') + (totalPnl/totalInvest*100).toFixed(1)+'%' : '—'}
+    </td>
+  </tr>`;
+}
+
+// ── ⑤ 실현손익 ──
+function ovRealizedView(mode) {
+  ovRealizedMode = mode;
+  ['list','acc','name'].forEach(m => {
+    const btn = document.getElementById('rv-'+m+'-btn');
+    if (btn) { btn.style.background=''; btn.style.color=''; }
+  });
+  const activeBtn = document.getElementById('rv-'+mode+'-btn');
+  if (activeBtn) { activeBtn.style.background='var(--blue)'; activeBtn.style.color='#fff'; }
+  renderOvRealized();
+}
+
+function renderOvRealized() {
+  const el = document.getElementById('ov-realized');
+  const rows = ovRealized;
+  if (!rows.length) { el.innerHTML = '<div style="color:var(--txt3);font-size:12px;padding:8px">실현손익 데이터 없음</div>'; return; }
+
+  const totalPnl    = rows.reduce((s,r)=>s+(r.pnl||0), 0);
+  const totalNetPnl = rows.reduce((s,r)=>s+(r.netPnl||0), 0);
+  const summary = `<div style="display:flex;gap:16px;margin-bottom:12px;flex-wrap:wrap">
+    <span style="font-size:12px;color:var(--txt2)">총 실현손익
+      <b style="color:${totalPnl>=0?'var(--green)':'var(--red)'}"> ${totalPnl>=0?'+':''}${fmtW(totalPnl)}</b>
+    </span>
+    <span style="font-size:12px;color:var(--txt2)">순 실현손익(비용제외)
+      <b style="color:${totalNetPnl>=0?'var(--green)':'var(--red)'}"> ${totalNetPnl>=0?'+':''}${fmtW(totalNetPnl)}</b>
+    </span>
+  </div>`;
+
+  if (ovRealizedMode === 'list') {
+    el.innerHTML = summary + `<table class="tbl">
+      <thead><tr><th>날짜</th><th>계좌</th><th>종목</th><th class="num">매수단가</th><th class="num">매도단가</th><th class="num">수량</th><th class="num">거래비용</th><th class="num">실현손익</th><th class="num">순손익</th></tr></thead>
+      <tbody>${rows.slice().reverse().map(r=>{
+        const col = r.pnl>=0?'var(--green)':'var(--red)';
+        const ncol= r.netPnl>=0?'var(--green)':'var(--red)';
+        return `<tr>
+          <td style="font-size:11px;color:var(--txt3)">${r.date||'—'}</td>
+          <td style="font-size:12px">${r.account||'—'}</td>
+          <td style="font-weight:600;font-size:12px">${r.name}</td>
+          <td class="num" style="font-size:11px">${fmtW(r.buyPrice)}</td>
+          <td class="num" style="font-size:11px">${fmtW(r.sellPrice)}</td>
+          <td class="num" style="font-size:11px">${r.qty>0?r.qty+'주':'—'}</td>
+          <td class="num" style="font-size:11px;color:var(--txt3)">${r.cost>0?fmtW(r.cost):'—'}</td>
+          <td class="num" style="color:${col};font-weight:700">${r.pnl>=0?'+':''}${fmtW(r.pnl)}</td>
+          <td class="num" style="color:${ncol};font-weight:700">${r.netPnl>=0?'+':''}${fmtW(r.netPnl)}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
+  } else if (ovRealizedMode === 'acc') {
+    const byAcc = {};
+    rows.forEach(r => {
+      const a = r.account||'기타';
+      if (!byAcc[a]) byAcc[a] = {pnl:0, netPnl:0, cnt:0};
+      byAcc[a].pnl    += r.pnl||0;
+      byAcc[a].netPnl += r.netPnl||0;
+      byAcc[a].cnt++;
+    });
+    el.innerHTML = summary + `<table class="tbl">
+      <thead><tr><th>계좌</th><th class="num">거래건수</th><th class="num">실현손익</th><th class="num">순손익</th></tr></thead>
+      <tbody>${Object.entries(byAcc).sort((a,b)=>b[1].netPnl-a[1].netPnl).map(([acc,v])=>{
+        const col=v.netPnl>=0?'var(--green)':'var(--red)';
+        return `<tr>
+          <td style="font-weight:600">${acc}</td>
+          <td class="num">${v.cnt}건</td>
+          <td class="num" style="color:${v.pnl>=0?'var(--green)':'var(--red)'}">${v.pnl>=0?'+':''}${fmtW(v.pnl)}</td>
+          <td class="num" style="color:${col};font-weight:700">${v.netPnl>=0?'+':''}${fmtW(v.netPnl)}</td>
+        </tr>`;
+      }).join('')}<tr class="sum"><td>합계</td><td class="num">${rows.length}건</td>
+        <td class="num" style="color:${totalPnl>=0?'var(--green)':'var(--red)'}">${totalPnl>=0?'+':''}${fmtW(totalPnl)}</td>
+        <td class="num" style="color:${totalNetPnl>=0?'var(--green)':'var(--red)'};font-weight:700">${totalNetPnl>=0?'+':''}${fmtW(totalNetPnl)}</td>
+      </tr></tbody>
+    </table>`;
+  } else { // 종목별
+    const byName = {};
+    rows.forEach(r => {
+      const n = r.name||'기타';
+      if (!byName[n]) byName[n] = {pnl:0, netPnl:0, cnt:0, accounts:new Set()};
+      byName[n].pnl    += r.pnl||0;
+      byName[n].netPnl += r.netPnl||0;
+      byName[n].cnt++;
+      if (r.account) byName[n].accounts.add(r.account);
+    });
+    el.innerHTML = summary + `<table class="tbl">
+      <thead><tr><th>종목</th><th>계좌</th><th class="num">매도횟수</th><th class="num">실현손익</th><th class="num">순손익</th></tr></thead>
+      <tbody>${Object.entries(byName).sort((a,b)=>b[1].netPnl-a[1].netPnl).map(([name,v])=>{
+        const col=v.netPnl>=0?'var(--green)':'var(--red)';
+        return `<tr>
+          <td style="font-weight:600;font-size:12px">${name}</td>
+          <td style="font-size:11px;color:var(--txt3)">${[...v.accounts].join(', ')}</td>
+          <td class="num">${v.cnt}회</td>
+          <td class="num" style="color:${v.pnl>=0?'var(--green)':'var(--red)'}">${v.pnl>=0?'+':''}${fmtW(v.pnl)}</td>
+          <td class="num" style="color:${col};font-weight:700">${v.netPnl>=0?'+':''}${fmtW(v.netPnl)}</td>
+        </tr>`;
+      }).join('')}<tr class="sum"><td colspan="3">합계</td>
+        <td class="num" style="color:${totalPnl>=0?'var(--green)':'var(--red)'}">${totalPnl>=0?'+':''}${fmtW(totalPnl)}</td>
+        <td class="num" style="color:${totalNetPnl>=0?'var(--green)':'var(--red)'};font-weight:700">${totalNetPnl>=0?'+':''}${fmtW(totalNetPnl)}</td>
+      </tr></tbody>
+    </table>`;
+  }
+}
+
+// ── ⑥ ISA·연금 한도 ──
+function renderOvLimits() {
+  const s = ovSummary;
+  const limits = s.limits || {};
+
+  // 연금 세액공제
+  const penEl = document.getElementById('ov-pension-limit');
+  const penIn26 = limits.penIn26 || 0;         // 26년 연금계좌 납입액
+  const penLimit = 9000000;                     // 세액공제 한도 900만
+  const penLeft  = Math.max(0, penLimit - penIn26);
+  const penPct   = Math.min(penIn26 / penLimit * 100, 100);
+  const penRefund = Math.round(Math.min(penIn26, penLimit) * 0.165);
+  penEl.innerHTML = `
+    <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px">
+      <span style="color:var(--txt2)">올해 납입</span>
+      <span style="font-weight:700">${fmtW(penIn26)}</span>
+    </div>
+    <div class="prog-track" style="margin-bottom:8px">
+      <div class="prog-fill" style="width:${penPct}%;background:var(--blue)"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:10px">
+      <span style="color:var(--txt3)">한도 900만원</span>
+      <span style="color:${penLeft===0?'var(--green)':'var(--txt2)'}">잔여 ${fmtW(penLeft)}</span>
+    </div>
+    <div style="background:var(--blue-bg);border-radius:8px;padding:10px 12px">
+      <div style="font-size:11px;color:var(--txt2);margin-bottom:3px">예상 세액공제 환급액</div>
+      <div style="font-size:18px;font-weight:700;color:var(--blue)">${fmtW(penRefund)}</div>
+      <div style="font-size:10px;color:var(--txt3);margin-top:3px">16.5% 기준 · 실제 환급은 종합소득에 따라 다를 수 있음</div>
+    </div>
+    ${penLeft > 0 ? `<div style="margin-top:8px;font-size:11px;color:var(--txt2)">
+      💡 ${fmtW(penLeft)} 더 납입하면 <b style="color:var(--blue)">${fmtW(Math.round(penLeft*0.165))}</b> 추가 환급
+    </div>` : '<div style="margin-top:8px;font-size:11px;color:var(--green);font-weight:600">✅ 세액공제 한도 달성!</div>'}`;
+
+  // ISA 납입한도
+  const isaEl = document.getElementById('ov-isa-limit');
+  const isaIn     = limits.isaIn || 0;          // ISA 누적 납입
+  const isaIn26   = limits.isaIn26 || 0;        // 26년 납입
+  const isaAnnual = 20000000;                    // 연 2000만
+  const isaTotal  = 100000000;                   // 총 1억
+  const isaAnnualLeft = Math.max(0, isaAnnual - isaIn26);
+  const isaTotalLeft  = Math.max(0, isaTotal  - isaIn);
+  const isaAnnualPct  = Math.min(isaIn26 / isaAnnual * 100, 100);
+  isaEl.innerHTML = `
+    <div style="font-size:11px;font-weight:700;color:var(--txt2);margin-bottom:6px">연간 한도 (2,000만원)</div>
+    <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+      <span style="color:var(--txt2)">올해 납입</span>
+      <span style="font-weight:700">${fmtW(isaIn26)}</span>
+    </div>
+    <div class="prog-track" style="margin-bottom:6px">
+      <div class="prog-fill" style="width:${isaAnnualPct}%;background:var(--teal)"></div>
+    </div>
+    <div style="font-size:11px;color:var(--txt3);margin-bottom:14px">잔여 <b>${fmtW(isaAnnualLeft)}</b></div>
+    <div style="font-size:11px;font-weight:700;color:var(--txt2);margin-bottom:6px">총 한도 (1억원)</div>
+    <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+      <span style="color:var(--txt2)">총 납입</span>
+      <span style="font-weight:700">${fmtW(isaIn)}</span>
+    </div>
+    <div class="prog-track" style="margin-bottom:6px">
+      <div class="prog-fill" style="width:${Math.min(isaIn/isaTotal*100,100)}%;background:var(--teal)"></div>
+    </div>
+    <div style="font-size:11px;color:var(--txt3);margin-bottom:10px">잔여 <b>${fmtW(isaTotalLeft)}</b></div>
+    <div style="background:rgba(0,180,147,.07);border-radius:8px;padding:10px 12px;font-size:11px;color:var(--txt2);line-height:1.8">
+      💡 ISA 만기 후 연금계좌 이전 시 추가 세액공제 가능<br>
+      · 이전금액의 10% (최대 300만원) 세액공제
+    </div>`;
+}
+
+// ── GAS 데이터 없을 때 샘플 데이터로 미리보기 ──
+function loadOvSample() {
+  ovSummary = {
+    totalIn: 21083668, totalAsset: 22553939, totalProfit: 1470271,
+    totalRate: 6.97, totalDiv: 376915, totalEval: 21794261,
+    totalCash: 754838, totalRealized: 208937,
+    pension: { in: 12850784, asset: 14811271, profit: 1960487, rate: 15.3, div: 375395 },
+    stock:   { in: 7982884,  asset: 7475926,  profit: -506958, rate: -6.4, div: 1520 },
+    gold:    { in: 250000,   asset: 261902,   profit: 11902,   rate: 4.8,  div: 0 },
+    accounts: [
+      { name:'미래ISA',      type:'주식(ISA)',      in:7685504,  eval:6509446, cash:694260,  asset:7203706,  profit:-481798, rate:-6.3, div:1520,   realized:-26893 },
+      { name:'미래연금저축', type:'연금(연금저축)', in:9050784,  eval:9878342, cash:2466,    asset:9880808,  profit:830024,  rate:9.2,  div:195234, realized:189539 },
+      { name:'삼성연금저축', type:'연금(연금저축)', in:900000,   eval:1149033, cash:0,       asset:1149033,  profit:264278,  rate:29.4, div:46431,  realized:46291 },
+      { name:'우리IRP',      type:'연금(IRP)',      in:2900000,  eval:3766185, cash:4840,    asset:3771025,  profit:871025,  rate:30.0, div:133730, realized:0 },
+      { name:'미래종합',     type:'주식(일반)',     in:297380,   eval:234330,  cash:37890,   asset:272220,   profit:-25160,  rate:-8.5, div:0,      realized:0 },
+      { name:'미래금현물',   type:'금(실물)',       in:250000,   eval:241680,  cash:20222,   asset:261902,   profit:11902,   rate:4.8,  div:0,      realized:0 },
+    ],
+    limits: {
+      penIn26: 3450000, isaIn: 7685504, isaIn26: 6100000,
+    }
+  };
+  ovHoldings = [
+    { name:'TIGER미국S&P500', account:'미래연금저축', accType:'연금', sector:'미국ETF(S&P500)', qty:120, avgPrice:22628, invest:2715410, curPrice:24480, eval:2937600, pnl:222190, rate:8.2 },
+    { name:'TIGER미국배당다우존스', account:'미래연금저축', accType:'연금', sector:'미국ETF(배당)', qty:141, avgPrice:12487, invest:1760665, curPrice:14632, eval:2063112, pnl:302447, rate:17.2 },
+    { name:'ACE미국나스닥100', account:'미래연금저축', accType:'연금', sector:'미국ETF(나스닥)', qty:94, avgPrice:27960, invest:2628280, curPrice:27345, eval:2570430, pnl:-57850, rate:-2.2 },
+    { name:'ACE미국S&P500미국채혼합50액티브', account:'우리IRP', accType:'연금', sector:'미국ETF(S&P500)', qty:179, avgPrice:11286, invest:2020370, curPrice:14100, eval:2523900, pnl:503530, rate:24.9 },
+    { name:'PLUS고배당주채권혼합', account:'우리IRP', accType:'연금', sector:'국내ETF(배당)', qty:72, avgPrice:12249, invest:881985, curPrice:15380, eval:1107360, pnl:225375, rate:25.6 },
+    { name:'SK하이닉스', account:'미래ISA', accType:'ISA', sector:'국내주식', qty:3, avgPrice:858000, invest:2574000, curPrice:835000, eval:2505000, pnl:-69000, rate:-2.7 },
+    { name:'삼성전자', account:'미래ISA', accType:'ISA', sector:'국내주식', qty:5, avgPrice:154080, invest:770400, curPrice:178650, eval:893250, pnl:122850, rate:15.9 },
+    { name:'KODEX200', account:'미래ISA', accType:'ISA', sector:'국내ETF', qty:18, avgPrice:87733, invest:1579200, curPrice:78110, eval:1405980, pnl:-173220, rate:-11.0 },
+  ];
+  ovRealized = [
+    { date:'2026.3.6',  account:'미래ISA',      name:'DB손해보험',  buyPrice:200833, sellPrice:184540, qty:5, cost:1913,  pnl:-81465, netPnl:-83379 },
+    { date:'2026.2.27', account:'미래ISA',      name:'우리금융지주',buyPrice:38647,  sellPrice:36700,  qty:19,cost:1444,  pnl:-37000, netPnl:-38444 },
+    { date:'2026.2.5',  account:'미래ISA',      name:'SK하이닉스',  buyPrice:858000, sellPrice:902000, qty:3, cost:5554,  pnl:132000, netPnl:126446 },
+    { date:'2025.11.7', account:'미래연금저축', name:'PLUS고배당주',buyPrice:15422,  sellPrice:19790,  qty:11,cost:7,     pnl:48045,  netPnl:48038 },
+    { date:'2025.11.7', account:'미래연금저축', name:'KODEX미국S&P500',buyPrice:19479,sellPrice:22225,qty:26,cost:32,   pnl:71400,  netPnl:71368 },
+    { date:'2025.11.7', account:'삼성연금저축', name:'PLUS고배당주',buyPrice:15620,  sellPrice:20355,  qty:5, cost:5,     pnl:23675,  netPnl:23670 },
+  ];
+  renderOv();
+  document.getElementById('ov-last-update').textContent = '※ 샘플 데이터 (GAS 연동 전 미리보기)';
+}
+
+// ════════════════════════════════════════════════════════════════
+
 // ── FIFO 실현손익 계산 엔진 ──
 // pfTx(날짜순 정렬된 전체 거래)를 받아 각 매도 rowIndex에 대한 실현손익 맵 반환
 function calcRealizedPnL(txList) {
