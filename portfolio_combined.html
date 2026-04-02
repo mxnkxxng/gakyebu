@@ -356,9 +356,10 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
       <div class="form-group"><label>단가 (원)</label><input type="number" id="f-price" placeholder="0" oninput="calcAmt()"></div>
       <div class="form-group"><label>금액 (원)</label><input type="number" id="f-amount" placeholder="자동계산"></div>
     </div>
-    <div class="form-grid" style="grid-template-columns:1fr 1fr 2fr">
+    <div class="form-grid" style="grid-template-columns:1fr 1fr 1fr 2fr">
       <div class="form-group"><label>수수료</label><input type="number" id="f-fee" placeholder="0"></div>
       <div class="form-group"><label>세금</label><input type="number" id="f-tax" placeholder="0"></div>
+      <div class="form-group"><label>거래비용</label><input type="number" id="f-cost" placeholder="0"></div>
       <div class="form-group"><label>메모</label><input type="text" id="f-memo" placeholder="선택사항"></div>
     </div>
     <div style="display:flex;gap:10px;align-items:center">
@@ -393,8 +394,8 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
   </div>
   <div class="card tbl-wrap">
     <table class="tbl">
-      <thead><tr><th>날짜</th><th>계좌</th><th>유형</th><th>종목</th><th class="num">수량</th><th class="num">단가</th><th class="num">금액</th><th class="num">수수료</th><th class="num">세금</th><th>메모</th><th style="width:80px;text-align:center">수정/삭제</th></tr></thead>
-      <tbody id="history-tx"><tr><td colspan="11" class="loading">로딩 중...</td></tr></tbody>
+      <thead><tr><th>날짜</th><th>계좌</th><th>유형</th><th>종목</th><th class="num">수량</th><th class="num">단가</th><th class="num">금액</th><th class="num">수수료</th><th class="num">세금</th><th class="num">거래비용</th><th class="num">실현손익</th><th>메모</th><th style="width:80px;text-align:center">수정/삭제</th></tr></thead>
+      <tbody id="history-tx"><tr><td colspan="13" class="loading">로딩 중...</td></tr></tbody>
     </table>
   </div>
 </div>
@@ -660,8 +661,20 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
     </div>
     <div class="field"><label>금액</label><input type="number" id="edit-amount" placeholder="0" inputmode="decimal"/></div>
     <div class="field"><label>내용(메모)</label><input type="text" id="edit-memo" placeholder="메모"/></div>
-    <div class="field" id="edit-out-wrap"><label>출금계좌</label><input type="text" id="edit-out-acct" placeholder="출금계좌"/></div>
-    <div class="field" id="edit-in-wrap"><label>입금계좌</label><input type="text" id="edit-in-acct" placeholder="입금계좌"/></div>
+    <div class="field" id="edit-out-wrap"><label>출금계좌</label>
+      <div class="acct-wrap">
+        <input class="acct-input" type="text" id="edit-out-acct" placeholder="계좌 검색 또는 입력" autocomplete="off"
+          oninput="acctSearch('edit-out',this.value)" onfocus="acctSearch('edit-out',this.value)" onblur="setTimeout(function(){closeAcctDrop('edit-out')},200)"/>
+        <div class="acct-drop" id="drop-edit-out"></div>
+      </div>
+    </div>
+    <div class="field" id="edit-in-wrap"><label>입금계좌</label>
+      <div class="acct-wrap">
+        <input class="acct-input" type="text" id="edit-in-acct" placeholder="계좌 검색 또는 입력" autocomplete="off"
+          oninput="acctSearch('edit-in',this.value)" onfocus="acctSearch('edit-in',this.value)" onblur="setTimeout(function(){closeAcctDrop('edit-in')},200)"/>
+        <div class="acct-drop" id="drop-edit-in"></div>
+      </div>
+    </div>
     <div style="display:flex;gap:10px;margin-top:16px">
       <button onclick="saveEdit()" style="flex:1;padding:13px;background:var(--blue);color:#fff;border:none;border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer">저장</button>
       <button onclick="deleteAndClose()" style="padding:13px 18px;background:var(--red-bg);color:var(--red);border:.5px solid var(--red-lt);border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer">삭제</button>
@@ -1038,7 +1051,7 @@ function renderDashboard() {
     const amt = Math.abs(parseFloat(r.amount)||0);
     const yr  = (r.date||'').slice(0,4);
     const acc = r.account||'';
-    if (!accMap[acc]) accMap[acc]={in:0};
+    if (!accMap[acc]) accMap[acc]={in:0,buy:0,sell:0,div:0,fee:0,cost:0};
     if (r.type==='입금') {
       totalIn+=amt; accMap[acc].in+=amt;
       if(yr==='2026') {
@@ -1046,8 +1059,11 @@ function renderDashboard() {
         if(['삼성연금저축','미래연금저축','우리IRP'].includes(acc)) pen26+=amt;
       }
     }
-    if (r.type==='매수'||r.type==='매수.') totalBuy+=amt;
-    if (r.type==='분배금') totalDiv+=amt;
+    if (r.type==='매수'||r.type==='매수.') { totalBuy+=amt; accMap[acc].buy+=amt; }
+    if (r.type==='매도'||r.type==='매도.')   accMap[acc].sell+=amt;
+    if (r.type==='분배금') { totalDiv+=amt; accMap[acc].div+=amt; }
+    accMap[acc].fee  += parseFloat(r.fee)||0;
+    accMap[acc].cost += parseFloat(r.cost)||0;
   });
 
   document.getElementById('k-invest').textContent = fmtW(totalIn);
@@ -1058,13 +1074,22 @@ function renderDashboard() {
   const taxRefund = Math.round(Math.min(pen26, 6000000) * 0.165);
   document.getElementById('k-tax').textContent    = taxRefund ? taxRefund.toLocaleString()+'원' : '—';
 
+  // 계좌별 FIFO 실현손익 집계
+  const pnlMap = calcRealizedPnL(pfTx);
+  const accRealized = {};
+  pfTx.forEach(r => {
+    if ((r.type==='매도'||r.type==='매도.') && pnlMap[r.rowIndex] !== undefined) {
+      const acc = r.account||'';
+      accRealized[acc] = (accRealized[acc]||0) + pnlMap[r.rowIndex];
+    }
+  });
+
   const maxIn = Math.max(...Object.values(accMap).map(v=>v.in), 1);
-  // 계좌별 수익 = 분배금 + 실현손익(매도-매수 단순 근사) - 수수료
   document.getElementById('acc-summary').innerHTML =
     Object.entries(accMap).filter(([,v])=>v.in>0).sort((a,b)=>b[1].in-a[1].in).map(([acc,v])=>{
-      const realizedApprox = v.sell - v.buy + v.div - v.fee;
-      const gainColor = realizedApprox>0?'var(--green)':realizedApprox<0?'var(--red)':'var(--txt3)';
-      const gainSign  = realizedApprox>0?'+':'';
+      const realized = accRealized[acc] || 0;
+      const gainColor = realized>0?'var(--green)':realized<0?'var(--red)':'var(--txt3)';
+      const gainSign  = realized>0?'+':'';
       return `<div style="margin-bottom:10px">
         <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">
           <span class="${accCol(acc)}" style="font-size:12px;font-weight:600">${acc}</span>
@@ -1073,7 +1098,7 @@ function renderDashboard() {
         <div class="bar-track" style="margin-bottom:3px"><div class="bar-fill" style="width:${v.in/maxIn*100}%;background:var(--blue)"></div></div>
         <div style="display:flex;gap:10px;font-size:10px;font-variant-numeric:tabular-nums">
           <span style="color:var(--txt3)">배당 <b style="color:var(--purple)">${fmtW(v.div)}</b></span>
-          <span style="color:var(--txt3)">매도차익 <b style="color:${gainColor}">${gainSign}${fmtW(realizedApprox)}</b></span>
+          <span style="color:var(--txt3)">실현손익 <b style="color:${gainColor}">${gainSign}${fmtW(realized)}</b></span>
           ${v.fee>0?`<span style="color:var(--txt3)">수수료 <b>${fmtW(v.fee)}</b></span>`:''}
         </div>
       </div>`;
@@ -1166,6 +1191,57 @@ function renderDashboard() {
 }
 
 // ── 거래 내역 ──
+// ── FIFO 실현손익 계산 엔진 ──
+// pfTx(날짜순 정렬된 전체 거래)를 받아 각 매도 rowIndex에 대한 실현손익 맵 반환
+function calcRealizedPnL(txList) {
+  // 날짜 오름차순 정렬
+  const sorted = txList.slice().sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  // 계좌+종목별 매수 큐: { [acc_name]: [{qty, price}] }
+  const buyQueues = {};
+  // rowIndex → 실현손익
+  const pnlMap = {};
+
+  sorted.forEach(r => {
+    const key = (r.account||'') + '|' + (r.name||'');
+    const qty = parseFloat(r.qty) || 0;
+    const amt = Math.abs(parseFloat(r.amount) || 0);
+    const fee = parseFloat(r.fee) || 0;
+    const tax = parseFloat(r.tax) || 0;
+    const cost = parseFloat(r.cost) || 0;
+    const totalCost = fee + tax + cost;
+
+    if (r.type === '매수' || r.type === '매수.') {
+      if (!buyQueues[key]) buyQueues[key] = [];
+      if (qty > 0) {
+        buyQueues[key].push({ qty, unitPrice: amt / qty });
+      }
+    } else if (r.type === '매도' || r.type === '매도.') {
+      if (!buyQueues[key]) buyQueues[key] = [];
+      let sellQty = qty > 0 ? qty : 0;
+      let costBasis = 0;
+      // FIFO: 앞에서부터 소진
+      const queue = buyQueues[key];
+      let remaining = sellQty;
+      while (remaining > 0 && queue.length > 0) {
+        const head = queue[0];
+        if (head.qty <= remaining) {
+          costBasis += head.qty * head.unitPrice;
+          remaining -= head.qty;
+          queue.shift();
+        } else {
+          costBasis += remaining * head.unitPrice;
+          head.qty -= remaining;
+          remaining = 0;
+        }
+      }
+      // 실현손익 = 매도금액 - 매수원가 - 수수료/세금/거래비용
+      const realized = amt - costBasis - totalCost;
+      pnlMap[r.rowIndex] = Math.round(realized);
+    }
+  });
+  return pnlMap;
+}
+
 function renderHistory() {
   const acc   = document.getElementById('filter-acc').value;
   const type  = document.getElementById('filter-type').value;
@@ -1176,9 +1252,15 @@ function renderHistory() {
     if(month && !(r.date||'').startsWith(month)) return false;
     return true;
   });
+  const pnlMap = calcRealizedPnL(pfTx);
   document.getElementById('history-tx').innerHTML = rows.length
-    ? rows.map(r=>`
-        <tr>
+    ? rows.map(r=>{
+        const isSell = r.type==='매도'||r.type==='매도.';
+        const pnl = isSell && pnlMap[r.rowIndex] !== undefined ? pnlMap[r.rowIndex] : null;
+        const pnlHtml = pnl !== null
+          ? `<td class="num" style="font-weight:600;color:${pnl>=0?'var(--green)':'var(--red)'}">${pnl>=0?'+':''}${fmtW(pnl)}</td>`
+          : `<td class="num" style="color:var(--txt3)">—</td>`;
+        return `<tr>
           <td style="font-variant-numeric:tabular-nums;font-size:11px;color:var(--txt3)">${r.date}</td>
           <td><span class="${accCol(r.account)}">${r.account}</span></td>
           <td>${typeTag(r.type)}</td>
@@ -1188,13 +1270,16 @@ function renderHistory() {
           <td class="num">${fmtW(r.amount)}</td>
           <td class="num" style="color:var(--txt3)">${r.fee>0?fmtW(r.fee):'—'}</td>
           <td class="num" style="color:var(--txt3)">${r.tax>0?fmtW(r.tax):'—'}</td>
+          <td class="num" style="color:var(--txt3)">${r.cost>0?fmtW(r.cost):'—'}</td>
+          ${pnlHtml}
           <td style="color:var(--txt3);font-size:11px">${r.memo||''}</td>
           <td style="text-align:center;white-space:nowrap">
             <button onclick="openPfEditModal(${r.rowIndex})" style="padding:3px 8px;font-size:11px;background:var(--bg3);border:1px solid var(--bd);border-radius:5px;cursor:pointer;color:var(--txt2);margin-right:2px">수정</button>
             <button onclick="deletePfTx(${r.rowIndex})" style="padding:3px 8px;font-size:11px;background:transparent;border:1px solid var(--bd);border-radius:5px;cursor:pointer;color:var(--red)">삭제</button>
           </td>
-        </tr>`).join('')
-    : '<tr><td colspan="11" style="text-align:center;color:var(--txt3);padding:20px">해당하는 거래 없음</td></tr>';
+        </tr>`;
+      }).join('')
+    : '<tr><td colspan="13" style="text-align:center;color:var(--txt3);padding:20px">해당하는 거래 없음</td></tr>';
 }
 
 // ── 연금·ISA 통합 리뷰 ──
@@ -1204,8 +1289,17 @@ function renderReview() {
   const ISA_ACCS = ['미래ISA'];
   // ── 집계 ──
   const accIn={}, accBuy={}, accSell={}, accDiv={}, accFee={};
-  const divByName={}, divByMonth={}, realizedByAcc={};
+  const divByName={}, divByMonth={};
   const sectorMap={};
+  // FIFO 실현손익 계좌별 집계
+  const reviewPnlMap = calcRealizedPnL(pfTx);
+  const accRealized2 = {};
+  pfTx.filter(r=>r.type==='매도'||r.type==='매도.').forEach(r=>{
+    if(reviewPnlMap[r.rowIndex]!==undefined){
+      const acc=r.account||'';
+      accRealized2[acc]=(accRealized2[acc]||0)+reviewPnlMap[r.rowIndex];
+    }
+  });
   pfTx.forEach(r=>{
     const yr=(r.date||'').slice(0,4);
     const ym=(r.date||'').slice(0,7);
@@ -1220,7 +1314,7 @@ function renderReview() {
       accIn[acc][yr]=(accIn[acc][yr]||0)+amt;
     }
     if(r.type==='매수'||r.type==='매수.') accBuy[acc]+=amt;
-    if(r.type==='매도'||r.type==='매도.'){ accSell[acc]+=amt; realizedByAcc[acc]=(realizedByAcc[acc]||0)+(amt - (accBuy[acc]*amt/(accBuy[acc]||1))); }
+    if(r.type==='매도'||r.type==='매도.') accSell[acc]+=amt;
     if(r.type==='분배금'){
       accDiv[acc]+=amt;
       if(r.name){ if(!divByName[r.name]) divByName[r.name]={total:0,cnt:0,acc}; divByName[r.name].total+=amt; divByName[r.name].cnt++; }
@@ -1346,11 +1440,11 @@ function renderReview() {
   const perfEl=document.getElementById('rv-acc-perf');
   if(perfEl){
     const perfAccs=Object.keys(accIn).sort();
-    perfEl.innerHTML=`<table class="tbl"><thead><tr><th>계좌</th><th class="num">납입</th><th class="num">분배금</th><th class="num">실현손익근사</th></tr></thead><tbody>`
+    perfEl.innerHTML=`<table class="tbl"><thead><tr><th>계좌</th><th class="num">납입</th><th class="num">분배금</th><th class="num">실현손익(FIFO)</th></tr></thead><tbody>`
       +perfAccs.map(acc=>{
         const totalIn=Object.values(accIn[acc]).reduce((s,v)=>s+v,0);
         const div=accDiv[acc]||0;
-        const realized=(accSell[acc]||0)-(accBuy[acc]||0)+div-(accFee[acc]||0);
+        const realized=accRealized2[acc]||0;
         const col=realized>=0?'var(--green)':'var(--red)';
         return `<tr>
           <td><span class="${accCol(acc)}">${acc}</span></td>
@@ -1401,19 +1495,34 @@ function renderReview() {
   // ⑧ 실현손익 내역
   const realEl=document.getElementById('rv-realized');
   if(realEl){
+    const realPnlMap = calcRealizedPnL(pfTx);
     const sells=pfTx.filter(r=>r.type==='매도'||r.type==='매도.').sort((a,b)=>b.date.localeCompare(a.date));
+    const totalRealized = sells.reduce((s,r)=> s + (realPnlMap[r.rowIndex]||0), 0);
     realEl.innerHTML=sells.length?`
+      <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
+        <span style="font-size:12px;color:var(--txt3)">누적 실현손익&nbsp;
+          <b style="color:${totalRealized>=0?'var(--green)':'var(--red)'};font-size:14px">${totalRealized>=0?'+':''}${fmtW(totalRealized)}</b>
+        </span>
+      </div>
       <table class="tbl">
-        <thead><tr><th>날짜</th><th>계좌</th><th>종목</th><th class="num">수량</th><th class="num">금액</th><th class="num">수수료</th><th class="num">세금</th></tr></thead>
-        <tbody>${sells.map(r=>`<tr>
-          <td style="font-size:11px;color:var(--txt3)">${r.date}</td>
-          <td><span class="${accCol(r.account)}">${r.account}</span></td>
-          <td style="font-size:12px">${r.name||'—'}</td>
-          <td class="num" style="font-size:11px">${r.qty>0?r.qty+'주':'—'}</td>
-          <td class="num" style="color:var(--green);font-weight:600">${fmtW(r.amount)}</td>
-          <td class="num" style="font-size:11px;color:var(--txt3)">${r.fee>0?fmtW(r.fee):'—'}</td>
-          <td class="num" style="font-size:11px;color:var(--txt3)">${r.tax>0?fmtW(r.tax):'—'}</td>
-        </tr>`).join('')}</tbody>
+        <thead><tr><th>날짜</th><th>계좌</th><th>종목</th><th class="num">수량</th><th class="num">매도금액</th><th class="num">수수료</th><th class="num">세금</th><th class="num">거래비용</th><th class="num" style="color:var(--green)">실현손익</th></tr></thead>
+        <tbody>${sells.map(r=>{
+          const pnl = realPnlMap[r.rowIndex] !== undefined ? realPnlMap[r.rowIndex] : null;
+          const pnlTd = pnl !== null
+            ? `<td class="num" style="font-weight:700;color:${pnl>=0?'var(--green)':'var(--red)'}">${pnl>=0?'+':''}${fmtW(pnl)}</td>`
+            : `<td class="num" style="color:var(--txt3)">—</td>`;
+          return `<tr>
+            <td style="font-size:11px;color:var(--txt3)">${r.date}</td>
+            <td><span class="${accCol(r.account)}">${r.account}</span></td>
+            <td style="font-size:12px">${r.name||'—'}</td>
+            <td class="num" style="font-size:11px">${r.qty>0?r.qty+'주':'—'}</td>
+            <td class="num" style="color:var(--green);font-weight:600">${fmtW(r.amount)}</td>
+            <td class="num" style="font-size:11px;color:var(--txt3)">${r.fee>0?fmtW(r.fee):'—'}</td>
+            <td class="num" style="font-size:11px;color:var(--txt3)">${r.tax>0?fmtW(r.tax):'—'}</td>
+            <td class="num" style="font-size:11px;color:var(--txt3)">${r.cost>0?fmtW(r.cost):'—'}</td>
+            ${pnlTd}
+          </tr>`;
+        }).join('')}</tbody>
       </table>`:'<div style="color:var(--txt3);font-size:12px">매도 내역 없음</div>';
   }
 
@@ -1516,6 +1625,7 @@ async function saveTx() {
     amount: parseFloat(document.getElementById('f-amount').value)||0,
     fee:    parseFloat(document.getElementById('f-fee').value)||0,
     tax:    parseFloat(document.getElementById('f-tax').value)||0,
+    cost:   parseFloat(document.getElementById('f-cost').value)||0,
     memo:   document.getElementById('f-memo').value.trim(),
   });
   if(ok){ pfToast('저장 완료!'); resetForm(); await loadPfData(); renderTodayTx(); }
@@ -1523,7 +1633,7 @@ async function saveTx() {
 }
 function resetForm() {
   document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
-  ['f-name','f-qty','f-price','f-amount','f-fee','f-tax','f-memo'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  ['f-name','f-qty','f-price','f-amount','f-fee','f-tax','f-cost','f-memo'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
 }
 function renderTodayTx() {
   const today = new Date().toISOString().split('T')[0];
@@ -1667,6 +1777,7 @@ function openPfEditModal(rowIndex) {
   document.getElementById('pfe-amount').value  = r.amount || '';
   document.getElementById('pfe-fee').value     = r.fee || '';
   document.getElementById('pfe-tax').value     = r.tax || '';
+  document.getElementById('pfe-cost').value    = r.cost || '';
   document.getElementById('pfe-memo').value    = r.memo || '';
   var m = document.getElementById('pf-edit-modal');
   m.style.display = 'flex';
@@ -1698,6 +1809,7 @@ async function savePfEdit() {
     amount:   parseFloat(document.getElementById('pfe-amount').value) || '',
     fee:      parseFloat(document.getElementById('pfe-fee').value) || '',
     tax:      parseFloat(document.getElementById('pfe-tax').value) || '',
+    cost:     parseFloat(document.getElementById('pfe-cost').value) || '',
     memo:     document.getElementById('pfe-memo').value,
   });
   if(!addOk) { pfToast('저장 실패','err'); return; }
@@ -2217,7 +2329,7 @@ function toggleBulkMode(){
 function toggleBulkSelect(id){
   if(bulkSelected.has(id))bulkSelected.delete(id);else bulkSelected.add(id);
   var cnt=document.getElementById('bulk-count');if(cnt)cnt.textContent=bulkSelected.size+'개 선택됨';
-  var el=document.getElementById('chk-'+id);if(el){el.style.background=bulkSelected.has(id)?'var(--blue)':'transparent';el.style.borderColor=bulkSelected.has(id)?'var(--blue)':'var(--border-md)';}
+  renderHist();
 }
 function selectAllBulk(){
   var es=me();if(histFilter!=='전체')es=es.filter(function(e){return e.type===histFilter;});
@@ -3288,6 +3400,8 @@ function saveGbConfig() {
         <input id="pfe-fee" type="number" step="any" style="width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--bd);border-radius:7px;color:var(--txt);font-size:13px;outline:none;box-sizing:border-box"></div>
       <div><label style="font-size:10px;color:var(--txt3);font-weight:700;letter-spacing:.06em;display:block;margin-bottom:4px">세금</label>
         <input id="pfe-tax" type="number" step="any" style="width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--bd);border-radius:7px;color:var(--txt);font-size:13px;outline:none;box-sizing:border-box"></div>
+      <div><label style="font-size:10px;color:var(--txt3);font-weight:700;letter-spacing:.06em;display:block;margin-bottom:4px">거래비용</label>
+        <input id="pfe-cost" type="number" step="any" style="width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--bd);border-radius:7px;color:var(--txt);font-size:13px;outline:none;box-sizing:border-box"></div>
     </div>
     <div style="margin-bottom:14px"><label style="font-size:10px;color:var(--txt3);font-weight:700;letter-spacing:.06em;display:block;margin-bottom:4px">메모</label>
       <input id="pfe-memo" type="text" style="width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--bd);border-radius:7px;color:var(--txt);font-size:13px;outline:none;box-sizing:border-box"></div>
