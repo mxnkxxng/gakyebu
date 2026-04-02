@@ -613,6 +613,28 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
 </div>
 
 
+<!-- ── 템플릿 불러오기 모달 ── -->
+<div id="tpl-modal" class="modal-bg hidden" onclick="closeTplModal(event)">
+  <div class="modal" style="max-height:75vh;display:flex;flex-direction:column;padding:0">
+    <div class="modal-title" style="padding:16px 16px 12px;flex-shrink:0">📋 템플릿 불러오기
+      <button class="modal-close" onclick="closeTplModal()">&#10005;</button>
+    </div>
+    <div id="tpl-list" style="overflow-y:auto;flex:1;padding:0 16px 16px"></div>
+  </div>
+</div>
+<!-- ── 템플릿 저장 모달 ── -->
+<div id="save-tpl-modal" class="modal-bg hidden" onclick="closeSaveTplModal(event)">
+  <div class="modal">
+    <div class="modal-title">템플릿 저장
+      <button class="modal-close" onclick="closeSaveTplModal()">&#10005;</button>
+    </div>
+    <div class="field"><label>템플릿 이름</label>
+      <input type="text" id="tpl-name-input" placeholder="예: 전기세, 관리비, 카페류"/>
+    </div>
+    <button onclick="saveCurAsTpl()" style="width:100%;padding:13px;background:var(--blue);color:#fff;border:none;border-radius:var(--rs);font-size:14px;font-weight:700;cursor:pointer;margin-top:4px">저장</button>
+  </div>
+</div>
+
 <!-- ── 수정 모달 ── -->
 <div id="edit-modal" class="modal-bg hidden" onclick="closeEditModal(event)">
   <div class="modal">
@@ -2420,7 +2442,7 @@ function saveEdit(){
   entries[idx].date=document.getElementById('edit-date').value;
   entries[idx].amount=amt;
   entries[idx].type=_editType;
-  if(_editMajor) entries[idx].major=_editMajor;
+  if(_editMajor) entries[idx].major=getCatLabel(_editType,_editMajor);
   entries[idx].sub=_editSub||'';
   if(amt!==0&&entries[idx].isTpl)delete entries[idx].isTpl;
   entries[idx].memo=document.getElementById('edit-memo').value;
@@ -2762,7 +2784,7 @@ function applyTplByIdx(i){
   setType(t.type||'지출');
   var keys=getCatKeys(t.type||'지출');
   var majKey=keys.find(function(k){return getCatLabel(t.type||'지출',k)===t.major||k===t.major;});
-  if(majKey){selMaj=majKey;renderMajor();}
+  if(majKey){pickMaj(majKey);}
   if(t.sub){selSub=t.sub;document.querySelectorAll('.sbtn').forEach(function(b){b.classList.toggle('sel',b.textContent===t.sub);});}
   if(t.memo)document.getElementById('gb-f-memo').value=t.memo;
   if(t.outAcct)document.getElementById('f-out-acct').value=t.outAcct;
@@ -2950,7 +2972,10 @@ function loadFromSheet(silent,overwrite){
       entries=imported;
     } else {
       var existIds=new Set(entries.map(function(x){return String(x.id);}));
-      var newOnes=imported.filter(function(x){return !existIds.has(String(x.id));});
+      // 내용 기반 지문: 날짜+구분+금액+대분류+소분류+메모 (ID가 달라도 같은 항목 중복 방지)
+      function _fp(e){return [e.date,e.type,e.amount,e.major,e.sub,e.memo,e.inAcct,e.outAcct].join('|');}
+      var existFps=new Set(entries.map(_fp));
+      var newOnes=imported.filter(function(x){return !existIds.has(String(x.id))&&!existFps.has(_fp(x));});
       entries=entries.concat(newOnes);
     }
     entries.sort(function(a,b){return b.date.localeCompare(a.date);});saveEntries();
