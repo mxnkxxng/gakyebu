@@ -1608,6 +1608,7 @@ async function loadHoldingsFromSheet() {
 }
 
 
+function renderStockScore(fifo, pnlMap) {
   const el = document.getElementById('stock-score');
   if (!el) return;
   const { holdByName, sellHistory } = fifo;
