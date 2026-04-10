@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>포트폴리오</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f5f4f0;
+  --card: #ffffff;
+  --card2: #fafaf8;
+  --border: #e8e5de;
+  --border2: #d4d0c8;
+  --text: #1a1a18;
+  --text2: #6b6860;
+  --text3: #a8a49c;
+  --green: #1a7a4a;
+  --green-bg: #edf7f2;
+  --red: #c0392b;
+  --red-bg: #fdf1f0;
+  --blue: #1a4f8a;
+  --blue-bg: #eef3fb;
+  --gold: #8a6200;
+  --gold-bg: #fdf8ed;
+  --accent: #2d5a8e;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 13px;
+  min-height: 100vh;
+}
+.mono { font-family: 'IBM Plex Mono', monospace; }
+
+/* 로딩 */
+#loading {
+  position: fixed; inset: 0;
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 16px; z-index: 100;
+}
+#loading .spinner {
+  width: 32px; height: 32px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+#loading p { color: var(--text2); font-size: 13px; }
+#error-msg {
+  display: none; position: fixed; inset: 0;
+  background: var(--bg);
+  align-items: center; justify-content: center;
+  flex-direction: column; gap: 12px; z-index: 100;
+}
+
+/* 레이아웃 */
+.wrap { max-width: 1100px; margin: 0 auto; padding: 32px 20px 80px; }
+
+/* 헤더 */
+.header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 28px;
+}
+.header-left h1 {
+  font-size: 14px; font-weight: 700; letter-spacing: .08em;
+  color: var(--text2); text-transform: uppercase;
+}
+.header-left .subtitle { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.refresh-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border-radius: 6px;
+  background: var(--card); border: 1px solid var(--border);
+  color: var(--text2); font-size: 12px; cursor: pointer;
+  font-family: 'Noto Sans KR', sans-serif;
+  transition: all .15s;
+}
+.refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
+.refresh-btn svg { width:13px; height:13px; }
+
+/* 섹션 타이틀 */
+.sec { margin-top: 28px; margin-bottom: 10px; }
+.sec-label {
+  font-size: 10px; font-weight: 700; letter-spacing: .12em;
+  color: var(--text3); text-transform: uppercase;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* 카드 공통 */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 18px 20px;
+}
+
+/* 히어로 그리드 */
+.hero-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.hero-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 18px 20px;
+}
+.hero-card.main {
+  grid-column: span 2;
+  background: var(--text);
+  border-color: var(--text);
+}
+.hero-label {
+  font-size: 10px; font-weight: 500; letter-spacing: .08em;
+  color: var(--text3); text-transform: uppercase; margin-bottom: 8px;
+}
+.hero-card.main .hero-label { color: rgba(255,255,255,.45); }
+.hero-value {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 24px; font-weight: 500; letter-spacing: -.02em;
+  color: var(--text);
+}
+.hero-card.main .hero-value { color: #fff; font-size: 28px; }
+.hero-sub { font-size: 11px; color: var(--text3); margin-top: 5px; }
+.hero-card.main .hero-sub { color: rgba(255,255,255,.4); }
+.badge {
+  display: inline-block; padding: 3px 8px; border-radius: 4px;
+  font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 500;
+  margin-top: 6px;
+}
+.badge.g { background: var(--green-bg); color: var(--green); }
+.badge.r { background: var(--red-bg);   color: var(--red); }
+.badge.b { background: var(--blue-bg);  color: var(--blue); }
+.badge.gold { background: var(--gold-bg); color: var(--gold); }
+.badge.inv { background: rgba(255,255,255,.12); color: rgba(255,255,255,.9); }
+
+/* 3단 분류 */
+.class-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+.class-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; }
+.class-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.class-title { font-size: 13px; font-weight: 700; }
+.kv { display: flex; justify-content: space-between; align-items: center; margin-bottom: 7px; }
+.kv-k { font-size: 12px; color: var(--text2); }
+.kv-v { font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
+.divider { height: 1px; background: var(--border); margin: 10px 0; }
+
+/* 계좌 테이블 */
+.tbl-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+table { width: 100%; border-collapse: collapse; }
+th {
+  padding: 9px 14px; text-align: right;
+  font-size: 10px; font-weight: 600; letter-spacing: .07em;
+  color: var(--text3); text-transform: uppercase;
+  background: var(--card2); border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+th:first-child { text-align: left; }
+td {
+  padding: 11px 14px; text-align: right;
+  font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+  border-bottom: 1px solid var(--border); color: var(--text);
+}
+td:first-child {
+  text-align: left; font-family: 'Noto Sans KR', sans-serif;
+  font-size: 13px; font-weight: 500;
+}
+tr:last-child td { border-bottom: none; }
+tr.total td { font-weight: 700; background: var(--card2); }
+tr:not(.total):hover td { background: #fafaf8; }
+.type-tag {
+  font-size: 10px; padding: 1px 5px; border-radius: 3px;
+  margin-left: 5px; vertical-align: middle;
+  font-family: 'Noto Sans KR', sans-serif;
+}
+.t-isa { background: var(--blue-bg); color: var(--blue); }
+.t-연금 { background: #f0eeff; color: #5b4fcf; }
+.t-irp { background: #f0eeff; color: #5b4fcf; }
+.t-일반 { background: var(--card2); color: var(--text2); border: 1px solid var(--border); }
+.t-금 { background: var(--gold-bg); color: var(--gold); }
+.pos { color: var(--green) !important; }
+.neg { color: var(--red) !important; }
+.neu { color: var(--text3) !important; }
+
+/* 바 */
+.bar-wrap { display: flex; align-items: center; gap: 8px; }
+.bar-bg { flex: 1; height: 3px; background: var(--border); border-radius: 2px; min-width: 50px; }
+.bar-fill { height: 100%; border-radius: 2px; }
+
+/* 비중 분석 */
+.an-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+.an-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; }
+.an-title { font-size: 10px; font-weight: 700; letter-spacing: .1em; color: var(--text3); text-transform: uppercase; margin-bottom: 14px; }
+.an-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.an-name { flex: 0 0 130px; font-size: 12px; color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.an-bar-bg { flex: 1; height: 3px; background: var(--border); border-radius: 2px; }
+.an-bar-fill { height: 100%; border-radius: 2px; }
+.an-pct { flex: 0 0 38px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; text-align: right; color: var(--text2); }
+.c1{background:#2d5a8e} .c2{background:#4a7fb5} .c3{background:#6fa3d4}
+.c4{background:#1a7a4a} .c5{background:#8a6200} .c6{background:#c0392b} .c7{background:#7c6cb5}
+
+/* 납입/ISA */
+.pension-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pen-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 18px 20px; }
+.pen-title { font-size: 12px; font-weight: 700; color: var(--text2); margin-bottom: 14px; letter-spacing:.02em; }
+.progress-wrap { margin-top: 12px; }
+.progress-header { display: flex; justify-content: space-between; font-size: 11px; color: var(--text3); margin-bottom: 6px; }
+.progress-bar { height: 4px; background: var(--border); border-radius: 2px; }
+.progress-fill { height: 100%; border-radius: 2px; transition: width 1s ease; }
+.note-box {
+  margin-top: 10px; padding: 8px 10px;
+  background: var(--card2); border-radius: 5px; border: 1px solid var(--border);
+  font-size: 11px; color: var(--text3); line-height: 1.6;
+}
+
+/* 보유종목 */
+.grp-header td {
+  background: var(--bg) !important; color: var(--text3) !important;
+  font-size: 10px !important; font-weight: 700 !important;
+  letter-spacing: .08em !important; text-transform: uppercase !important;
+  font-family: 'Noto Sans KR', sans-serif !important;
+  padding: 6px 14px !important; border-bottom: 1px solid var(--border) !important;
+}
+
+/* 인사이트 */
+.insight-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; }
+.ins { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; }
+.ins-label { font-size: 10px; font-weight: 700; letter-spacing: .08em; color: var(--text3); text-transform: uppercase; margin-bottom: 8px; }
+.ins-value { font-family: 'IBM Plex Mono', monospace; font-size: 20px; font-weight: 500; }
+.ins-desc { font-size: 11px; color: var(--text3); margin-top: 4px; line-height: 1.5; }
+
+/* 탭 */
+.tabs { display: flex; gap: 2px; margin-bottom: 10px; }
+.tab {
+  padding: 7px 14px; border-radius: 5px; cursor: pointer;
+  font-size: 12px; font-weight: 500; color: var(--text2);
+  border: 1px solid transparent; transition: all .15s;
+}
+.tab.active { background: var(--card); border-color: var(--border); color: var(--text); }
+.tab:not(.active):hover { color: var(--text); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+@media (max-width: 768px) {
+  .hero-grid { grid-template-columns: 1fr 1fr; }
+  .hero-card.main { grid-column: span 2; }
+  .class-grid, .an-grid, .insight-grid { grid-template-columns: 1fr; }
+  .pension-grid { grid-template-columns: 1fr; }
+  th, td { padding: 9px 8px; font-size: 11px; }
+}
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="spinner"></div>
+  <p>구글시트에서 데이터 불러오는 중...</p>
+</div>
+<div id="error-msg" style="display:none;flex-direction:column;align-items:center;gap:12px;">
+  <p style="color:var(--red);font-weight:600;">데이터 로드 실패</p>
+  <p id="err-detail" style="color:var(--text2);font-size:12px;"></p>
+  <button class="refresh-btn" onclick="loadData()">다시 시도</button>
+</div>
+
+<div id="app" style="display:none;">
+<div class="wrap">
+
+  <!-- 헤더 -->
+  <div class="header">
+    <div class="header-left">
+      <h1>Portfolio Dashboard</h1>
+      <div class="subtitle" id="last-updated">—</div>
+    </div>
+    <button class="refresh-btn" onclick="loadData()">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M13.5 8A5.5 5.5 0 1 1 8 2.5c1.8 0 3.4.87 4.4 2.2M13.5 2v3h-3"/>
+      </svg>
+      새로고침
+    </button>
+  </div>
+
+  <!-- 총괄 -->
+  <div class="sec"><div class="sec-label">총괄 현황</div></div>
+  <div class="hero-grid">
+    <div class="hero-card main">
+      <div class="hero-label">현재 총자산</div>
+      <div class="hero-value" id="h-total">—</div>
+      <div class="hero-sub" id="h-invested">납입원금 —</div>
+      <div class="badge inv" id="h-rate">—</div>
+    </div>
+    <div class="hero-card">
+      <div class="hero-label">누적 수익</div>
+      <div class="hero-value" id="h-profit" style="font-size:20px;">—</div>
+      <div class="hero-sub">평가 + 실현 + 기타</div>
+    </div>
+    <div class="hero-card">
+      <div class="hero-label">누적 분배금</div>
+      <div class="hero-value" id="h-div" style="font-size:20px;color:var(--gold);">—</div>
+      <div class="hero-sub">수령 배당·분배금 합계</div>
+    </div>
+    <div class="hero-card">
+      <div class="hero-label">실현 손익</div>
+      <div class="hero-value" id="h-real" style="font-size:20px;">—</div>
+      <div class="hero-sub">확정 매매 손익</div>
+    </div>
+  </div>
+
+  <!-- 투자 판단 지표 -->
+  <div class="sec"><div class="sec-label">투자 판단 지표</div></div>
+  <div class="insight-grid">
+    <div class="ins">
+      <div class="ins-label">예수금 (현금 여력)</div>
+      <div class="ins-value" id="i-cash" style="color:var(--blue)">—</div>
+      <div class="ins-desc" id="i-cash-desc">총자산 대비 —</div>
+    </div>
+    <div class="ins">
+      <div class="ins-label">ETF 비중</div>
+      <div class="ins-value" id="i-etf">—</div>
+      <div class="ins-desc" id="i-etf-desc">개별주식 —</div>
+    </div>
+    <div class="ins">
+      <div class="ins-label">미국 노출도</div>
+      <div class="ins-value" id="i-us" style="color:var(--blue)">—</div>
+      <div class="ins-desc" id="i-us-desc">—</div>
+    </div>
+    <div class="ins">
+      <div class="ins-label">연금 비중</div>
+      <div class="ins-value" id="i-pension">—</div>
+      <div class="ins-desc" id="i-pension-desc">—</div>
+    </div>
+  </div>
+
+  <!-- 자산 분류 -->
+  <div class="sec"><div class="sec-label">자산 분류별</div></div>
+  <div class="class-grid" id="class-grid">
+    <div class="class-card"><div class="class-header"><span class="class-title">🏦 연금</span><span class="badge b" id="cl-pension-rate">—</span></div><div id="cl-pension-rows"></div></div>
+    <div class="class-card"><div class="class-header"><span class="class-title">📈 주식</span><span class="badge b" id="cl-stock-rate">—</span></div><div id="cl-stock-rows"></div></div>
+    <div class="class-card"><div class="class-header"><span class="class-title">🥇 금</span><span class="badge gold" id="cl-gold-rate">—</span></div><div id="cl-gold-rows"></div></div>
+  </div>
+
+  <!-- 연금 납입 & ISA -->
+  <div class="sec"><div class="sec-label">연금 납입 현황 & ISA 세금 혜택</div></div>
+  <div class="pension-grid">
+    <div class="pen-card">
+      <div class="pen-title">🏦 연금 계좌 납입 현황</div>
+      <div id="pension-rows"></div>
+      <div class="progress-wrap">
+        <div class="progress-header"><span>세액공제 한도 연 900만원</span><span id="pg-pension-label" style="color:#5b4fcf;">—</span></div>
+        <div class="progress-bar"><div class="progress-fill" id="pg-pension-bar" style="background:#7c6cb5;width:0%"></div></div>
+      </div>
+    </div>
+    <div class="pen-card">
+      <div class="pen-title">📊 ISA 납입 & 비과세 현황 (미래ISA)</div>
+      <div id="isa-rows"></div>
+      <div class="progress-wrap">
+        <div class="progress-header"><span>연간 납입 한도 1,000만원</span><span id="pg-isa-label" style="color:var(--blue);">—</span></div>
+        <div class="progress-bar"><div class="progress-fill" id="pg-isa-bar" style="background:var(--blue);width:0%"></div></div>
+      </div>
+      <div class="note-box" id="isa-note">—</div>
+    </div>
+  </div>
+
+  <!-- 탭: 계좌현황 / 보유종목 / 비중분석 -->
+  <div class="sec"><div class="sec-label">상세 현황</div></div>
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('accounts',this)">계좌별 현황</div>
+    <div class="tab" onclick="switchTab('holdings',this)">보유종목</div>
+    <div class="tab" onclick="switchTab('analysis',this)">비중 분석</div>
+  </div>
+
+  <!-- 계좌별 -->
+  <div id="tab-accounts" class="tab-content active">
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th>계좌</th><th>납입원금</th><th>평가금액</th><th>예수금</th>
+          <th>총자산</th><th>누적수익</th><th>수익률</th><th>분배금</th><th>실현손익</th>
+        </tr></thead>
+        <tbody id="acct-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 보유종목 -->
+  <div id="tab-holdings" class="tab-content">
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th>종목명</th><th>계좌</th><th>수량</th><th>평균단가</th>
+          <th>현재가</th><th>투자원금</th><th>평가금액</th><th>손익</th><th>수익률</th>
+        </tr></thead>
+        <tbody id="holdings-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 비중 분석 -->
+  <div id="tab-analysis" class="tab-content">
+    <div class="an-grid" id="an-grid">
+      <div class="an-card"><div class="an-title">섹터별 비중</div><div id="an-sector"></div></div>
+      <div class="an-card"><div class="an-title">계좌별 비중</div><div id="an-account"></div></div>
+      <div class="an-card"><div class="an-title">지역·유형 비중</div><div id="an-region"></div></div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<script>
+const API = 'https://script.google.com/macros/s/AKfycbyG_x_DVs4JA9N4v9mU6BzHY6mmRLALjWO7jIwolySLAuwPBvQMivlbCSyq43MBUguh/exec';
+
+// ── 유틸 ──────────────────────────────────────────────
+const fmt = n => {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  return Math.round(n).toLocaleString('ko-KR') + '원';
+};
+const fmtSign = n => {
+  if (!n && n !== 0) return '—';
+  const s = n >= 0 ? '+' : '';
+  return s + Math.round(n).toLocaleString('ko-KR') + '원';
+};
+const fmtPct = n => {
+  if (!n && n !== 0) return '—';
+  return (n >= 0 ? '+' : '') + n.toFixed(2) + '%';
+};
+const parseNum = s => {
+  if (typeof s === 'number') return s;
+  return parseFloat(String(s||'').replace(/[원,\s()]/g,'').replace('−','-')) || 0;
+};
+const colorClass = n => n > 0 ? 'pos' : n < 0 ? 'neg' : 'neu';
+const kv = (label, val, cls='') =>
+  `<div class="kv"><span class="kv-k">${label}</span><span class="kv-v ${cls}">${val}</span></div>`;
+
+// ── 탭 ───────────────────────────────────────────────
+function switchTab(id, el) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  el.classList.add('active');
+}
+
+// ── 메인 로드 ─────────────────────────────────────────
+async function loadData() {
+  document.getElementById('loading').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('error-msg').style.display = 'none';
+
+  try {
+    // 두 가지 액션 병렬 fetch
+    const [dashRes, holdRes] = await Promise.all([
+      fetch(`${API}?action=all`),
+      fetch(`${API}?action=pf_holdings`)
+    ]);
+    const dashData = await dashRes.json();
+    const holdData = await holdRes.json();
+
+    if (!dashData.ok) throw new Error(dashData.error || 'API 오류');
+
+    render(dashData, holdData.data || {});
+    document.getElementById('last-updated').textContent =
+      '마지막 업데이트 ' + new Date().toLocaleString('ko-KR', {month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+  } catch(e) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('error-msg').style.display = 'flex';
+    document.getElementById('err-detail').textContent = e.message;
+  }
+}
+
+// ── 렌더 ─────────────────────────────────────────────
+function render(data, holdings) {
+  // asset 데이터 (getAssetData 반환값)
+  const asset = data.asset || {};
+  // config에서 initBalRaw로 계좌 목록 구성
+  const cfg = data.config || {};
+
+  // 보유종목에서 계좌/섹터/지역 집계
+  renderHoldings(holdings);
+  renderFromHoldings(holdings, asset, cfg);
+}
+
+function renderFromHoldings(holdings, asset, cfg) {
+  // holdings 객체: { 종목명: { account, sector, ticker, qty, avgPrice, costBasis, currentPrice, evalAmt } }
+  const items = Object.entries(holdings).map(([name, v]) => ({name, ...v}));
+
+  // ── 집계 ──
+  let totalEval = 0, totalCost = 0;
+  let pensionEval = 0, pensionCost = 0;
+  let stockEval = 0, stockCost = 0;
+  let goldEval = 0, goldCost = 0;
+  let usEtfEval = 0, krStockEval = 0, etfEval = 0, indivEval = 0;
+
+  const sectorMap = {}, accountMap = {};
+  const accountData = {
+    '미래ISA':    { invested: 7325504, eval: 0, cash: 5907428, profit: 0, rate: 4.2,  div: 8349,   real: -26893,  type: 'ISA',  total: 0 },
+    '미래연금저축':{ invested: 9050784, eval: 0, cash: 7918,   profit: 0, rate: 12.3, div: 200686, real: 189539,  type: '연금', total: 0 },
+    '삼성연금저축':{ invested: 900000,  eval: 0, cash: 0,      profit: 0, rate: 30.5, div: 46431,  real: 46291,   type: '연금', total: 0 },
+    '우리IRP':    { invested: 2900000, eval: 0, cash: 4840,   profit: 0, rate: 31.5, div: 133730, real: 0,       type: 'IRP',  total: 0 },
+    '미래종합':   { invested: 297380,  eval: 0, cash: 305829, profit: 0, rate: 2.8,  div: 0,      real: 0,       type: '일반', total: 0 },
+    '미래금현물': { invested: 250000,  eval: 0, cash: 20222,  profit: 0, rate: 4.8,  div: 0,      real: 0,       type: '금',   total: 0 },
+  };
+
+  items.forEach(item => {
+    if (!item.qty || item.qty === 0) return;
+    const e = item.evalAmt || (item.qty * item.currentPrice);
+    const c = item.costBasis || (item.qty * item.avgPrice);
+    totalEval += e; totalCost += c;
+
+    const acct = item.account;
+    const sec  = item.sector || '기타';
+
+    // 섹터
+    if (!sectorMap[sec]) sectorMap[sec] = 0;
+    sectorMap[sec] += e;
+
+    // 계좌별
+    if (!accountMap[acct]) accountMap[acct] = 0;
+    accountMap[acct] += e;
+    if (accountData[acct]) accountData[acct].eval += e;
+
+    // 연금/주식/금 분류 (계좌 기준)
+    if (['미래연금저축','삼성연금저축','우리IRP'].includes(acct)) { pensionEval += e; pensionCost += c; }
+    else if (acct === '미래금현물') { goldEval += e; goldCost += c; }
+    else { stockEval += e; stockCost += c; }
+
+    // 지역/유형
+    if (sec && sec.includes('미국ETF')) usEtfEval += e;
+    if (sec === '국내주식') krStockEval += e;
+    if (!sec.includes('주식')) etfEval += e;
+    else indivEval += e;
+  });
+
+  // 계좌 총자산 계산
+  let totalAssets = 0, totalInvested = 0, totalDiv = 0, totalReal = 0, totalCash = 0;
+  Object.values(accountData).forEach(a => {
+    a.total = a.eval + a.cash;
+    a.profit = a.total - a.invested;
+    totalAssets += a.total;
+    totalInvested += a.invested;
+    totalDiv += a.div;
+    totalReal += a.real;
+    totalCash += a.cash;
+  });
+  const totalProfit = totalAssets - totalInvested;
+  const totalRate = totalInvested ? (totalProfit / totalInvested * 100) : 0;
+
+  // 연금 실제 자산 (eval + cash)
+  const pensionTotal = (accountData['미래연금저축'].total||0) + (accountData['삼성연금저축'].total||0) + (accountData['우리IRP'].total||0);
+  const stockTotal   = (accountData['미래ISA'].total||0) + (accountData['미래종합'].total||0);
+  const goldTotal    = accountData['미래금현물'].total||0;
+
+  // ── Hero ──
+  document.getElementById('h-total').textContent = fmt(totalAssets);
+  document.getElementById('h-invested').textContent = '납입원금 ' + fmt(totalInvested);
+  document.getElementById('h-rate').textContent = fmtPct(totalRate);
+  const profitEl = document.getElementById('h-profit');
+  profitEl.textContent = fmtSign(totalProfit);
+  profitEl.className = 'hero-value ' + colorClass(totalProfit);
+  profitEl.style.fontSize = '20px';
+  document.getElementById('h-div').textContent = fmt(totalDiv);
+  const realEl = document.getElementById('h-real');
+  realEl.textContent = fmtSign(totalReal);
+  realEl.className = 'hero-value ' + colorClass(totalReal);
+  realEl.style.fontSize = '20px';
+
+  // ── 투자 판단 지표 ──
+  const cashPct = totalAssets ? (totalCash / totalAssets * 100) : 0;
+  document.getElementById('i-cash').textContent = fmt(totalCash);
+  document.getElementById('i-cash-desc').textContent = `총자산 대비 ${cashPct.toFixed(1)}%`;
+
+  const etfPct  = totalEval ? (etfEval / totalEval * 100) : 0;
+  const indPct  = totalEval ? (indivEval / totalEval * 100) : 0;
+  document.getElementById('i-etf').textContent = etfPct.toFixed(1) + '%';
+  document.getElementById('i-etf').className = 'ins-value';
+  document.getElementById('i-etf-desc').textContent = `개별주식 ${indPct.toFixed(1)}%`;
+
+  const usPct = totalEval ? (usEtfEval / totalEval * 100) : 0;
+  const krPct = totalEval ? (krStockEval / totalEval * 100) : 0;
+  document.getElementById('i-us').textContent = usPct.toFixed(1) + '%';
+  document.getElementById('i-us-desc').textContent = `한국 ${krPct.toFixed(1)}% / ETF 내 미국 집중`;
+
+  const penPct = totalAssets ? (pensionTotal / totalAssets * 100) : 0;
+  document.getElementById('i-pension').textContent = penPct.toFixed(1) + '%';
+  document.getElementById('i-pension').style.color = '#5b4fcf';
+  document.getElementById('i-pension-desc').textContent =
+    `연금 ${fmt(pensionTotal).replace('원','')} / 주식 ${fmt(stockTotal).replace('원','')} / 금 ${fmt(goldTotal).replace('원','')}`;
+
+  // ── 자산 분류 ──
+  const clRate = (e, c) => c ? ((e - c) / c * 100) : 0;
+  const pensionRate = clRate(pensionTotal, accountData['미래연금저축'].invested + accountData['삼성연금저축'].invested + accountData['우리IRP'].invested);
+  const stockRate   = clRate(stockTotal,   accountData['미래ISA'].invested + accountData['미래종합'].invested);
+  const goldRate    = clRate(goldTotal,    accountData['미래금현물'].invested);
+
+  document.getElementById('cl-pension-rate').textContent = fmtPct(pensionRate);
+  document.getElementById('cl-stock-rate').textContent   = fmtPct(stockRate);
+  document.getElementById('cl-gold-rate').textContent    = fmtPct(goldRate);
+
+  const pensionInv = accountData['미래연금저축'].invested + accountData['삼성연금저축'].invested + accountData['우리IRP'].invested;
+  const stockInv   = accountData['미래ISA'].invested + accountData['미래종합'].invested;
+
+  document.getElementById('cl-pension-rows').innerHTML =
+    kv('납입원금', fmt(pensionInv)) +
+    kv('현재 총자산', fmt(pensionTotal), colorClass(pensionRate)) +
+    '<div class="divider"></div>' +
+    kv('누적 수익', fmtSign(pensionTotal - pensionInv), colorClass(pensionTotal - pensionInv)) +
+    kv('분배금', fmt(accountData['미래연금저축'].div + accountData['삼성연금저축'].div + accountData['우리IRP'].div));
+
+  document.getElementById('cl-stock-rows').innerHTML =
+    kv('납입원금', fmt(stockInv)) +
+    kv('현재 총자산', fmt(stockTotal), colorClass(stockRate)) +
+    '<div class="divider"></div>' +
+    kv('누적 수익', fmtSign(stockTotal - stockInv), colorClass(stockTotal - stockInv)) +
+    kv('분배금', fmt(accountData['미래ISA'].div));
+
+  document.getElementById('cl-gold-rows').innerHTML =
+    kv('납입원금', fmt(accountData['미래금현물'].invested)) +
+    kv('현재 총자산', fmt(goldTotal), colorClass(goldRate)) +
+    '<div class="divider"></div>' +
+    kv('누적 수익', fmtSign(goldTotal - accountData['미래금현물'].invested), colorClass(goldTotal - accountData['미래금현물'].invested)) +
+    kv('분배금', '0원');
+
+  // ── 연금 납입 ──
+  const pensionAccounts = ['미래연금저축','삼성연금저축','우리IRP'];
+  let pensionHtml = '';
+  pensionAccounts.forEach(name => {
+    const a = accountData[name];
+    pensionHtml += `<div class="kv">
+      <span class="kv-k">${name}</span>
+      <div style="text-align:right">
+        <div class="kv-v">${fmt(a.invested)}</div>
+        <div style="font-size:10px;color:var(--text3)">총자산 ${fmt(a.total)} · <span class="${colorClass(a.rate)}">${fmtPct(a.rate)}</span></div>
+      </div>
+    </div>`;
+  });
+  pensionHtml += `<div class="divider"></div>
+    <div class="kv"><span class="kv-k" style="font-weight:700;color:var(--text)">연금 납입 합계</span><span class="kv-v" style="color:#5b4fcf;">${fmt(pensionInv)}</span></div>`;
+  document.getElementById('pension-rows').innerHTML = pensionHtml;
+  const pg = Math.min((pensionInv / 9000000 * 100), 100).toFixed(0);
+  document.getElementById('pg-pension-bar').style.width = pg + '%';
+  document.getElementById('pg-pension-label').textContent = fmt(pensionInv) + ' / 9,000,000원';
+
+  // ── ISA ──
+  const isa = accountData['미래ISA'];
+  const isaProfit = isa.total - isa.invested;
+  document.getElementById('isa-rows').innerHTML =
+    kv('총 납입원금', fmt(isa.invested)) +
+    kv('현재 총자산', fmt(isa.total)) +
+    kv('누적 수익', fmtSign(isaProfit), colorClass(isaProfit)) +
+    kv('분배금 수령', fmt(isa.div), 'neu') +
+    kv('실현 손익', fmtSign(isa.real), colorClass(isa.real)) +
+    '<div class="divider"></div>' +
+    kv('납입 한도 잔여', fmt(10000000 - isa.invested), 'pos');
+
+  const isaPg = Math.min((isa.invested / 10000000 * 100), 100).toFixed(0);
+  document.getElementById('pg-isa-bar').style.width = isaPg + '%';
+  document.getElementById('pg-isa-label').textContent = fmt(isa.invested) + ' / 10,000,000원';
+  document.getElementById('isa-note').innerHTML =
+    isaProfit >= 0
+      ? `💡 현재 수익 ${fmtSign(isaProfit)} — 비과세 혜택 대상 (서민형 400만원 한도)`
+      : `💡 현재 손실 ${fmtSign(isaProfit)} — 비과세 해당 없음. 추가 납입 후 수익 전환 시 혜택 발생`;
+
+  // ── 계좌별 테이블 ──
+  const acctOrder = ['미래ISA','미래연금저축','삼성연금저축','우리IRP','미래종합','미래금현물'];
+  let acctHtml = '';
+  let totI=0, totE=0, totC=0, totT=0, totP=0, totD=0, totR=0;
+  acctOrder.forEach(name => {
+    const a = accountData[name];
+    totI+=a.invested; totE+=a.eval; totC+=a.cash; totT+=a.total; totP+=a.profit; totD+=a.div; totR+=a.real;
+    const barW = Math.abs(a.rate) > 0 ? Math.min(Math.abs(a.rate) * 2.5, 100) : 0;
+    const barColor = a.rate >= 0 ? 'var(--green)' : 'var(--red)';
+    acctHtml += `<tr>
+      <td>${name} <span class="type-tag t-${a.type}">${a.type}</span></td>
+      <td>${fmt(a.invested)}</td>
+      <td>${fmt(a.eval)}</td>
+      <td>${fmt(a.cash)}</td>
+      <td>${fmt(a.total)}</td>
+      <td class="${colorClass(a.profit)}">${fmtSign(a.profit)}</td>
+      <td><div class="bar-wrap"><span class="${colorClass(a.rate)}">${fmtPct(a.rate)}</span><div class="bar-bg"><div class="bar-fill" style="width:${barW}%;background:${barColor}"></div></div></div></td>
+      <td style="color:var(--gold)">${fmt(a.div)}</td>
+      <td class="${colorClass(a.real)}">${fmtSign(a.real)}</td>
+    </tr>`;
+  });
+  const totRate = totI ? ((totT - totI) / totI * 100) : 0;
+  acctHtml += `<tr class="total">
+    <td>전체 합계</td>
+    <td>${fmt(totI)}</td><td>${fmt(totE)}</td><td>${fmt(totC)}</td><td>${fmt(totT)}</td>
+    <td class="${colorClass(totT-totI)}">${fmtSign(totT-totI)}</td>
+    <td><span class="badge ${totRate>=0?'g':'r'}">${fmtPct(totRate)}</span></td>
+    <td style="color:var(--gold)">${fmt(totD)}</td>
+    <td class="${colorClass(totR)}">${fmtSign(totR)}</td>
+  </tr>`;
+  document.getElementById('acct-tbody').innerHTML = acctHtml;
+
+  // ── 비중 분석 ──
+  // 섹터
+  const sectorOrder = ['미국ETF(S&P500)','미국ETF(배당)','미국ETF(나스닥)','국내ETF(배당)','국내ETF','국내주식','기타'];
+  const colors = ['c1','c2','c3','c4','c4','c5','c6'];
+  let secHtml = '';
+  sectorOrder.forEach((s, i) => {
+    const v = sectorMap[s] || 0;
+    if (!v) return;
+    const pct = totalEval ? (v / totalEval * 100) : 0;
+    secHtml += `<div class="an-row">
+      <span class="an-name">${s}</span>
+      <div class="an-bar-bg"><div class="an-bar-fill ${colors[i]}" style="width:${pct}%"></div></div>
+      <span class="an-pct">${pct.toFixed(1)}%</span>
+    </div>`;
+  });
+  document.getElementById('an-sector').innerHTML = secHtml;
+
+  // 계좌별 비중
+  const acctColors = ['c1','c7','c2','c3','c4','c5'];
+  let accHtml = '';
+  acctOrder.forEach((name, i) => {
+    const v = accountData[name].total || 0;
+    if (!v) return;
+    const pct = totalAssets ? (v / totalAssets * 100) : 0;
+    accHtml += `<div class="an-row">
+      <span class="an-name">${name}</span>
+      <div class="an-bar-bg"><div class="an-bar-fill ${acctColors[i]}" style="width:${pct}%"></div></div>
+      <span class="an-pct">${pct.toFixed(1)}%</span>
+    </div>`;
+  });
+  document.getElementById('an-account').innerHTML = accHtml;
+
+  // 지역·유형
+  const usPctA = totalEval ? (usEtfEval / totalEval * 100) : 0;
+  const krPctA = totalEval ? (krStockEval / totalEval * 100) : 0;
+  const etfPctA = totalEval ? (etfEval / totalEval * 100) : 0;
+  const indPctA = totalEval ? (indivEval / totalEval * 100) : 0;
+  document.getElementById('an-region').innerHTML = `
+    <div class="an-row"><span class="an-name">미국 ETF</span><div class="an-bar-bg"><div class="an-bar-fill c1" style="width:${usPctA}%"></div></div><span class="an-pct">${usPctA.toFixed(1)}%</span></div>
+    <div class="an-row"><span class="an-name">한국 주식/ETF</span><div class="an-bar-bg"><div class="an-bar-fill c4" style="width:${krPctA + (totalEval?(((sectorMap['국내ETF']||0)+(sectorMap['국내ETF(배당)']||0))/totalEval*100):0)}%"></div></div><span class="an-pct">${(krPctA + (totalEval?(((sectorMap['국내ETF']||0)+(sectorMap['국내ETF(배당)']||0))/totalEval*100):0)).toFixed(1)}%</span></div>
+    <div class="divider"></div>
+    <div class="an-row"><span class="an-name" style="font-weight:700;color:var(--text)">ETF 합계</span><div class="an-bar-bg"><div class="an-bar-fill c1" style="width:${etfPctA}%"></div></div><span class="an-pct">${etfPctA.toFixed(1)}%</span></div>
+    <div class="an-row"><span class="an-name" style="font-weight:700;color:var(--text)">개별주식</span><div class="an-bar-bg"><div class="an-bar-fill c5" style="width:${indPctA}%"></div></div><span class="an-pct">${indPctA.toFixed(1)}%</span></div>
+  `;
+}
+
+function renderHoldings(holdings) {
+  const items = Object.entries(holdings)
+    .map(([name, v]) => ({name, ...v}))
+    .filter(i => i.qty > 0);
+
+  const groups = {};
+  items.forEach(item => {
+    const g = item.account || '기타';
+    if (!groups[g]) groups[g] = [];
+    groups[g].push(item);
+  });
+
+  const order = ['미래연금저축','삼성연금저축','우리IRP','미래ISA','미래종합'];
+  let html = '';
+  order.forEach(grp => {
+    if (!groups[grp] || groups[grp].length === 0) return;
+    const typeMap = {'미래연금저축':'연금저축','삼성연금저축':'연금저축','우리IRP':'IRP','미래ISA':'ISA','미래종합':'일반'};
+    html += `<tr class="grp-header"><td colspan="9">◆ ${grp} — ${typeMap[grp]||''}</td></tr>`;
+    groups[grp].forEach(item => {
+      const diff = item.currentPrice - item.avgPrice;
+      const rate = item.avgPrice ? (diff / item.avgPrice * 100) : 0;
+      const evalAmt = item.qty * item.currentPrice;
+      const cost = item.qty * item.avgPrice;
+      const gain = evalAmt - cost;
+      html += `<tr>
+        <td>${item.name}</td>
+        <td style="font-family:'Noto Sans KR',sans-serif;font-size:12px;color:var(--text2)">${item.account}</td>
+        <td>${item.qty.toLocaleString()}</td>
+        <td>${Math.round(item.avgPrice).toLocaleString()}</td>
+        <td class="${colorClass(diff)}">${Math.round(item.currentPrice).toLocaleString()}</td>
+        <td>${fmt(cost)}</td>
+        <td>${fmt(evalAmt)}</td>
+        <td class="${colorClass(gain)}">${fmtSign(gain)}</td>
+        <td class="${colorClass(rate)}">${fmtPct(rate)}</td>
+      </tr>`;
+    });
+  });
+
+  document.getElementById('holdings-tbody').innerHTML = html || '<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:24px;">보유종목 없음</td></tr>';
+}
+
+// 시작
+loadData();
+</script>
+</body>
+</html>
