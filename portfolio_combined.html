@@ -1105,7 +1105,7 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
       <div style="background:rgba(255,255,255,.08);border-radius:10px;padding:14px 16px">
         <div style="font-size:10px;color:rgba(255,255,255,.45);margin-bottom:6px;font-weight:600;letter-spacing:.06em">💰 가계부 자산</div>
         <div style="font-size:18px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums" id="ta-household">—</div>
-        <div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:3px">현금·부동산 (연금·투자 제외)</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:3px">현금·부동산 (투자계좌 제외)</div>
       </div>
       <div style="background:rgba(255,255,255,.08);border-radius:10px;padding:14px 16px">
         <div style="font-size:10px;color:rgba(255,255,255,.45);margin-bottom:6px;font-weight:600;letter-spacing:.06em">📊 주식 수익률</div>
@@ -2227,8 +2227,9 @@ function renderTotalAsset() {
   if(typeof calcBalances === 'function' && typeof ACCTS_DEF !== 'undefined') {
     const _cb = calcBalances().curBal;
     const cb = k => (typeof sheetAssetData !== 'undefined' && sheetAssetData && sheetAssetData[k]!==undefined) ? sheetAssetData[k] : _cb(k);
-    // ※ invest/contract(연금·투자 계좌)는 주식탭에서 이미 집계되므로 여기서는 제외
+    // ※ invest/contract 그룹은 주식·연금 파트(evalTotal)에서 이미 집계되므로 가계부 파트에서 제외
     const cA   = ACCTS_DEF.filter(a=>a.group==='cash');
+    const estA = ACCTS_DEF.filter(a=>a.group==='estate');
     const cashT = cA.reduce((s,a)=>s+cb(a.key),0);
     const dep   = cb('전세 보증금');
     let loanAmt = 0;
@@ -2238,16 +2239,15 @@ function renderTotalAsset() {
     hhNetWorth = cashT + netEstate + debtT;
     const items = [
       {l:'현금·통장', v:cashT, c:'var(--txt)'},
-      {l:'부동산 순 (보증금-대출)', v:netEstate, c:'var(--teal)'},
+      {l:'부동산 (순)', v:netEstate, c:'var(--teal)'},
       {l:'카드부채', v:Math.abs(debtT), neg:true, c:'var(--red)'},
     ];
-    hhDetailHtml = '<div style="font-size:10px;color:var(--txt3);padding:4px 0 8px;border-bottom:.5px solid var(--bd);margin-bottom:4px">⚠️ 연금·투자 계좌는 주식·연금 항목에 포함 (이중 계산 방지)</div>'
-    + items.map(x=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:.5px solid var(--bd);font-size:12px">
+    hhDetailHtml = items.map(x=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:.5px solid var(--bd);font-size:12px">
       <span style="color:var(--txt2)">${x.l}</span>
       <span style="font-variant-numeric:tabular-nums;font-weight:600;color:${x.c}">${x.neg?'-':''}${Math.round(x.v).toLocaleString()}원</span>
     </div>`).join('')
     + `<div style="display:flex;justify-content:space-between;padding:8px 0 0;font-size:13px;font-weight:700">
-      <span>소계</span>
+      <span>순자산</span>
       <span style="font-variant-numeric:tabular-nums;color:${hhNetWorth>=0?'var(--blue)':'var(--red)'}">
         ${hhNetWorth>=0?'':'-'}${Math.abs(Math.round(hhNetWorth)).toLocaleString()}원</span>
     </div>`;
@@ -3937,15 +3937,16 @@ function renderAsset(){
   var netEstate=dep-loanAmt;
 
   // ── 순자산 ──
-  var netWorth=cashT+invT+conT+netEstate+debtT;
+  // ── 순자산 (투자계좌는 주식·연금 탭에서 집계하므로 여기선 제외) ──
+  var netWorth=cashT+netEstate+debtT;
   var nwEl=document.getElementById('ast-net-worth');
   nwEl.textContent=(netWorth<0?'-':'')+fmt(netWorth);
   nwEl.style.color=netWorth>=0?'var(--blue)':'var(--red)';
   var nwSub=document.getElementById('ast-net-sub');
-  if(nwSub)nwSub.textContent='현금 '+fmtK(cashT)+' + 투자 '+fmtK(invT+conT)+' + 부동산 '+fmtK(netEstate)+' - 카드부채 '+fmtK(Math.abs(debtT));
+  if(nwSub)nwSub.textContent='현금 '+fmtK(cashT)+' + 부동산 '+fmtK(netEstate)+' - 카드부채 '+fmtK(Math.abs(debtT))+' (투자계좌는 주식·연금 탭 참조)';
   var bdItems=[
     {l:'현금',v:cashT,c:'var(--text)',note:''},
-    {l:'투자',v:invT+conT,c:'var(--blue)',note:''},
+    {l:'투자(별도집계)',v:invT+conT,c:'var(--txt3)',note:'주식·연금탭'},
     {l:'부동산',v:netEstate,c:'var(--blue)',note:'보증금-대출'},
     {l:'카드부채',v:Math.abs(debtT),c:'var(--red)',neg:true,note:''}
   ];
