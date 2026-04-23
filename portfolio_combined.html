@@ -1136,23 +1136,6 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
         <div style="font-size:11px;font-weight:700;color:var(--txt3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px">🏠 부동산 (전세)</div>
         <div id="ta-hh-estate"></div>
       </div>
-      <!-- 이달 저축 -->
-      <div id="ta-hh-saving-sec" style="display:none;margin-top:14px">
-        <div style="font-size:11px;font-weight:700;color:var(--txt3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px;display:flex;justify-content:space-between">
-          <span>💰 이달 저축 현황</span>
-          <span id="ta-hh-sav-sum" style="color:var(--blue);font-variant-numeric:tabular-nums"></span>
-        </div>
-        <div id="ta-hh-saving"></div>
-      </div>
-      <!-- 저축률 -->
-      <div id="ta-hh-trend-sec" style="display:none;margin-top:14px">
-        <div style="font-size:11px;font-weight:700;color:var(--txt3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px">📊 저축률 추이</div>
-        <div style="display:flex;gap:16px;margin-bottom:10px">
-          <div style="font-size:12px;color:var(--txt2)">(수입-지출)/수입 <span id="ta-hh-sav-rate" style="font-weight:700"></span></div>
-          <div style="font-size:12px;color:var(--txt2)">저축액 비율 <span id="ta-hh-sav-rate2" style="font-weight:700"></span></div>
-        </div>
-        <div id="ta-hh-trend"></div>
-      </div>
     </div>
   </div>
   <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:14px;padding:20px;margin-bottom:20px">
@@ -1173,6 +1156,28 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
       <div style="text-align:center;padding:12px;background:var(--bg3);border-radius:10px">
         <div style="font-size:10px;color:var(--txt3);margin-bottom:5px;font-weight:600">총 수익</div>
         <div style="font-size:16px;font-weight:700;font-variant-numeric:tabular-nums" id="ta-total-profit">—</div>
+      </div>
+    </div>
+  </div>
+  <!-- 이달 저축 & 저축률 -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+    <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:14px;padding:20px">
+      <div style="font-size:12px;font-weight:700;color:var(--txt2);margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
+        <span>💰 이달 저축 현황</span>
+        <span id="ta-hh-sav-sum" style="font-variant-numeric:tabular-nums;color:var(--blue)"></span>
+      </div>
+      <div id="ta-hh-saving-sec" style="display:none">
+        <div id="ta-hh-saving"></div>
+      </div>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:14px;padding:20px">
+      <div style="font-size:12px;font-weight:700;color:var(--txt2);margin-bottom:12px">📊 저축률 추이</div>
+      <div id="ta-hh-trend-sec" style="display:none">
+        <div style="display:flex;gap:16px;margin-bottom:10px">
+          <div style="font-size:11px;color:var(--txt2)">(수입-지출)/수입 <span id="ta-hh-sav-rate" style="font-weight:700"></span></div>
+          <div style="font-size:11px;color:var(--txt2)">저축액 <span id="ta-hh-sav-rate2" style="font-weight:700"></span></div>
+        </div>
+        <div id="ta-hh-trend"></div>
       </div>
     </div>
   </div>
@@ -2296,17 +2301,17 @@ function renderTotalAsset() {
 
     // 순자산 요약 행
     const summaryItems = [
-      {l:'현금·통장', v:cashT, c:'var(--txt)'},
-      {l:'부동산 (순)', v:netEstate, c:'var(--teal)'},
-      {l:'카드부채', v:Math.abs(debtT), neg:true, c:'var(--red)'},
+      {l:'현금·통장', v:cashT},
+      {l:'부동산 (순)', v:netEstate},
+      {l:'카드부채', v:Math.abs(debtT), neg:true},
     ];
-    hhDetailHtml = summaryItems.map(x=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:.5px solid var(--bd);font-size:12px">
-      <span style="color:var(--txt2)">${x.l}</span>
-      <span style="font-variant-numeric:tabular-nums;font-weight:600;color:${x.c}">${x.neg?'-':''}${Math.round(x.v).toLocaleString()}원</span>
+    hhDetailHtml = summaryItems.map(x=>`<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:.5px solid var(--bd);font-size:11px">
+      <span style="color:var(--txt3)">${x.l}</span>
+      <span style="font-variant-numeric:tabular-nums;color:var(--txt3)">${x.neg?'-':''}${Math.round(x.v).toLocaleString()}원</span>
     </div>`).join('')
-    + `<div style="display:flex;justify-content:space-between;padding:8px 0 0;font-size:13px;font-weight:700">
-      <span>현금·부동산 순자산</span>
-      <span style="font-variant-numeric:tabular-nums;color:${hhNetWorth>=0?'var(--blue)':'var(--red)'}">
+    + `<div style="display:flex;justify-content:space-between;padding:6px 0 0;font-size:11px;font-weight:700">
+      <span style="color:var(--txt)">합계</span>
+      <span style="font-variant-numeric:tabular-nums;color:var(--txt)">
         ${hhNetWorth>=0?'':'-'}${Math.abs(Math.round(hhNetWorth)).toLocaleString()}원</span>
     </div>`;
 
@@ -2316,14 +2321,14 @@ function renderTotalAsset() {
       conSec.style.display='';
       const conRows = conA.map(a=>{
         const v=cb(a.key);
-        return `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:.5px solid var(--bd);font-size:12px">
-          <span style="color:var(--txt2)">${a.label}</span>
-          <span style="font-variant-numeric:tabular-nums;font-weight:600;color:var(--blue)">${fmt(v)}</span>
+        return `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:.5px solid var(--bd);font-size:11px">
+          <span style="color:var(--txt3)">${a.label}</span>
+          <span style="font-variant-numeric:tabular-nums;color:var(--txt3)">${fmt(v)}</span>
         </div>`;
       }).join('');
       document.getElementById('ta-hh-contract').innerHTML = conRows
-        + `<div style="display:flex;justify-content:space-between;padding:7px 0 0;font-size:12px;font-weight:700">
-          <span>합계</span><span style="font-variant-numeric:tabular-nums;color:var(--blue)">${fmt(conT)}</span></div>`;
+        + `<div style="display:flex;justify-content:space-between;padding:6px 0 0;font-size:11px;font-weight:700">
+          <span style="color:var(--txt)">합계</span><span style="font-variant-numeric:tabular-nums;color:var(--txt)">${fmt(conT)}</span></div>`;
     } else if(conSec) { conSec.style.display='none'; }
 
 
@@ -2333,18 +2338,18 @@ function renderTotalAsset() {
       estSec.style.display='';
       let estRows = estA.map(a=>{
         const v=cb(a.key);
-        return `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:.5px solid var(--bd);font-size:12px">
-          <span style="color:var(--txt2)">${a.label}</span>
-          <span style="font-variant-numeric:tabular-nums;font-weight:600;color:var(--blue)">${fmt(v)}</span>
+        return `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:.5px solid var(--bd);font-size:11px">
+          <span style="color:var(--txt3)">${a.label}</span>
+          <span style="font-variant-numeric:tabular-nums;color:var(--txt3)">${fmt(v)}</span>
         </div>`;
       }).join('');
       if(dep>0 && loanAmt>0) estRows +=
-        `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:.5px solid var(--bd);font-size:12px">
+        `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:.5px solid var(--bd);font-size:11px">
           <span style="color:var(--txt3)">대출원금 잔액</span>
-          <span style="font-variant-numeric:tabular-nums;color:var(--red)">-${fmt(loanAmt)}</span>
+          <span style="font-variant-numeric:tabular-nums;color:var(--txt3)">-${fmt(loanAmt)}</span>
         </div>
-        <div style="display:flex;justify-content:space-between;padding:7px 0 0;font-size:12px;font-weight:700">
-          <span>순 보증금</span><span style="font-variant-numeric:tabular-nums;color:var(--teal)">${fmt(netEstate)}</span></div>`;
+        <div style="display:flex;justify-content:space-between;padding:6px 0 0;font-size:11px;font-weight:700">
+          <span style="color:var(--txt)">순 보증금</span><span style="font-variant-numeric:tabular-nums;color:var(--txt)">${fmt(netEstate)}</span></div>`;
       document.getElementById('ta-hh-estate').innerHTML = estRows;
     } else if(estSec) { estSec.style.display='none'; }
 
