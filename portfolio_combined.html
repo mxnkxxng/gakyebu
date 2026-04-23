@@ -2221,22 +2221,46 @@ function renderTotalAsset() {
   const taStockRateEl = document.getElementById('ta-stock-rate');
   if(stockRate!==null) taStockRateEl.style.color = stockRate>=0?'#6aff9e':'#ff8a8a';
 
-  // 주식 계좌별 상세
-  const PEN_LABELS = {'삼성연금저축':'삼성연금저축','미래연금저축':'미래연금저축','우리IRP':'우리IRP','미래금현물':'미래금현물'};
+  // 주식 계좌별 상세 — 계좌별로 분리해서 표시
+  // 계좌별 평가금액 맵 구성
+  const acctEvalMap = {};
+  // holdingsData 기반 (ISA·종합 등 현재가 조회 가능 계좌)
+  Object.entries(fifo.holdByName).forEach(([name, h]) => {
+    const hd = holdingsData[name] || {};
+    const cp = parseFloat(hd.currentPrice) || 0;
+    const acc = hd.account || h.account || '';
+    if (cp > 0 && acc) {
+      const ev = Math.round(h.qty * cp);
+      acctEvalMap[acc] = (acctEvalMap[acc] || 0) + ev;
+    }
+  });
+  // 수동입력 계좌 (연금·금) — holdingsData에 없으면 수동값으로 채움
+  ['삼성연금저축','미래연금저축','우리IRP','미래금현물','미래금'].forEach(acc => {
+    const mv = parseFloat(manualEval[acc]) || 0;
+    if (mv > 0 && !(acctEvalMap[acc] > 0)) acctEvalMap[acc] = mv;
+  });
+
+  // 계좌 표시 순서 및 색상
+  const ACC_ORDER = ['미래ISA','미래연금저축','삼성연금저축','우리IRP','미래종합','미래금현물','미래금'];
+  const ACC_COLOR = {
+    '미래ISA':'var(--teal)', '미래연금저축':'var(--purple)', '삼성연금저축':'#8b5cf6',
+    '우리IRP':'var(--blue)', '미래종합':'var(--green)', '미래금현물':'var(--yellow)', '미래금':'var(--yellow)'
+  };
+  // 정렬: ACC_ORDER 순 → 나머지
+  const orderedAccts = [
+    ...ACC_ORDER.filter(a => acctEvalMap[a] > 0),
+    ...Object.keys(acctEvalMap).filter(a => !ACC_ORDER.includes(a) && acctEvalMap[a] > 0)
+  ];
+
   let stockDetailHtml = '';
-  // 연금·금 (수동입력)
-  Object.entries(PEN_LABELS).forEach(([acc, label])=>{
-    const v = parseFloat(manualEval[acc])||0;
-    if(v>0) stockDetailHtml += `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:.5px solid var(--bd);font-size:12px">
-      <span style="color:var(--txt2)">${label}</span>
+  orderedAccts.forEach(acc => {
+    const v = acctEvalMap[acc];
+    const c = ACC_COLOR[acc] || 'var(--txt2)';
+    stockDetailHtml += `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:.5px solid var(--bd);font-size:12px">
+      <span style="color:${c};font-weight:600">${acc}</span>
       <span style="font-variant-numeric:tabular-nums;font-weight:600">${Math.round(v).toLocaleString()}원</span>
     </div>`;
   });
-  // ISA (현재가 기반)
-  if(isaEval>0) stockDetailHtml += `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:.5px solid var(--bd);font-size:12px">
-    <span style="color:var(--txt2)">미래ISA (평가)</span>
-    <span style="font-variant-numeric:tabular-nums;font-weight:600">${Math.round(isaEval).toLocaleString()}원</span>
-  </div>`;
   if(deposit>0) stockDetailHtml += `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:.5px solid var(--bd);font-size:12px">
     <span style="color:var(--txt3)">예수금 여력</span>
     <span style="font-variant-numeric:tabular-nums;color:var(--txt3)">${Math.round(deposit).toLocaleString()}원</span>
