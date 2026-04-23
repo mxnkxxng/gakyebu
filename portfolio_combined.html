@@ -1105,7 +1105,7 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
       <div style="background:rgba(255,255,255,.08);border-radius:10px;padding:14px 16px">
         <div style="font-size:10px;color:rgba(255,255,255,.45);margin-bottom:6px;font-weight:600;letter-spacing:.06em">💰 가계부 자산</div>
         <div style="font-size:18px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums" id="ta-household">—</div>
-        <div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:3px">현금·투자·부동산</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:3px">현금·부동산 (연금·투자 제외)</div>
       </div>
       <div style="background:rgba(255,255,255,.08);border-radius:10px;padding:14px 16px">
         <div style="font-size:10px;color:rgba(255,255,255,.45);margin-bottom:6px;font-weight:600;letter-spacing:.06em">📊 주식 수익률</div>
@@ -2227,31 +2227,27 @@ function renderTotalAsset() {
   if(typeof calcBalances === 'function' && typeof ACCTS_DEF !== 'undefined') {
     const _cb = calcBalances().curBal;
     const cb = k => (typeof sheetAssetData !== 'undefined' && sheetAssetData && sheetAssetData[k]!==undefined) ? sheetAssetData[k] : _cb(k);
-    const invA = ACCTS_DEF.filter(a=>a.group==='invest');
-    const conA = ACCTS_DEF.filter(a=>a.group==='contract');
+    // ※ invest/contract(연금·투자 계좌)는 주식탭에서 이미 집계되므로 여기서는 제외
     const cA   = ACCTS_DEF.filter(a=>a.group==='cash');
-    const estA = ACCTS_DEF.filter(a=>a.group==='estate');
-    const invT  = invA.reduce((s,a)=>s+cb(a.key),0);
-    const conT  = conA.reduce((s,a)=>s+cb(a.key),0);
     const cashT = cA.reduce((s,a)=>s+cb(a.key),0);
     const dep   = cb('전세 보증금');
     let loanAmt = 0;
     ACCTS_DEF.filter(a=>a.group==='longdebt').forEach(a=>{ loanAmt+=Math.abs(cb(a.key)); });
     const netEstate = dep - loanAmt;
     const debtT = ACCTS_DEF.filter(a=>a.group==='debt').reduce((s,a)=>s+Math.min(0,cb(a.key)),0);
-    hhNetWorth = cashT + invT + conT + netEstate + debtT;
+    hhNetWorth = cashT + netEstate + debtT;
     const items = [
       {l:'현금·통장', v:cashT, c:'var(--txt)'},
-      {l:'투자·연금 (가계부)', v:invT+conT, c:'var(--blue)'},
-      {l:'부동산 (순)', v:netEstate, c:'var(--teal)'},
+      {l:'부동산 순 (보증금-대출)', v:netEstate, c:'var(--teal)'},
       {l:'카드부채', v:Math.abs(debtT), neg:true, c:'var(--red)'},
     ];
-    hhDetailHtml = items.map(x=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:.5px solid var(--bd);font-size:12px">
+    hhDetailHtml = '<div style="font-size:10px;color:var(--txt3);padding:4px 0 8px;border-bottom:.5px solid var(--bd);margin-bottom:4px">⚠️ 연금·투자 계좌는 주식·연금 항목에 포함 (이중 계산 방지)</div>'
+    + items.map(x=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:.5px solid var(--bd);font-size:12px">
       <span style="color:var(--txt2)">${x.l}</span>
       <span style="font-variant-numeric:tabular-nums;font-weight:600;color:${x.c}">${x.neg?'-':''}${Math.round(x.v).toLocaleString()}원</span>
     </div>`).join('')
     + `<div style="display:flex;justify-content:space-between;padding:8px 0 0;font-size:13px;font-weight:700">
-      <span>순자산</span>
+      <span>소계</span>
       <span style="font-variant-numeric:tabular-nums;color:${hhNetWorth>=0?'var(--blue)':'var(--red)'}">
         ${hhNetWorth>=0?'':'-'}${Math.abs(Math.round(hhNetWorth)).toLocaleString()}원</span>
     </div>`;
