@@ -281,27 +281,29 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
 <!-- ── 상단 네비 ── -->
 <nav class="topnav">
   <div class="topnav-logo">portfolio.db</div>
-  <div class="topnav-group-label">📈 주식·연금</div>
-  <div class="topnav-tab on" onclick="showTab(0)">대시보드</div>
-  <div class="topnav-tab"   onclick="showTab(1)">거래 입력</div>
-  <div class="topnav-tab"   onclick="showTab(2)">거래 내역</div>
-  <div class="topnav-tab"   onclick="showTab(3)">📊 연금·ISA 리뷰</div>
-  <div class="topnav-tab"   onclick="showTab(4)">📋 보유종목</div>
-  <div class="topnav-tab"   onclick="showTab(11)">⚙ 연동설정</div>
+  <div class="topnav-tab on" onclick="showTab(12)" style="font-weight:700;color:var(--blue)">💎 전체자산</div>
   <div class="topnav-sep"></div>
   <div class="topnav-group-label">💰 가계부</div>
   <div class="topnav-tab"   onclick="showTab(5)">홈</div>
   <div class="topnav-tab"   onclick="showTab(6)">입력</div>
   <div class="topnav-tab"   onclick="showTab(7)">내역</div>
   <div class="topnav-tab"   onclick="showTab(8)">잔고</div>
-  <div class="topnav-tab"   onclick="showTab(9)">자산</div>
+  <div class="topnav-tab"   onclick="showTab(9)">가계부 자산</div>
   <div class="topnav-tab"   onclick="showTab(10)">설정</div>
+  <div class="topnav-sep"></div>
+  <div class="topnav-group-label">📈 주식·연금</div>
+  <div class="topnav-tab"   onclick="showTab(0)">대시보드</div>
+  <div class="topnav-tab"   onclick="showTab(1)">거래 입력</div>
+  <div class="topnav-tab"   onclick="showTab(2)">거래 내역</div>
+  <div class="topnav-tab"   onclick="showTab(3)">📊 연금·ISA 리뷰</div>
+  <div class="topnav-tab"   onclick="showTab(4)">📋 보유종목</div>
+  <div class="topnav-tab"   onclick="showTab(11)">⚙ 연동설정</div>
 </nav>
 
 <!-- ════════════════════════════════════════════
   탭 0 : 대시보드
 ═════════════════════════════════════════════ -->
-<div id="p0" class="panel on">
+<div id="p0" class="panel">
 
   <!-- ── 상단 수동 평가금액 입력 배너 (연금/금 계좌용) ── -->
   <div id="manual-eval-banner" style="background:rgba(245,166,35,.07);border:1px solid rgba(245,166,35,.25);border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:flex-start;gap:12px">
@@ -386,7 +388,7 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
     <div class="sec" style="margin:0;flex:1">🏦 계좌별 현황</div>
     <div style="display:flex;align-items:center;gap:8px;margin-left:16px">
-      <span style="font-size:11px;color:var(--txt3)" id="k-price-updated">현재가 미로드</span>
+      <span style="font-size:11px;color:var(--txt3)" id="k-price-updated" class="holdings-update-time">현재가 미로드</span>
       <button onclick="loadHoldingsFromSheet()" style="padding:6px 14px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:4px">↺ 현재가 갱신</button>
     </div>
   </div>
@@ -1080,6 +1082,78 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
 
 
 
+<!-- ════════════════════════════════════════════
+  탭 12 : 전체 자산 통합
+═════════════════════════════════════════════ -->
+<div id="p12" class="panel on" style="max-width:900px;margin:0 auto">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+    <div>
+      <div style="font-size:20px;font-weight:700;color:var(--txt)">💎 전체 자산 현황</div>
+      <div style="font-size:12px;color:var(--txt3);margin-top:3px">가계부 + 주식·연금 통합 자산</div>
+    </div>
+    <button onclick="renderTotalAsset()" style="padding:8px 16px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">↺ 새로고침</button>
+  </div>
+  <div style="background:linear-gradient(135deg,#1a2744 0%,#1e3a5f 100%);border-radius:16px;padding:28px 32px;margin-bottom:20px">
+    <div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:10px">총 순자산</div>
+    <div style="font-variant-numeric:tabular-nums;font-size:36px;font-weight:700;color:#fff;letter-spacing:-.5px" id="ta-total">—</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:20px">
+      <div style="background:rgba(255,255,255,.08);border-radius:10px;padding:14px 16px">
+        <div style="font-size:10px;color:rgba(255,255,255,.45);margin-bottom:6px;font-weight:600;letter-spacing:.06em">📈 주식·연금</div>
+        <div style="font-size:18px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums" id="ta-stock">—</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:3px" id="ta-stock-sub">현재가 로드 필요</div>
+      </div>
+      <div style="background:rgba(255,255,255,.08);border-radius:10px;padding:14px 16px">
+        <div style="font-size:10px;color:rgba(255,255,255,.45);margin-bottom:6px;font-weight:600;letter-spacing:.06em">💰 가계부 자산</div>
+        <div style="font-size:18px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums" id="ta-household">—</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:3px">현금·투자·부동산</div>
+      </div>
+      <div style="background:rgba(255,255,255,.08);border-radius:10px;padding:14px 16px">
+        <div style="font-size:10px;color:rgba(255,255,255,.45);margin-bottom:6px;font-weight:600;letter-spacing:.06em">📊 주식 수익률</div>
+        <div style="font-size:18px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums" id="ta-stock-rate">—</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:3px">납입 대비 평가</div>
+      </div>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+    <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:14px;padding:20px">
+      <div style="font-size:12px;font-weight:700;color:var(--txt2);margin-bottom:14px;display:flex;align-items:center;gap:6px">
+        📈 주식·연금 계좌별
+        <span style="font-size:10px;color:var(--txt3);font-weight:400" id="ta-price-time"></span>
+      </div>
+      <div id="ta-stock-detail"><div style="font-size:12px;color:var(--txt3);padding:12px 0">주식 탭에서 데이터를 먼저 로드하세요</div></div>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:14px;padding:20px">
+      <div style="font-size:12px;font-weight:700;color:var(--txt2);margin-bottom:14px">💰 가계부 자산 구성</div>
+      <div id="ta-household-detail"><div style="font-size:12px;color:var(--txt3);padding:12px 0">가계부 탭에서 데이터를 먼저 로드하세요</div></div>
+    </div>
+  </div>
+  <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:14px;padding:20px;margin-bottom:20px">
+    <div style="font-size:12px;font-weight:700;color:var(--txt2);margin-bottom:14px">📋 주식 손익 요약 (FIFO 기반)</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+      <div style="text-align:center;padding:12px;background:var(--bg3);border-radius:10px">
+        <div style="font-size:10px;color:var(--txt3);margin-bottom:5px;font-weight:600">누적 분배금</div>
+        <div style="font-size:16px;font-weight:700;color:var(--purple);font-variant-numeric:tabular-nums" id="ta-div">—</div>
+      </div>
+      <div style="text-align:center;padding:12px;background:var(--bg3);border-radius:10px">
+        <div style="font-size:10px;color:var(--txt3);margin-bottom:5px;font-weight:600">FIFO 실현손익</div>
+        <div style="font-size:16px;font-weight:700;font-variant-numeric:tabular-nums" id="ta-realized">—</div>
+      </div>
+      <div style="text-align:center;padding:12px;background:var(--bg3);border-radius:10px">
+        <div style="font-size:10px;color:var(--txt3);margin-bottom:5px;font-weight:600">미실현 손익</div>
+        <div style="font-size:16px;font-weight:700;font-variant-numeric:tabular-nums" id="ta-unrealized">—</div>
+      </div>
+      <div style="text-align:center;padding:12px;background:var(--bg3);border-radius:10px">
+        <div style="font-size:10px;color:var(--txt3);margin-bottom:5px;font-weight:600">총 수익</div>
+        <div style="font-size:16px;font-weight:700;font-variant-numeric:tabular-nums" id="ta-total-profit">—</div>
+      </div>
+    </div>
+  </div>
+  <div style="background:rgba(49,130,246,.06);border:1px solid rgba(49,130,246,.2);border-radius:10px;padding:14px 16px;font-size:11px;color:var(--txt3);line-height:1.7">
+    💡 <b>주식 현재가</b>는 주식 탭 대시보드에서 <b>↺ 현재가 갱신</b> 버튼으로 구글시트에서 로드하면 자동 반영됩니다 ·
+    localStorage에 저장되므로 새로고침 후에도 유지됩니다
+  </div>
+</div>
+
 <div id="pf-toast" class="toast"></div>
 <div id="toast" class="toast"></div>
 
@@ -1117,8 +1191,8 @@ function showTab(i) {
     var match=m.match(/showTab\((\d+)\)/);
     if(match) t.classList.toggle('on', parseInt(match[1])===i);
   });
-  // 패널 전환 — 12개 패널 ID 직접 지정
-  ['p0','p1','p2','p3','p4','p5','p6','p7','p8','p9','p10','p11'].forEach(function(id,j){
+  // 패널 전환 — 13개 패널 ID 직접 지정
+  ['p0','p1','p2','p3','p4','p5','p6','p7','p8','p9','p10','p11','p12'].forEach(function(id,j){
     var el = document.getElementById(id);
     if(el) el.classList.toggle('on', i===j);
   });
@@ -1159,6 +1233,7 @@ function showTab(i) {
   if(i===9) { setTimeout(function(){ if(typeof renderAsset==='function') renderAsset(); }, 50); }
   if(i===10) { setTimeout(function(){ if(typeof renderSetup==="function") renderSetup(); }, 50); }
   if(i===11) { var _pfu=document.getElementById("cfg-pf-url"); if(_pfu){ var _sv=getPfUrl(); if(_sv) _pfu.value=_sv; } }
+  if(i===12) { setTimeout(function(){ renderTotalAsset(); }, 50); }
 }
 
 // ── 데이터 ──
@@ -1229,8 +1304,15 @@ async function loadPfData() {
     renderPlan();
     if(typeof loadAssetFromSheet === 'function') loadAssetFromSheet();
     pfToast('로드 완료!');
-    // 현재가도 자동 로드 시도
-    loadHoldingsFromSheet();
+    // 현재가: localStorage에 이미 있으면 그걸 쓰고, 없으면 시트에서 로드
+    const cached = localStorage.getItem('pf_holdings_data');
+    if (cached && cached !== '{}') {
+      pfToast('현재가: 캐시에서 복원 (갱신 필요시 ↺ 버튼 클릭)');
+      if(typeof renderHoldingsTab === 'function') renderHoldingsTab();
+      if(typeof renderTotalAsset === 'function') renderTotalAsset();
+    } else {
+      loadHoldingsFromSheet();
+    }
   } else {
     pfToast('로드 실패 — Script URL 확인하세요','err');
   }
@@ -2011,16 +2093,17 @@ async function loadHoldingsFromSheet() {
     const r = await fetch(`${url}?action=pf_holdings`);
     const d = await r.json();
     if(d && d.data && Object.keys(d.data).length>0) {
-      localStorage.setItem('pf_holdings_data', JSON.stringify(d.data));
       const now = new Date().toLocaleTimeString('ko-KR', {hour:'2-digit',minute:'2-digit'});
-      const updEl = document.getElementById('k-price-updated');
-      if(updEl) updEl.textContent = `현재가 ${now} 갱신`;
+      localStorage.setItem('pf_holdings_data', JSON.stringify(d.data));
+      localStorage.setItem('pf_holdings_time', now);
+      document.querySelectorAll('.holdings-update-time').forEach(el=>{ el.textContent = `현재가 ${now} 갱신`; });
       pfToast(`현재가 로드 완료 (${Object.keys(d.data).length}종목)`);
-      renderDashboard(); // 재렌더링
+      renderDashboard();
+      if(typeof renderHoldingsTab === 'function') renderHoldingsTab();
+      if(typeof renderTotalAsset === 'function') renderTotalAsset();
     } else {
       pfToast('현재가 로드 실패 — GAS에 pf_holdings 액션을 추가하세요','err');
-      const updEl = document.getElementById('k-price-updated');
-      if(updEl) updEl.textContent = '현재가 로드 실패';
+      document.querySelectorAll('.holdings-update-time').forEach(el=>{ el.textContent = '현재가 로드 실패'; });
     }
   } catch(e) {
     pfToast('현재가 로드 오류','err');
@@ -2028,8 +2111,262 @@ async function loadHoldingsFromSheet() {
 }
 
 
-// ── 거래 내역 ──
-// ── FIFO 실현손익 계산 엔진 ──
+// ── 전체 자산 통합 뷰 (탭12) ──
+function renderTotalAsset() {
+  const fmtW2 = n => {
+    const v = Math.round(Math.abs(parseFloat(String(n).replace(/[^0-9.\-]/g,''))||0));
+    if(!v) return '—';
+    if(v >= 100000000) return (v/100000000).toFixed(1)+'억원';
+    if(v >= 10000) return (v/10000).toFixed(0)+'만원';
+    return v.toLocaleString()+'원';
+  };
+  const fmtSign = n => {
+    const v = Math.round(n||0);
+    const s = v>=0?'+':'';
+    return s + Math.abs(v).toLocaleString()+'원';
+  };
+  const col = v => v>=0?'var(--green)':'var(--red)';
+
+  // ── 주식·연금 파트 ──
+  let holdingsData = {};
+  try { holdingsData = JSON.parse(localStorage.getItem('pf_holdings_data')||'{}'); } catch(e){}
+  const manualEval = getManualEval ? getManualEval() : {};
+  const priceTime = localStorage.getItem('pf_holdings_time')||'';
+
+  // FIFO 계산
+  const fifo = pfTx.length ? calcFifoForDashboard(pfTx) : {holdByName:{}, sellHistory:[], totalCostBasis:0};
+  const pnlMap = pfTx.length ? calcRealizedPnL(pfTx) : {};
+
+  // 총 납입
+  let totalIn=0, totalDiv=0;
+  pfTx.forEach(r=>{
+    if(r.type==='입금') totalIn += Math.abs(parseFloat(r.amount)||0);
+    if(r.type==='분배금') totalDiv += Math.abs(parseFloat(r.amount)||0);
+  });
+
+  // 실현손익 합계
+  const totalRealized = Object.values(pnlMap).reduce((s,v)=>s+v, 0);
+
+  // 평가금액 (보유종목 현재가 기반 + 수동입력)
+  let evalTotal = 0, evalAvail = 0;
+  const PEN_ACCS = ['삼성연금저축','미래연금저축','우리IRP'];
+  const GOLD_ACCS = ['미래금현물','미래금'];
+  PEN_ACCS.forEach(acc=>{ evalTotal += parseFloat(manualEval[acc])||0; });
+  GOLD_ACCS.forEach(acc=>{ evalTotal += parseFloat(manualEval[acc])||0; });
+
+  // ISA·종합: holdingsData 기반 평가금액
+  let isaEval = 0;
+  Object.entries(fifo.holdByName).forEach(([name,h])=>{
+    const hd = holdingsData[name]||{};
+    const cp = parseFloat(hd.currentPrice)||0;
+    if(cp>0){
+      const ev = Math.round(h.qty * cp);
+      evalTotal += ev;
+      isaEval += ev;
+      evalAvail++;
+    }
+  });
+
+  // 예수금 (입금-출금-매수+매도 합)
+  let deposit = 0;
+  pfTx.forEach(r=>{
+    if(r.type==='입금') deposit += Math.abs(parseFloat(r.amount)||0);
+    if(r.type==='출금') deposit -= Math.abs(parseFloat(r.amount)||0);
+    if(r.type==='매수'||r.type==='매수.') deposit -= Math.abs(parseFloat(r.amount)||0);
+    if(r.type==='매도'||r.type==='매도.') deposit += Math.abs(parseFloat(r.amount)||0);
+    if(r.type==='분배금') deposit += Math.abs(parseFloat(r.amount)||0);
+  });
+  deposit = Math.max(0, deposit);
+  evalTotal += deposit;
+
+  const unrealized = evalTotal > 0 ? evalTotal - fifo.totalCostBasis - deposit : null;
+  const stockRate = totalIn>0 && evalTotal>0 ? (evalTotal-totalIn)/totalIn*100 : null;
+
+  document.getElementById('ta-stock').textContent = evalTotal > 0
+    ? Math.round(evalTotal).toLocaleString()+'원'
+    : '현재가 로드 필요';
+  document.getElementById('ta-stock-sub').textContent = evalAvail>0
+    ? `${evalAvail}종목 현재가 로드됨`
+    : '↺ 현재가 갱신 필요';
+  document.getElementById('ta-stock-rate').textContent = stockRate !== null
+    ? (stockRate>=0?'+':'')+stockRate.toFixed(2)+'%' : '—';
+  const taStockRateEl = document.getElementById('ta-stock-rate');
+  if(stockRate!==null) taStockRateEl.style.color = stockRate>=0?'#6aff9e':'#ff8a8a';
+
+  // 주식 계좌별 상세
+  const PEN_LABELS = {'삼성연금저축':'삼성연금저축','미래연금저축':'미래연금저축','우리IRP':'우리IRP','미래금현물':'미래금현물'};
+  let stockDetailHtml = '';
+  // 연금·금 (수동입력)
+  Object.entries(PEN_LABELS).forEach(([acc, label])=>{
+    const v = parseFloat(manualEval[acc])||0;
+    if(v>0) stockDetailHtml += `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:.5px solid var(--bd);font-size:12px">
+      <span style="color:var(--txt2)">${label}</span>
+      <span style="font-variant-numeric:tabular-nums;font-weight:600">${Math.round(v).toLocaleString()}원</span>
+    </div>`;
+  });
+  // ISA (현재가 기반)
+  if(isaEval>0) stockDetailHtml += `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:.5px solid var(--bd);font-size:12px">
+    <span style="color:var(--txt2)">미래ISA (평가)</span>
+    <span style="font-variant-numeric:tabular-nums;font-weight:600">${Math.round(isaEval).toLocaleString()}원</span>
+  </div>`;
+  if(deposit>0) stockDetailHtml += `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:.5px solid var(--bd);font-size:12px">
+    <span style="color:var(--txt3)">예수금 여력</span>
+    <span style="font-variant-numeric:tabular-nums;color:var(--txt3)">${Math.round(deposit).toLocaleString()}원</span>
+  </div>`;
+  if(evalTotal>0) stockDetailHtml += `<div style="display:flex;justify-content:space-between;padding:8px 0 0;font-size:13px;font-weight:700">
+    <span>합계</span>
+    <span style="font-variant-numeric:tabular-nums;color:var(--blue)">${Math.round(evalTotal).toLocaleString()}원</span>
+  </div>`;
+  if(!stockDetailHtml) stockDetailHtml = '<div style="font-size:12px;color:var(--txt3);padding:12px 0">주식 탭에서 데이터를 먼저 로드하세요</div>';
+  if(priceTime) stockDetailHtml += `<div style="font-size:10px;color:var(--txt3);margin-top:8px">📡 현재가 ${priceTime} 기준</div>`;
+  document.getElementById('ta-stock-detail').innerHTML = stockDetailHtml;
+
+  // ── 가계부 파트 ──
+  let hhNetWorth = 0;
+  let hhDetailHtml = '';
+  if(typeof calcBalances === 'function' && typeof ACCTS_DEF !== 'undefined') {
+    const _cb = calcBalances().curBal;
+    const cb = k => (typeof sheetAssetData !== 'undefined' && sheetAssetData && sheetAssetData[k]!==undefined) ? sheetAssetData[k] : _cb(k);
+    const invA = ACCTS_DEF.filter(a=>a.group==='invest');
+    const conA = ACCTS_DEF.filter(a=>a.group==='contract');
+    const cA   = ACCTS_DEF.filter(a=>a.group==='cash');
+    const estA = ACCTS_DEF.filter(a=>a.group==='estate');
+    const invT  = invA.reduce((s,a)=>s+cb(a.key),0);
+    const conT  = conA.reduce((s,a)=>s+cb(a.key),0);
+    const cashT = cA.reduce((s,a)=>s+cb(a.key),0);
+    const dep   = cb('전세 보증금');
+    let loanAmt = 0;
+    ACCTS_DEF.filter(a=>a.group==='longdebt').forEach(a=>{ loanAmt+=Math.abs(cb(a.key)); });
+    const netEstate = dep - loanAmt;
+    const debtT = ACCTS_DEF.filter(a=>a.group==='debt').reduce((s,a)=>s+Math.min(0,cb(a.key)),0);
+    hhNetWorth = cashT + invT + conT + netEstate + debtT;
+    const items = [
+      {l:'현금·통장', v:cashT, c:'var(--txt)'},
+      {l:'투자·연금 (가계부)', v:invT+conT, c:'var(--blue)'},
+      {l:'부동산 (순)', v:netEstate, c:'var(--teal)'},
+      {l:'카드부채', v:Math.abs(debtT), neg:true, c:'var(--red)'},
+    ];
+    hhDetailHtml = items.map(x=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:.5px solid var(--bd);font-size:12px">
+      <span style="color:var(--txt2)">${x.l}</span>
+      <span style="font-variant-numeric:tabular-nums;font-weight:600;color:${x.c}">${x.neg?'-':''}${Math.round(x.v).toLocaleString()}원</span>
+    </div>`).join('')
+    + `<div style="display:flex;justify-content:space-between;padding:8px 0 0;font-size:13px;font-weight:700">
+      <span>순자산</span>
+      <span style="font-variant-numeric:tabular-nums;color:${hhNetWorth>=0?'var(--blue)':'var(--red)'}">
+        ${hhNetWorth>=0?'':'-'}${Math.abs(Math.round(hhNetWorth)).toLocaleString()}원</span>
+    </div>`;
+  } else {
+    hhDetailHtml = '<div style="font-size:12px;color:var(--txt3);padding:12px 0">가계부 탭에서 데이터를 먼저 로드하세요</div>';
+  }
+  document.getElementById('ta-household').textContent = hhNetWorth > 0
+    ? Math.round(hhNetWorth).toLocaleString()+'원' : '—';
+  document.getElementById('ta-household-detail').innerHTML = hhDetailHtml;
+
+  // ── 총합 ──
+  const grandTotal = (evalTotal||0) + (hhNetWorth||0);
+  document.getElementById('ta-total').textContent = grandTotal > 0
+    ? Math.round(grandTotal).toLocaleString()+'원' : '—';
+
+  // ── 손익 카드 ──
+  const divEl = document.getElementById('ta-div');
+  if(divEl) divEl.textContent = totalDiv > 0 ? Math.round(totalDiv).toLocaleString()+'원' : '—';
+
+  const realEl = document.getElementById('ta-realized');
+  if(realEl) {
+    realEl.textContent = totalRealized !== 0 ? (totalRealized>=0?'+':'')+Math.abs(Math.round(totalRealized)).toLocaleString()+'원' : '—';
+    realEl.style.color = totalRealized>=0?'var(--green)':'var(--red)';
+  }
+  const unEl = document.getElementById('ta-unrealized');
+  if(unEl) {
+    if(unrealized !== null) {
+      unEl.textContent = (unrealized>=0?'+':'')+Math.abs(Math.round(unrealized)).toLocaleString()+'원';
+      unEl.style.color = col(unrealized);
+    } else { unEl.textContent = '현재가 필요'; unEl.style.color='var(--txt3)'; }
+  }
+  const tpEl = document.getElementById('ta-total-profit');
+  if(tpEl) {
+    const tp = totalRealized + totalDiv + (unrealized||0);
+    tpEl.textContent = tp!==0 ? (tp>=0?'+':'')+Math.abs(Math.round(tp)).toLocaleString()+'원' : '—';
+    tpEl.style.color = col(tp);
+  }
+
+  // 가격 갱신 시간 표시
+  const ptEl = document.getElementById('ta-price-time');
+  if(ptEl && priceTime) ptEl.textContent = `(${priceTime} 기준)`;
+}
+
+// ════════════════════════════════════════════════════════════════
+// ── 분할매도 묶음 실현손익 계산 ──
+// 같은 날 / 같은 계좌 / 같은 종목의 매도를 자동 그룹화해서
+// 거래비용을 묶음 단위로 한 번만 적용하는 방식
+// ════════════════════════════════════════════════════════════════
+function calcGroupedPnL(txList) {
+  const sorted = txList.slice().sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  const buyQueues = {};
+  // 1단계: 매수 큐 구성 (기존과 동일)
+  const sellRows = []; // 매도 row들만 따로
+  sorted.forEach(r => {
+    const key = (r.account||'')+'|'+(r.name||'');
+    const qty = parseFloat(r.qty)||0;
+    const amt = Math.abs(parseFloat(r.amount)||0);
+    const fee = Math.abs(parseFloat(r.fee)||0);
+    const tax = Math.abs(parseFloat(r.tax)||0);
+    const cost= Math.abs(parseFloat(r.cost)||0);
+    if(r.type==='매수'||r.type==='매수.') {
+      if(!buyQueues[key]) buyQueues[key]=[];
+      if(qty>0) buyQueues[key].push({qty, unitPrice: amt/qty});
+    } else if(r.type==='매도'||r.type==='매도.') {
+      sellRows.push({...r, _key:key, _qty:qty, _amt:amt, _fee:fee, _tax:tax, _cost:cost});
+    }
+  });
+  // 2단계: 같은 날/계좌/종목 그룹화
+  const groups = {};
+  sellRows.forEach(r => {
+    const gk = (r.date||'')+'|'+(r.account||'')+'|'+(r.name||'');
+    if(!groups[gk]) groups[gk] = {rows:[], totalQty:0, totalAmt:0, totalFee:0, totalTax:0, totalCost:0};
+    const g = groups[gk];
+    g.rows.push(r);
+    g.totalQty  += r._qty;
+    g.totalAmt  += r._amt;
+    g.totalFee  += r._fee;
+    g.totalTax  += r._tax;
+    g.totalCost += r._cost;
+  });
+  // 3단계: 그룹별 FIFO 계산 → 각 row에 안분 배분
+  // buyQueues를 복사해서 그룹 순서대로 소진
+  const buyQueuesCopy = {};
+  Object.entries(buyQueues).forEach(([k,v])=>{ buyQueuesCopy[k]=v.map(x=>({...x})); });
+
+  const pnlMap = {}; // rowIndex → 실현손익
+  const groupPnlMap = {}; // groupKey → {totalPnl, rows}
+
+  Object.entries(groups).forEach(([gk, g]) => {
+    const key = g.rows[0]._key;
+    const queue = buyQueuesCopy[key]||[];
+    let remQty = g.totalQty, costBasis = 0;
+    while(remQty>0.0001 && queue.length>0) {
+      const h = queue[0];
+      if(h.qty<=remQty+0.0001){
+        costBasis += h.qty * h.unitPrice;
+        remQty    -= h.qty;
+        queue.shift();
+      } else {
+        costBasis += remQty * h.unitPrice;
+        h.qty     -= remQty;
+        remQty     = 0;
+      }
+    }
+    // 그룹 전체 실현손익 (거래비용 한 번만 적용)
+    const groupPnl = g.totalAmt - costBasis - g.totalFee - g.totalTax - g.totalCost;
+    groupPnlMap[gk] = {pnl: Math.round(groupPnl), rows: g.rows, count: g.rows.length};
+    // 각 row에 수량 비례로 안분
+    g.rows.forEach(r => {
+      const share = g.totalQty > 0 ? r._qty / g.totalQty : 1/g.rows.length;
+      pnlMap[r.rowIndex] = Math.round(groupPnl * share);
+    });
+  });
+  return { pnlMap, groupPnlMap };
+}
 // pfTx(날짜순 정렬된 전체 거래)를 받아 각 매도 rowIndex에 대한 실현손익 맵 반환
 function calcRealizedPnL(txList) {
   // 날짜 오름차순 정렬
@@ -2090,18 +2427,38 @@ function renderHistory() {
     if(month && !(r.date||'').startsWith(month)) return false;
     return true;
   });
-  const pnlMap = calcRealizedPnL(pfTx);
+
+  // 분할매도 묶음 계산 사용
+  const { pnlMap, groupPnlMap } = calcGroupedPnL(pfTx);
+
+  // rowIndex → groupKey 맵핑
+  const rowGroupKey = {};
+  const groupCounts = {};
+  pfTx.forEach(r => {
+    if(r.type==='매도'||r.type==='매도.') {
+      const gk = (r.date||'')+'|'+(r.account||'')+'|'+(r.name||'');
+      rowGroupKey[r.rowIndex] = gk;
+    }
+  });
+  Object.entries(groupPnlMap).forEach(([gk, g]) => { groupCounts[gk] = g.count; });
+
   document.getElementById('history-tx').innerHTML = rows.length
     ? rows.map(r=>{
         const isSell = r.type==='매도'||r.type==='매도.';
         const pnl = isSell && pnlMap[r.rowIndex] !== undefined ? pnlMap[r.rowIndex] : null;
+        const gk = rowGroupKey[r.rowIndex];
+        const isGrouped = gk && groupCounts[gk] > 1;
+        const groupBadge = isGrouped
+          ? `<span title="분할매도 묶음 ${groupCounts[gk]}건" style="font-size:9px;background:rgba(49,130,246,.12);color:var(--blue);border-radius:4px;padding:1px 5px;margin-left:4px;font-weight:700">묶음${groupCounts[gk]}</span>`
+          : '';
+        const approxMark = isGrouped ? '<span title="수량 비례 안분값" style="font-size:9px;color:var(--txt3)">≈</span>' : '';
         const pnlHtml = pnl !== null
-          ? `<td class="num" style="font-weight:600;color:${pnl>=0?'var(--green)':'var(--red)'}">${pnl>=0?'+':''}${fmtW(pnl)}</td>`
+          ? `<td class="num" style="font-weight:600;color:${pnl>=0?'var(--green)':'var(--red)'}">${approxMark}${pnl>=0?'+':''}${fmtW(Math.abs(pnl))}</td>`
           : `<td class="num" style="color:var(--txt3)">—</td>`;
-        return `<tr>
+        return `<tr${isGrouped?' style="background:rgba(49,130,246,.025)"':''}>
           <td style="font-variant-numeric:tabular-nums;font-size:11px;color:var(--txt3)">${r.date}</td>
           <td><span class="${accCol(r.account)}">${r.account}</span></td>
-          <td>${typeTag(r.type)}</td>
+          <td>${typeTag(r.type)}${groupBadge}</td>
           <td>${r.name||'—'}</td>
           <td class="num">${r.qty>0?r.qty+'주':'—'}</td>
           <td class="num">${r.price>0?fmtW(r.price):'—'}</td>
@@ -2118,6 +2475,20 @@ function renderHistory() {
         </tr>`;
       }).join('')
     : '<tr><td colspan="13" style="text-align:center;color:var(--txt3);padding:20px">해당하는 거래 없음</td></tr>';
+
+  // 분할매도 묶음 안내 배너
+  const hasGrouped = Object.values(groupCounts).some(c=>c>1);
+  const existingBanner = document.getElementById('grouped-sell-banner');
+  if(hasGrouped && !existingBanner) {
+    const banner = document.createElement('div');
+    banner.id = 'grouped-sell-banner';
+    banner.style.cssText = 'margin-bottom:12px;padding:10px 14px;background:rgba(49,130,246,.07);border:1px solid rgba(49,130,246,.2);border-radius:8px;font-size:11px;color:var(--txt2);line-height:1.6';
+    banner.innerHTML = '📦 <b>분할매도 묶음 처리 중</b> — 같은 날·같은 종목·같은 계좌 매도는 자동으로 묶어 계산합니다. 거래비용은 묶음 전체에 한 번만 입력하면 수량 비례로 안분됩니다. <span style="background:rgba(49,130,246,.12);color:var(--blue);border-radius:4px;padding:1px 5px;font-weight:700">묶음N</span> 행이 해당합니다.';
+    const wrap = document.querySelector('#p2 .card.tbl-wrap');
+    if(wrap) wrap.parentNode.insertBefore(banner, wrap);
+  } else if(!hasGrouped && existingBanner) {
+    existingBanner.remove();
+  }
 }
 
 // ── 연금·ISA 통합 리뷰 ──
@@ -2129,8 +2500,8 @@ function renderReview() {
   const accIn={}, accBuy={}, accSell={}, accDiv={}, accFee={};
   const divByName={}, divByMonth={};
   const sectorMap={};
-  // FIFO 실현손익 계좌별 집계
-  const reviewPnlMap = calcRealizedPnL(pfTx);
+  // FIFO 실현손익 계좌별 집계 (분할매도 묶음 처리 적용)
+  const { pnlMap: reviewPnlMap } = calcGroupedPnL(pfTx);
   const accRealized2 = {};
   pfTx.filter(r=>r.type==='매도'||r.type==='매도.').forEach(r=>{
     if(reviewPnlMap[r.rowIndex]!==undefined){
