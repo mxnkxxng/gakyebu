@@ -1124,7 +1124,40 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
     </div>
     <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:14px;padding:20px">
       <div style="font-size:12px;font-weight:700;color:var(--txt2);margin-bottom:14px">💰 가계부 자산 구성</div>
+      <!-- 순자산 요약 -->
       <div id="ta-household-detail"><div style="font-size:12px;color:var(--txt3);padding:12px 0">가계부 탭에서 데이터를 먼저 로드하세요</div></div>
+      <!-- 계약금 가용 -->
+      <div id="ta-hh-contract-sec" style="display:none;margin-top:14px">
+        <div style="font-size:11px;font-weight:700;color:var(--txt3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px">🏡 집 계약금 가용</div>
+        <div id="ta-hh-contract"></div>
+      </div>
+      <!-- 연금·투자 -->
+      <div id="ta-hh-invest-sec" style="display:none;margin-top:14px">
+        <div style="font-size:11px;font-weight:700;color:var(--txt3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px">📈 연금·투자 (가계부 기록 기준)</div>
+        <div id="ta-hh-invest"></div>
+      </div>
+      <!-- 부동산 -->
+      <div id="ta-hh-estate-sec" style="display:none;margin-top:14px">
+        <div style="font-size:11px;font-weight:700;color:var(--txt3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px">🏠 부동산 (전세)</div>
+        <div id="ta-hh-estate"></div>
+      </div>
+      <!-- 이달 저축 -->
+      <div id="ta-hh-saving-sec" style="display:none;margin-top:14px">
+        <div style="font-size:11px;font-weight:700;color:var(--txt3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px;display:flex;justify-content:space-between">
+          <span>💰 이달 저축 현황</span>
+          <span id="ta-hh-sav-sum" style="color:var(--blue);font-variant-numeric:tabular-nums"></span>
+        </div>
+        <div id="ta-hh-saving"></div>
+      </div>
+      <!-- 저축률 -->
+      <div id="ta-hh-trend-sec" style="display:none;margin-top:14px">
+        <div style="font-size:11px;font-weight:700;color:var(--txt3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px">📊 저축률 추이</div>
+        <div style="display:flex;gap:16px;margin-bottom:10px">
+          <div style="font-size:12px;color:var(--txt2)">(수입-지출)/수입 <span id="ta-hh-sav-rate" style="font-weight:700"></span></div>
+          <div style="font-size:12px;color:var(--txt2)">저축액 비율 <span id="ta-hh-sav-rate2" style="font-weight:700"></span></div>
+        </div>
+        <div id="ta-hh-trend"></div>
+      </div>
     </div>
   </div>
   <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:14px;padding:20px;margin-bottom:20px">
@@ -2224,33 +2257,146 @@ function renderTotalAsset() {
   // ── 가계부 파트 ──
   let hhNetWorth = 0;
   let hhDetailHtml = '';
-  if(typeof calcBalances === 'function' && typeof ACCTS_DEF !== 'undefined') {
+  if(typeof calcBalances === 'function' && typeof ACCTS_DEF !== 'undefined' && typeof fmt === 'function') {
     const _cb = calcBalances().curBal;
     const cb = k => (typeof sheetAssetData !== 'undefined' && sheetAssetData && sheetAssetData[k]!==undefined) ? sheetAssetData[k] : _cb(k);
-    // ※ invest/contract 그룹은 주식·연금 파트(evalTotal)에서 이미 집계되므로 가계부 파트에서 제외
+    const invA = ACCTS_DEF.filter(a=>a.group==='invest');
+    const conA = ACCTS_DEF.filter(a=>a.group==='contract');
     const cA   = ACCTS_DEF.filter(a=>a.group==='cash');
     const estA = ACCTS_DEF.filter(a=>a.group==='estate');
+    const invT  = invA.reduce((s,a)=>s+cb(a.key),0);
+    const conT  = conA.reduce((s,a)=>s+cb(a.key),0);
     const cashT = cA.reduce((s,a)=>s+cb(a.key),0);
     const dep   = cb('전세 보증금');
     let loanAmt = 0;
     ACCTS_DEF.filter(a=>a.group==='longdebt').forEach(a=>{ loanAmt+=Math.abs(cb(a.key)); });
     const netEstate = dep - loanAmt;
     const debtT = ACCTS_DEF.filter(a=>a.group==='debt').reduce((s,a)=>s+Math.min(0,cb(a.key)),0);
+    // ※ invest/contract는 주식·연금 evalTotal에서 이미 집계 → 이중 방지
     hhNetWorth = cashT + netEstate + debtT;
-    const items = [
+
+    // 순자산 요약 행
+    const summaryItems = [
       {l:'현금·통장', v:cashT, c:'var(--txt)'},
       {l:'부동산 (순)', v:netEstate, c:'var(--teal)'},
       {l:'카드부채', v:Math.abs(debtT), neg:true, c:'var(--red)'},
     ];
-    hhDetailHtml = items.map(x=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:.5px solid var(--bd);font-size:12px">
+    hhDetailHtml = summaryItems.map(x=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:.5px solid var(--bd);font-size:12px">
       <span style="color:var(--txt2)">${x.l}</span>
       <span style="font-variant-numeric:tabular-nums;font-weight:600;color:${x.c}">${x.neg?'-':''}${Math.round(x.v).toLocaleString()}원</span>
     </div>`).join('')
     + `<div style="display:flex;justify-content:space-between;padding:8px 0 0;font-size:13px;font-weight:700">
-      <span>순자산</span>
+      <span>현금·부동산 순자산</span>
       <span style="font-variant-numeric:tabular-nums;color:${hhNetWorth>=0?'var(--blue)':'var(--red)'}">
         ${hhNetWorth>=0?'':'-'}${Math.abs(Math.round(hhNetWorth)).toLocaleString()}원</span>
     </div>`;
+
+    // ── 계약금 가용 ──
+    const conSec = document.getElementById('ta-hh-contract-sec');
+    if(conA.length>0 && conSec) {
+      conSec.style.display='';
+      const conRows = conA.map(a=>{
+        const v=cb(a.key);
+        return `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:.5px solid var(--bd);font-size:12px">
+          <span style="color:var(--txt2)">${a.label}</span>
+          <span style="font-variant-numeric:tabular-nums;font-weight:600;color:var(--blue)">${fmt(v)}</span>
+        </div>`;
+      }).join('');
+      document.getElementById('ta-hh-contract').innerHTML = conRows
+        + `<div style="display:flex;justify-content:space-between;padding:7px 0 0;font-size:12px;font-weight:700">
+          <span>합계</span><span style="font-variant-numeric:tabular-nums;color:var(--blue)">${fmt(conT)}</span></div>`;
+    } else if(conSec) { conSec.style.display='none'; }
+
+    // ── 연금·투자 (가계부 기록 기준 — 참고용) ──
+    const invSec = document.getElementById('ta-hh-invest-sec');
+    if(invA.length>0 && invSec) {
+      invSec.style.display='';
+      const invRows = invA.map(a=>{
+        const v=cb(a.key);
+        return `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:.5px solid var(--bd);font-size:12px">
+          <span style="color:var(--txt2)">${a.label}</span>
+          <span style="font-variant-numeric:tabular-nums;font-weight:600;color:var(--blue)">${fmt(v)}</span>
+        </div>`;
+      }).join('');
+      document.getElementById('ta-hh-invest').innerHTML = invRows
+        + `<div style="display:flex;justify-content:space-between;padding:7px 0 0;font-size:12px;font-weight:700">
+          <span>합계</span><span style="font-variant-numeric:tabular-nums;color:var(--blue)">${fmt(invT)}</span></div>
+        <div style="font-size:10px;color:var(--txt3);margin-top:5px">※ 가계부 이동 기록 기준 — 실평가금액은 주식·연금 탭 참조</div>`;
+    } else if(invSec) { invSec.style.display='none'; }
+
+    // ── 부동산 ──
+    const estSec = document.getElementById('ta-hh-estate-sec');
+    if(estA.length>0 && estSec) {
+      estSec.style.display='';
+      let estRows = estA.map(a=>{
+        const v=cb(a.key);
+        return `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:.5px solid var(--bd);font-size:12px">
+          <span style="color:var(--txt2)">${a.label}</span>
+          <span style="font-variant-numeric:tabular-nums;font-weight:600;color:var(--blue)">${fmt(v)}</span>
+        </div>`;
+      }).join('');
+      if(dep>0 && loanAmt>0) estRows +=
+        `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:.5px solid var(--bd);font-size:12px">
+          <span style="color:var(--txt3)">대출원금 잔액</span>
+          <span style="font-variant-numeric:tabular-nums;color:var(--red)">-${fmt(loanAmt)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:7px 0 0;font-size:12px;font-weight:700">
+          <span>순 보증금</span><span style="font-variant-numeric:tabular-nums;color:var(--teal)">${fmt(netEstate)}</span></div>`;
+      document.getElementById('ta-hh-estate').innerHTML = estRows;
+    } else if(estSec) { estSec.style.display='none'; }
+
+    // ── 이달 저축 ──
+    const savSec = document.getElementById('ta-hh-saving-sec');
+    if(savSec && typeof SAVE_GOALS!=='undefined' && typeof curMon!=='undefined') {
+      savSec.style.display='';
+      let mSS=0;
+      const savRows = SAVE_GOALS.map(g=>{
+        const mA = entries.filter(e=>e.date&&e.date.indexOf(curMon)===0&&e.type==='이동'&&e.memo&&e.memo.indexOf(g.mk)>=0).reduce((s,e)=>s+e.amount,0);
+        mSS+=mA; const ok=g.g===0||mA>=g.g; const pct=g.g>0?Math.min(Math.round(mA/g.g*100),100):0;
+        return `<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:.5px solid var(--bd);font-size:12px">
+          <span style="flex:1;color:var(--txt2)">${g.n}</span>
+          <span style="font-size:11px;color:var(--txt3);white-space:nowrap;font-variant-numeric:tabular-nums">${fmt(mA)}${g.g>0?' / '+fmt(g.g):''}</span>
+          ${g.g>0?`<div style="width:40px;height:5px;background:var(--bg3);border-radius:3px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${ok?'var(--green)':mA>0?'var(--yellow)':'var(--bd)'};border-radius:3px"></div></div>`:''}
+          <span style="font-size:11px">${ok?'✔':'·'}</span>
+        </div>`;
+      }).join('');
+      document.getElementById('ta-hh-saving').innerHTML = savRows || '<div style="font-size:12px;color:var(--txt3)">저축 목표 없음</div>';
+      const sumEl = document.getElementById('ta-hh-sav-sum');
+      if(sumEl) sumEl.textContent = fmt(mSS);
+    } else if(savSec) { savSec.style.display='none'; }
+
+    // ── 저축률 추이 ──
+    const trendSec = document.getElementById('ta-hh-trend-sec');
+    if(trendSec && typeof entries!=='undefined' && typeof curMon!=='undefined') {
+      trendSec.style.display='';
+      const savInvKeys = ACCTS_DEF.filter(a=>a.group==='invest'||a.group==='contract').map(a=>a.key);
+      const allInc = entries.filter(e=>e.type==='수입').reduce((s,e)=>s+e.amount,0);
+      const allExp = entries.filter(e=>e.type==='지출').reduce((s,e)=>s+e.amount,0);
+      const allSav = entries.filter(e=>e.type==='이동'&&savInvKeys.indexOf(e.inAcct)>=0).reduce((s,e)=>s+e.amount,0);
+      const sr1 = allInc>0?Math.round((allInc-allExp)/allInc*100):0;
+      const sr2 = allInc>0?Math.round(allSav/allInc*100):0;
+      const r1El = document.getElementById('ta-hh-sav-rate');
+      const r2El = document.getElementById('ta-hh-sav-rate2');
+      if(r1El){r1El.textContent=sr1+'%';r1El.style.color=sr1>=30?'var(--green)':sr1>=0?'var(--yellow)':'var(--red)';}
+      if(r2El){r2El.textContent=sr2+'%';r2El.style.color=sr2>=30?'var(--green)':sr2>=15?'var(--yellow)':'var(--red)';}
+      const allMons=[...new Set(entries.map(e=>e.date?e.date.slice(0,7):null).filter(Boolean))].sort();
+      const trendRows = allMons.map(mon=>{
+        const mI=entries.filter(e=>e.date&&e.date.indexOf(mon)===0&&e.type==='수입').reduce((s,e)=>s+e.amount,0);
+        const mE=entries.filter(e=>e.date&&e.date.indexOf(mon)===0&&e.type==='지출').reduce((s,e)=>s+e.amount,0);
+        const mS=entries.filter(e=>e.date&&e.date.indexOf(mon)===0&&e.type==='이동'&&savInvKeys.indexOf(e.inAcct)>=0).reduce((s,e)=>s+e.amount,0);
+        const mR1=mI>0?Math.round((mI-mE)/mI*100):0;
+        const mR2=mI>0?Math.round(mS/mI*100):0;
+        const mm=mon.split('-')[1]; const col=mR1>=30?'var(--green)':mR1>=0?'var(--yellow)':'var(--red)';
+        return `<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:.5px solid var(--bd);font-size:12px">
+          <span style="font-weight:600;min-width:24px;color:var(--txt2)">${parseInt(mm)}월</span>
+          <div style="flex:1;height:5px;background:var(--bg3);border-radius:3px;overflow:hidden"><div style="height:100%;width:${Math.max(0,Math.min(mR1*2,100))}%;background:${col};border-radius:3px"></div></div>
+          <span style="font-weight:700;color:${col};min-width:36px;font-variant-numeric:tabular-nums">${mR1}%</span>
+          <span style="color:var(--txt3);min-width:40px;text-align:right;font-variant-numeric:tabular-nums">저축 ${mR2}%</span>
+        </div>`;
+      }).join('');
+      document.getElementById('ta-hh-trend').innerHTML = trendRows || '<div style="font-size:12px;color:var(--txt3)">데이터 없음</div>';
+    } else if(trendSec) { trendSec.style.display='none'; }
+
   } else {
     hhDetailHtml = '<div style="font-size:12px;color:var(--txt3);padding:12px 0">가계부 탭에서 데이터를 먼저 로드하세요</div>';
   }
