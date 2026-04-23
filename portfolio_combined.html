@@ -1228,7 +1228,7 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
 
 const PF_URL_KEY = 'pf_script_url';
 const PF_PW_KEY  = 'pf_pw';
-const DEFAULT_PW = btoa('1234');
+const DEFAULT_PW = btoa(encodeURIComponent('1234'));
 
 function getPfUrl() { try { return localStorage.getItem(PF_URL_KEY)||''; } catch(e){ return ''; } }
 function getPw()    { try { return localStorage.getItem(PF_PW_KEY)||DEFAULT_PW; } catch(e){ return DEFAULT_PW; } }
@@ -1236,7 +1236,7 @@ function getPw()    { try { return localStorage.getItem(PF_PW_KEY)||DEFAULT_PW; 
 // ── 비밀번호 ──
 function checkPw() {
   const val = document.getElementById('lock-input').value;
-  if (btoa(val) === getPw()) {
+  if (btoa(encodeURIComponent(val)) === getPw()) {
     document.getElementById('lock').style.display = 'none';
     try { sessionStorage.setItem('pf_auth','1'); } catch(e){}
     loadPfData();
@@ -1245,7 +1245,7 @@ function checkPw() {
     document.getElementById('lock-input').value = '';
   }
 }
-try { if(sessionStorage.getItem('pf_auth')==='1') document.getElementById('lock').style.display='none'; } catch(e){}
+try { const _lock=document.getElementById('lock'); if(_lock && sessionStorage.getItem('pf_auth')==='1') _lock.style.display='none'; } catch(e){}
 
 // ── 탭 전환 ──
 function showTab(i) {
@@ -3222,7 +3222,7 @@ function savePfConfig() {
   const url = document.getElementById('cfg-pf-url').value.trim();
   const pw  = document.getElementById('cfg-pw').value;
   if(url) { try{ localStorage.setItem(PF_URL_KEY,url); }catch(e){} }
-  if(pw)  { try{ localStorage.setItem(PF_PW_KEY,btoa(pw)); }catch(e){} }
+  if(pw)  { try{ localStorage.setItem(PF_PW_KEY, btoa(encodeURIComponent(pw))); }catch(e){} }
   document.getElementById('cfg-msg').textContent = '저장 완료! 데이터를 불러옵니다...';
   setTimeout(()=>loadPfData(), 300);
 }
