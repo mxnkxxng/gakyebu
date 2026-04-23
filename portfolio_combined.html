@@ -2299,15 +2299,6 @@ async function loadHoldingsFromSheet() {
         if(acc && qty && cp) acctEvalByLoad[acc] = (acctEvalByLoad[acc]||0) + qty*cp;
       });
       localStorage.setItem('pf_acct_eval', JSON.stringify(acctEvalByLoad));
-      // 계좌별 평가금액 집계 (같은 종목명이 여러 계좌에 있어도 정확히 합산)
-      const acctEvalByLoad = {};
-      Object.values(d.data).forEach(hd => {
-        const acc = hd.account||'';
-        const qty = parseFloat(hd.qty)||0;
-        const cp  = parseFloat(hd.currentPrice)||0;
-        if(acc && qty && cp) acctEvalByLoad[acc] = (acctEvalByLoad[acc]||0) + qty*cp;
-      });
-      localStorage.setItem('pf_acct_eval', JSON.stringify(acctEvalByLoad));
       document.querySelectorAll('.holdings-update-time').forEach(el=>{ el.textContent = `현재가 ${now} 갱신`; });
       pfToast(`현재가 로드 완료 (${Object.keys(d.data).length}종목)`);
       renderDashboard();
