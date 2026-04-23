@@ -288,13 +288,12 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
   <div class="topnav-tab"   onclick="showTab(6)">입력</div>
   <div class="topnav-tab"   onclick="showTab(7)">내역</div>
   <div class="topnav-tab"   onclick="showTab(8)">잔고</div>
-  <div class="topnav-tab"   onclick="showTab(9)">가계부 자산</div>
   <div class="topnav-tab"   onclick="showTab(10)">설정</div>
   <div class="topnav-sep"></div>
   <div class="topnav-group-label">📈 주식·연금</div>
-  <div class="topnav-tab"   onclick="showTab(0)">대시보드</div>
-  <div class="topnav-tab"   onclick="showTab(1)">거래 입력</div>
-  <div class="topnav-tab"   onclick="showTab(2)">거래 내역</div>
+  <div class="topnav-tab"   onclick="showTab(0)">홈</div>
+  <div class="topnav-tab"   onclick="showTab(1)">입력</div>
+  <div class="topnav-tab"   onclick="showTab(2)">내역</div>
   <div class="topnav-tab"   onclick="showTab(3)">📊 연금·ISA 리뷰</div>
   <div class="topnav-tab"   onclick="showTab(4)">📋 보유종목</div>
   <div class="topnav-tab"   onclick="showTab(11)">⚙ 연동설정</div>
@@ -1131,11 +1130,7 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
         <div style="font-size:11px;font-weight:700;color:var(--txt3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px">🏡 집 계약금 가용</div>
         <div id="ta-hh-contract"></div>
       </div>
-      <!-- 연금·투자 -->
-      <div id="ta-hh-invest-sec" style="display:none;margin-top:14px">
-        <div style="font-size:11px;font-weight:700;color:var(--txt3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px">📈 연금·투자 (가계부 기록 기준)</div>
-        <div id="ta-hh-invest"></div>
-      </div>
+
       <!-- 부동산 -->
       <div id="ta-hh-estate-sec" style="display:none;margin-top:14px">
         <div style="font-size:11px;font-weight:700;color:var(--txt3);letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px">🏠 부동산 (전세)</div>
@@ -2307,22 +2302,6 @@ function renderTotalAsset() {
           <span>합계</span><span style="font-variant-numeric:tabular-nums;color:var(--blue)">${fmt(conT)}</span></div>`;
     } else if(conSec) { conSec.style.display='none'; }
 
-    // ── 연금·투자 (가계부 기록 기준 — 참고용) ──
-    const invSec = document.getElementById('ta-hh-invest-sec');
-    if(invA.length>0 && invSec) {
-      invSec.style.display='';
-      const invRows = invA.map(a=>{
-        const v=cb(a.key);
-        return `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:.5px solid var(--bd);font-size:12px">
-          <span style="color:var(--txt2)">${a.label}</span>
-          <span style="font-variant-numeric:tabular-nums;font-weight:600;color:var(--blue)">${fmt(v)}</span>
-        </div>`;
-      }).join('');
-      document.getElementById('ta-hh-invest').innerHTML = invRows
-        + `<div style="display:flex;justify-content:space-between;padding:7px 0 0;font-size:12px;font-weight:700">
-          <span>합계</span><span style="font-variant-numeric:tabular-nums;color:var(--blue)">${fmt(invT)}</span></div>
-        <div style="font-size:10px;color:var(--txt3);margin-top:5px">※ 가계부 이동 기록 기준 — 실평가금액은 주식·연금 탭 참조</div>`;
-    } else if(invSec) { invSec.style.display='none'; }
 
     // ── 부동산 ──
     const estSec = document.getElementById('ta-hh-estate-sec');
