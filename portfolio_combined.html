@@ -296,9 +296,7 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
   <div class="topnav-tab"   onclick="showTab(0)">홈</div>
   <div class="topnav-tab"   onclick="showTab(1)">입력</div>
   <div class="topnav-tab"   onclick="showTab(2)">내역</div>
-  <div class="topnav-tab"   onclick="showInvTab('realized')">실현손익</div>
-  <div class="topnav-tab"   onclick="showInvTab('dividend')">배당</div>
-  <div class="topnav-tab"   onclick="showInvTab('analysis')">주식분석</div>
+  <div class="topnav-tab"   onclick="showTab(3)">분석</div>
   <div class="topnav-tab"   onclick="showTab(11)">⚙ 연동설정</div>
 </nav>
 
@@ -1679,7 +1677,7 @@ function showInvTab(tab) {
   // p3 패널 직접 활성화 (showTab 무한루프 방지)
   document.querySelectorAll('.topnav-tab').forEach(function(t){
     var m=t.getAttribute('onclick')||'';
-    t.classList.toggle('on', m.includes("showTab(3)") || (m.includes("showInvTab") && m.includes("'"+tab+"'")));
+    t.classList.toggle('on', m.includes("showTab(3)") || m.includes("showInvTab"));
   });
   ['p0','p1','p2','p3','p4','p5','p6','p7','p8','p9','p10','p11','p12'].forEach(function(id){
     var el=document.getElementById(id); if(el) el.classList.toggle('on', id==='p3');
