@@ -275,6 +275,8 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
       oninput="document.getElementById('lock-err').style.opacity=0">
     <button onclick="checkPw()">입력</button>
     <div class="err" id="lock-err">비밀번호가 틀렸어요</div>
+    <div style="font-size:11px;color:#475569;text-align:center;margin-top:4px">기본 비밀번호: 1234</div>
+    <button onclick="if(confirm('비밀번호를 초기화하면 1234로 되돌아가요. 계속할까요?')){localStorage.removeItem('pf_pw');location.reload();}" style="background:transparent;border:none;color:#475569;font-size:11px;cursor:pointer;text-decoration:underline;padding:4px">비밀번호 초기화</button>
   </div>
 </div>
 
@@ -1236,7 +1238,9 @@ function getPw()    { try { return localStorage.getItem(PF_PW_KEY)||DEFAULT_PW; 
 // ── 비밀번호 ──
 function checkPw() {
   const val = document.getElementById('lock-input').value;
-  if (btoa(encodeURIComponent(val)) === getPw()) {
+  const stored = getPw();
+  const entered = btoa(encodeURIComponent(val));
+  if (entered === stored) {
     document.getElementById('lock').style.display = 'none';
     try { sessionStorage.setItem('pf_auth','1'); } catch(e){}
     loadPfData();
