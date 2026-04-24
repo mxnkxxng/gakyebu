@@ -2116,7 +2116,7 @@ function renderDashboard() {
     const rp=penNetIn>0?((tot-penNetIn)/penNetIn*100):0;
     penDetailHtml+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
       <span style="font-size:12px;color:var(--txt2)">${acc}</span>
-      <div style="text-align:right"><div style="font-variant-numeric:tabular-nums;font-size:12px;font-weight:600">${fmtW(v.in)}</div>
+      <div style="text-align:right"><div style="font-variant-numeric:tabular-nums;font-size:12px;font-weight:600">${fmtW(penNetIn)}</div>
       <div style="font-size:10px;color:var(--txt3)">총자산 ${tot>0?fmtW(tot):'—'} · <span style="color:${col(rp)}">${rp!==0?(rp>=0?'+':'')+rp.toFixed(1)+'%':'—'}</span></div></div></div>`;
   });
   penDetailHtml+=`<div style="height:1px;background:var(--bd);margin:8px 0"></div>
@@ -2444,38 +2444,88 @@ function renderStockScoreV2(fifo, pnlMap, holdingsData) {
 
 // ── GAS 보유종목 시트에서 현재가 자동 로드 ──
 // GAS doGet에 action=pf_holdings 를 추가해야 함 (아래 GAS 코드 참조)
+// ================================================================
+// 보유종목 자동계산 엔진
+// 흐름: 거래내역(pfTx) → FIFO 보유종목 → GAS에 티커 전송 → 현재가 수신
+// ================================================================
+const TICKER_MAP = {
+  'KODEX200':'069500','TIGER미국S&P500':'360200','ACE미국S&P500':'458730',
+  'TIGER미국배당다우존스':'458670','ACE미국나스닥100':'367380','TIGER미국나스닥100':'133690',
+  'KODEX미국S&P500':'379800','PLUS미국고배당주액티브':'441680','KODEX미국빅테크10':'455890',
+  'KODEX미국빅테크10(H)':'455890','PLUS고배당주채권혼합':'408040','KODEX200미국채혼합':'272580',
+  'PLUS고배당주':'402970','ACE미국배당다우존스':'441640','SOL미국배당다우존스':'441150',
+  'ACE미국S&P500미국채혼합50액티브':'438080','KODEX머니마켓액티브':'357870',
+  'KODEX미국S&P500액티브':'448290','KODEX미국부동산리츠':'352560',
+  'TIGER미국S&P500타겟데일리커버드콜':'483050','TIGER미국배당다우존스타겟커버드콜2호':'476280',
+  'ACE미국S&P500채권혼합':'476550',
+  '삼성전자':'005930','SK하이닉스':'000660','현대차2우B':'005387','DB손해보험':'005830',
+  '우리금융지주':'316140','하나금융지주':'086790','ACEKRX금현물':'411060',
+};
+function getTicker(name) {
+  for (const r of pfTx) { if (r.name === name && r.ticker) return r.ticker; }
+  return TICKER_MAP[name] || null;
+}
 async function loadHoldingsFromSheet() {
   const url = getPfUrl();
   if(!url){ pfToast('Script URL을 먼저 설정하세요','err'); return; }
-  pfToast('현재가 로딩 중...');
-  try {
-    const r = await fetch(`${url}?action=pf_holdings`);
-    const d = await r.json();
-    if(d && d.data && Object.keys(d.data).length>0) {
-      const now = new Date().toLocaleTimeString('ko-KR', {hour:'2-digit',minute:'2-digit'});
-      localStorage.setItem('pf_holdings_data', JSON.stringify(d.data));
-      localStorage.setItem('pf_holdings_time', now);
-      // 계좌별 평가금액 집계 (같은 종목명이 여러 계좌에 있어도 정확히 합산)
-      const acctEvalByLoad = {};
-      Object.values(d.data).forEach(hd => {
-        const acc = hd.account||'';
-        const qty = parseFloat(hd.qty)||0;
-        const cp  = parseFloat(hd.currentPrice)||0;
-        if(acc && qty && cp) acctEvalByLoad[acc] = (acctEvalByLoad[acc]||0) + qty*cp;
-      });
-      localStorage.setItem('pf_acct_eval', JSON.stringify(acctEvalByLoad));
-      document.querySelectorAll('.holdings-update-time').forEach(el=>{ el.textContent = `현재가 ${now} 갱신`; });
-      pfToast(`현재가 로드 완료 (${Object.keys(d.data).length}종목)`);
-      renderDashboard();
-      if(typeof renderHoldingsTab === 'function') renderHoldingsTab();
-      if(typeof renderTotalAsset === 'function') renderTotalAsset();
-    } else {
-      pfToast('현재가 로드 실패 — GAS에 pf_holdings 액션을 추가하세요','err');
-      document.querySelectorAll('.holdings-update-time').forEach(el=>{ el.textContent = '현재가 로드 실패'; });
-    }
-  } catch(e) {
-    pfToast('현재가 로드 오류','err');
+  if(!pfTx.length){ pfToast('거래내역을 먼저 로드하세요','err'); return; }
+
+  // STEP 1: FIFO로 현재 보유종목 자동 계산
+  const fifo = calcFifoForDashboard(pfTx);
+  const { holdByName } = fifo;
+  const holdNames = Object.keys(holdByName);
+  if(!holdNames.length){ pfToast('보유종목 없음'); return; }
+
+  // STEP 2: 티커 수집
+  const tickerList = holdNames.map(n=>({ name:n, ticker:getTicker(n), account:holdByName[n].account||'' }));
+  const withTicker = tickerList.filter(t=>t.ticker);
+  if(withTicker.length === 0){
+    pfToast('티커 정보 없음 — TICKER_MAP 확인','err'); return;
   }
+
+  pfToast(`현재가 조회 중... (${withTicker.length}종목)`);
+
+  // STEP 3: GAS에 현재가 요청 (action=pf_prices)
+  let priceMap = {};
+  try {
+    const tickers = withTicker.map(t=>t.ticker).join(',');
+    const r = await fetch(`${url}?action=pf_prices&tickers=${encodeURIComponent(tickers)}`);
+    const d = await r.json();
+    if(d && d.data) priceMap = d.data;
+    else pfToast('현재가 조회 실패 — GAS에 pf_prices 액션 추가 필요','err');
+  } catch(e) {
+    pfToast('현재가 조회 오류 — GAS 재배포 확인','err'); console.error(e);
+  }
+
+  // STEP 4: holdingsData 조립 (FIFO 계산 + 현재가)
+  const holdingsData = {};
+  holdNames.forEach(name => {
+    const h = holdByName[name];
+    const ticker = getTicker(name) || '';
+    const cp = ticker && priceMap[ticker] ? parseFloat(priceMap[ticker]) : 0;
+    holdingsData[name] = {
+      account: h.account||'', ticker, qty: h.qty,
+      avgPrice: h.avgCost, costBasis: h.costBasis,
+      currentPrice: cp, evalAmt: cp>0 ? Math.round(h.qty*cp) : 0,
+    };
+  });
+
+  // STEP 5: 저장 및 계좌별 평가금액 집계
+  const now = new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
+  try { localStorage.setItem('pf_holdings_data', JSON.stringify(holdingsData)); } catch(e){}
+  try { localStorage.setItem('pf_holdings_time', now); } catch(e){}
+  const acctEval = {};
+  Object.values(holdingsData).forEach(hd=>{
+    if(hd.account && hd.evalAmt) acctEval[hd.account]=(acctEval[hd.account]||0)+hd.evalAmt;
+  });
+  try { localStorage.setItem('pf_acct_eval', JSON.stringify(acctEval)); } catch(e){}
+
+  document.querySelectorAll('.holdings-update-time').forEach(el=>{ el.textContent=`현재가 ${now} 갱신`; });
+  const loaded = Object.values(holdingsData).filter(h=>h.currentPrice>0).length;
+  pfToast(`보유종목 ${holdNames.length}종목 / 현재가 ${loaded}개 완료`);
+  renderDashboard();
+  if(typeof renderHoldingsTab==='function') renderHoldingsTab();
+  if(typeof renderTotalAsset==='function') renderTotalAsset();
 }
 
 
