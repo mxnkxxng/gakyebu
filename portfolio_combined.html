@@ -3388,13 +3388,11 @@ async function deletePfTx(rowIndex) {
   }
 }
 
-// 모달 바깥 클릭시 닫기
-document.getElementById('pf-edit-modal').addEventListener('click', function(e){
-  if(e.target === this) closePfEditModal();
-});
-
 // ── 초기화 ──
 window.addEventListener('DOMContentLoaded', ()=>{
+  // 모달 바깥 클릭시 닫기
+  const _modal = document.getElementById('pf-edit-modal');
+  if(_modal) _modal.addEventListener('click', function(e){ if(e.target===this) closePfEditModal(); });
   document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
   const savedUrl = getPfUrl();
   if(savedUrl) document.getElementById('cfg-pf-url').value = savedUrl;
