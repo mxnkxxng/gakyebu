@@ -1490,14 +1490,27 @@ const accCol = a => {
 };
 
 // ── 구글시트 연동 ──
-async function pfFetch(action) {
+async function pfFetch(action, extra) {
   const url = getPfUrl();
   if (!url) return null;
-  try {
-    const r = await fetch(`${url}?action=${action}`);
-    const d = await r.json();
-    return d;
-  } catch(e) { return null; }
+  return new Promise((resolve) => {
+    const cbName = '_cb_' + Date.now();
+    const script = document.createElement('script');
+    let params = `action=${action}&callback=${cbName}`;
+    if (extra) params += '&' + extra;
+    script.src = `${url}?${params}`;
+    window[cbName] = (data) => {
+      delete window[cbName];
+      if (document.body.contains(script)) document.body.removeChild(script);
+      resolve(data);
+    };
+    script.onerror = () => {
+      delete window[cbName];
+      if (document.body.contains(script)) document.body.removeChild(script);
+      resolve(null);
+    };
+    document.body.appendChild(script);
+  });
 }
 
 async function pfPost(body) {
