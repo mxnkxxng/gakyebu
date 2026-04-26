@@ -2650,12 +2650,20 @@ async function fullSync() {
     .sort((a,b)=>a.date.localeCompare(b.date));
 
   try {
-    // JSONP GET으로 전송 (CORS 우회)
-    const enc = rows => encodeURIComponent(JSON.stringify(rows));
-    const r1 = await pfFetch('pf_writeAppHoldings', 'rows=' + enc(holdingsRows));
-    const r2 = await pfFetch('pf_writeAppRealized', 'rows=' + enc(realizedRows));
-    const r3 = await pfFetch('pf_writeAppDiv',      'rows=' + enc(divRows));
-    if(r1 && r1.ok && r2 && r2.ok && r3 && r3.ok) {
+    // JSONP GET으로 전송 — 청크 단위로 나눠서 보냄
+    async function sendChunks(action, rows, chunkSize=20) {
+      for(let i=0; i<rows.length; i+=chunkSize) {
+        const chunk = rows.slice(i, i+chunkSize);
+        const extra = 'rows='+encodeURIComponent(JSON.stringify(chunk))+'&idx='+i+'&total='+rows.length;
+        const r = await pfFetch(action, extra);
+        if(!r || !r.ok) return false;
+      }
+      return true;
+    }
+    const r1 = await sendChunks('pf_writeAppHoldings', holdingsRows);
+    const r2 = await sendChunks('pf_writeAppRealized', realizedRows);
+    const r3 = await sendChunks('pf_writeAppDiv',      divRows);
+    if(r1 && r2 && r3) {
       pfToast(`저장 완료 — 보유 ${holdingsRows.length}종목 / 실현 ${realizedRows.length}건 / 배당 ${divRows.length}건`);
     } else {
       pfToast('저장 실패 — GAS 확인','err');
