@@ -1494,7 +1494,7 @@ async function pfFetch(action, extra) {
   const url = getPfUrl();
   if (!url) return null;
   return new Promise((resolve) => {
-    const cbName = '_cb_' + Date.now();
+    const cbName = '_cb_' + Date.now() + '_' + Math.floor(Math.random()*9999);
     const script = document.createElement('script');
     let params = `action=${action}&callback=${cbName}`;
     if (extra) params += '&' + extra;
@@ -1557,11 +1557,9 @@ async function loadPfData() {
     buildAcctSelects();
     renderPlan();
     if(typeof loadAssetFromSheet === 'function') loadAssetFromSheet();
-    pfToast('거래내역 로드 완료! 시트 동기화 중...');
+    pfToast('거래내역 로드 완료!');
     const syncEl = document.getElementById('manual-eval-sync-status');
     if(syncEl) { const ev = getManualEval(); const filled = ['미래연금저축','삼성연금저축','우리IRP'].filter(a=>ev[a]>0); syncEl.textContent = filled.length ? '✓ 연금 평가금액 로드: '+filled.join(', ') : '⚠ 연금 평가금액 미설정'; syncEl.style.color = filled.length ? 'var(--green)' : 'var(--yellow)'; }
-    // 자동으로 전체 동기화 실행 (FIFO → 시트 → 현재가)
-    fullSync();
   } else {
     pfToast('로드 실패 — Script URL 확인하세요','err');
   }
