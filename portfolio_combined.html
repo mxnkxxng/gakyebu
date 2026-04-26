@@ -2650,10 +2650,12 @@ async function fullSync() {
     .sort((a,b)=>a.date.localeCompare(b.date));
 
   try {
-    const r1 = await pfPost({ action:'pf_writeAppHoldings', rows: holdingsRows });
-    const r2 = await pfPost({ action:'pf_writeAppRealized', rows: realizedRows });
-    const r3 = await pfPost({ action:'pf_writeAppDiv',      rows: divRows });
-    if(r1 && r2 && r3) {
+    // JSONP GET으로 전송 (CORS 우회)
+    const enc = rows => encodeURIComponent(JSON.stringify(rows));
+    const r1 = await pfFetch('pf_writeAppHoldings', 'rows=' + enc(holdingsRows));
+    const r2 = await pfFetch('pf_writeAppRealized', 'rows=' + enc(realizedRows));
+    const r3 = await pfFetch('pf_writeAppDiv',      'rows=' + enc(divRows));
+    if(r1 && r1.ok && r2 && r2.ok && r3 && r3.ok) {
       pfToast(`저장 완료 — 보유 ${holdingsRows.length}종목 / 실현 ${realizedRows.length}건 / 배당 ${divRows.length}건`);
     } else {
       pfToast('저장 실패 — GAS 확인','err');
