@@ -1549,6 +1549,7 @@ async function loadPfData() {
   const d = await pfFetch('pf_entries');
   if (d && d.data) {
     pfTx = d.data;
+    try { localStorage.setItem('pf_tx_cache', JSON.stringify(pfTx)); } catch(e){}
     renderDashboard();
     renderHistory();
     renderHistAcctSummary();
@@ -2601,7 +2602,63 @@ async function syncFromSheet() {
  * 거래입력 후 이 버튼 누르면 끝
  */
 async function fullSync() {
-  await syncToSheet();   // FIFO → 시트 저장 (2초 후 syncFromSheet 자동 호출)
+  const url = getPfUrl();
+  if(!url){ pfToast('Script URL을 먼저 설정하세요','err'); return; }
+  if(!pfTx.length){ pfToast('거래내역을 먼저 로드하세요','err'); return; }
+
+  pfToast('새 시트에 저장 중...');
+
+  const fifo = calcFifoForDashboard(pfTx);
+  const { holdByName, sellHistory } = fifo;
+
+  // 보유종목
+  const holdingsRows = Object.entries(holdByName).map(([name, h]) => ({
+    name,
+    account:   h.account || '',
+    ticker:    typeof getTicker === 'function' ? getTicker(name) : (TICKER_MAP[name]||''),
+    qty:       Math.round(h.qty * 100) / 100,
+    avgPrice:  Math.round(h.avgCost),
+    costBasis: Math.round(h.costBasis),
+  }));
+
+  // 실현손익
+  const { groupPnlMap } = calcGroupedPnL(pfTx);
+  const realizedRows = Object.values(groupPnlMap).map(g => {
+    const r = g.rows[0];
+    return {
+      date:     r.date||'',
+      account:  r.account||'',
+      name:     r.name||'',
+      qty:      g.rows.reduce((s,x)=>s+(parseFloat(x.qty)||0),0),
+      pnl:      g.pnl,
+      proceeds: g.rows.reduce((s,x)=>s+Math.abs(parseFloat(x.amount)||0),0),
+    };
+  }).sort((a,b)=>a.date.localeCompare(b.date));
+
+  // 배당
+  const divRows = pfTx
+    .filter(r => r.type === '분배금' || r.type === '배당')
+    .map(r => ({
+      date:    r.date,
+      account: r.account,
+      name:    r.name,
+      amount:  Math.abs(parseFloat(r.amount)||0),
+      memo:    r.memo||'',
+    }))
+    .sort((a,b)=>a.date.localeCompare(b.date));
+
+  try {
+    const r1 = await pfPost({ action:'pf_writeAppHoldings', rows: holdingsRows });
+    const r2 = await pfPost({ action:'pf_writeAppRealized', rows: realizedRows });
+    const r3 = await pfPost({ action:'pf_writeAppDiv',      rows: divRows });
+    if(r1 && r2 && r3) {
+      pfToast(`저장 완료 — 보유 ${holdingsRows.length}종목 / 실현 ${realizedRows.length}건 / 배당 ${divRows.length}건`);
+    } else {
+      pfToast('저장 실패 — GAS 확인','err');
+    }
+  } catch(e) {
+    pfToast('저장 오류: '+e.message,'err');
+  }
 }
 
 
@@ -4088,6 +4145,20 @@ window.addEventListener('DOMContentLoaded', ()=>{
   toggleFields();
   renderPlan();
   loadManualEvalInputs(); // 저장된 수동 평가금액 복원
+  // 캐시에서 거래내역 복원 (새로고침해도 유지)
+  try {
+    const cached = localStorage.getItem('pf_tx_cache');
+    if(cached) {
+      pfTx = JSON.parse(cached);
+      renderDashboard();
+      renderHistory();
+      renderHistAcctSummary();
+      if(typeof renderAcctSummaryTab==='function') renderAcctSummaryTab();
+      renderPension();
+      buildAcctSelects();
+      renderPlan();
+    }
+  } catch(e){}
   try{ if(sessionStorage.getItem('pf_auth')==='1') loadPfData(); }catch(e){}
 });
 </script>
