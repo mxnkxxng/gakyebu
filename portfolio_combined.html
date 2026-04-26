@@ -540,6 +540,7 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
     </select>
     <input type="month" id="filter-month" onchange="renderHistory()" style="background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:8px 12px;color:var(--txt);font-size:13px;outline:none">
     <button class="btn btn-ghost" onclick="loadPfData()">↺ 새로고침</button>
+    <button class="btn btn-ghost" style="color:var(--red)" onclick="if(confirm('앱 데이터를 전부 초기화할까요? (시트는 건드리지 않아요)')) { localStorage.clear(); pfTx=[]; renderDashboard(); renderHistory(); pfToast('초기화 완료! 새로고침 버튼으로 시트에서 다시 불러오세요'); }">🗑 초기화</button>
   </div>
   <div class="card tbl-wrap">
     <table class="tbl">
