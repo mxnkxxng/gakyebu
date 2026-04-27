@@ -1628,23 +1628,24 @@ function renderDashboard() {
   const clDivider='<div style="height:1px;background:var(--bd);margin:8px 0"></div>';
   const rateStr=(t,i)=>i>0?((t-i)/i*100>=0?'+':'')+((t-i)/i*100).toFixed(2)+'%':'—';
 
-  document.getElementById('cl-pen-rate').textContent=rateStr(penTotal,penInv);
-  document.getElementById('cl-pen-rows').innerHTML=
+  const setEl=(id,prop,val)=>{const el=document.getElementById(id);if(el)el[prop]=val;};
+  setEl('cl-pen-rate','textContent',rateStr(penTotal,penInv));
+  setEl('cl-pen-rows','innerHTML',
     clKv('납입원금',fmtW(penInv))+clKv('현재 총자산',fmtW(penTotal))+clDivider+
     clKv('누적 수익',penTotal>penInv?'+'+fmtW(penTotal-penInv):fmtW(penTotal-penInv),(penTotal>=penInv?'var(--green)':'var(--red)'))+
-    clKv('분배금',fmtW(totalDiv-((accMap['미래ISA']?accMap['미래ISA'].div:0))));
+    clKv('분배금',fmtW(totalDiv-((accMap['미래ISA']?accMap['미래ISA'].div:0)))));
 
-  document.getElementById('cl-stk-rate').textContent=rateStr(stkTotal,stkInv);
-  document.getElementById('cl-stk-rows').innerHTML=
+  setEl('cl-stk-rate','textContent',rateStr(stkTotal,stkInv));
+  setEl('cl-stk-rows','innerHTML',
     clKv('납입원금',fmtW(stkInv))+clKv('현재 총자산',fmtW(stkTotal))+clDivider+
     clKv('누적 수익',(stkTotal-stkInv>=0?'+':'')+fmtW(stkTotal-stkInv),(stkTotal>=stkInv?'var(--green)':'var(--red)'))+
-    clKv('분배금',fmtW(accMap['미래ISA']?accMap['미래ISA'].div:0));
+    clKv('분배금',fmtW(accMap['미래ISA']?accMap['미래ISA'].div:0)));
 
-  document.getElementById('cl-gold-rate').textContent=rateStr(goldTotal,goldInv);
-  document.getElementById('cl-gold-rows').innerHTML=
+  setEl('cl-gold-rate','textContent',rateStr(goldTotal,goldInv));
+  setEl('cl-gold-rows','innerHTML',
     clKv('납입원금',fmtW(goldInv))+clKv('현재 총자산',fmtW(goldTotal))+clDivider+
     clKv('누적 수익',(goldTotal-goldInv>=0?'+':'')+fmtW(goldTotal-goldInv),(goldTotal>=goldInv?'var(--green)':'var(--red)'))+
-    clKv('분배금','0원');
+    clKv('분배금','0원'));
 
   // ④ 계좌별 현황 테이블
   const accOrder=['미래ISA','미래연금저축','삼성연금저축','우리IRP','미래종합','미래금현물'];
