@@ -2429,12 +2429,15 @@ function renderTotalAsset() {
   const fifo = pfTx.length ? calcFifoForDashboard(pfTx) : {holdByName:{}, sellHistory:[], totalCostBasis:0};
   const pnlMap = pfTx.length ? calcRealizedPnL(pfTx) : {};
 
-  // 총 납입
-  let totalIn=0, totalDiv=0;
+  // 총 순납입(입금-출금) · 배당
+  let totalIn=0, totalOut=0, totalDiv=0;
   pfTx.forEach(r=>{
-    if(r.type==='입금') totalIn += Math.abs(parseFloat(r.amount)||0);
-    if(r.type==='분배금') totalDiv += Math.abs(parseFloat(r.amount)||0);
+    const amt = Math.abs(parseFloat(r.amount)||0);
+    if(r.type==='입금')   totalIn  += amt;
+    if(r.type==='출금')   totalOut += amt;
+    if(r.type==='분배금'||r.type==='배당') totalDiv += amt;
   });
+  const netIn = totalIn - totalOut; // 순납입
 
   // 실현손익 합계
   const totalRealized = Object.values(pnlMap).reduce((s,v)=>s+v, 0);
@@ -2472,7 +2475,7 @@ function renderTotalAsset() {
   evalTotal += deposit;
 
   const unrealized = evalTotal > 0 ? evalTotal - fifo.totalCostBasis - deposit : null;
-  const stockRate = totalIn>0 && evalTotal>0 ? (evalTotal-totalIn)/totalIn*100 : null;
+  const stockRate = netIn>0 && evalTotal>0 ? (evalTotal-netIn)/netIn*100 : null;
 
   document.getElementById('ta-stock').textContent = evalTotal > 0
     ? Math.round(evalTotal).toLocaleString()+'원'
@@ -2485,28 +2488,46 @@ function renderTotalAsset() {
   const taStockRateEl = document.getElementById('ta-stock-rate');
   if(stockRate!==null) taStockRateEl.style.color = stockRate>=0?'#6aff9e':'#ff8a8a';
 
-  // 주식 계좌별 상세 — savedAcctEval 우선 사용 (계좌별 정확한 집계)
+  // 주식 계좌별 상세
+  // 1단계: 거래내역에서 계좌별 순납입·매수원가 집계 (항상 가능)
+  const acctTxMap = {};
+  pfTx.forEach(r => {
+    const acc = r.account||''; if(!acc) return;
+    if(!acctTxMap[acc]) acctTxMap[acc] = {in:0, out:0, buy:0, sell:0, div:0, fee:0};
+    const amt = Math.abs(parseFloat(r.amount)||0);
+    if(r.type==='입금')                          acctTxMap[acc].in   += amt;
+    else if(r.type==='출금')                     acctTxMap[acc].out  += amt;
+    else if(r.type==='매수'||r.type==='매수.')   acctTxMap[acc].buy  += amt;
+    else if(r.type==='매도'||r.type==='매도.')   acctTxMap[acc].sell += amt;
+    else if(r.type==='분배금'||r.type==='배당')  acctTxMap[acc].div  += amt;
+  });
+
+  // 2단계: 현재가 기반 평가금액 (현재가 갱신 후)
   let savedAcctEvalTA = {};
   try { savedAcctEvalTA = JSON.parse(localStorage.getItem('pf_acct_eval')||'{}'); } catch(e){}
-  const acctEvalMap = {};
-  if(Object.keys(savedAcctEvalTA).length > 0) {
-    Object.assign(acctEvalMap, savedAcctEvalTA);
-  } else {
-    // 폴백: holdingsData name 기반 (부정확할 수 있음)
+  // 현재가 갱신 안 됐으면 holdingsData에서 재집계
+  if(!Object.keys(savedAcctEvalTA).length) {
     Object.entries(fifo.holdByName).forEach(([name, h]) => {
       const hd = holdingsData[name] || {};
       const cp = parseFloat(hd.currentPrice) || 0;
       const acc = hd.account || h.account || '';
-      if (cp > 0 && acc) {
-        const ev = Math.round(h.qty * cp);
-        acctEvalMap[acc] = (acctEvalMap[acc] || 0) + ev;
-      }
+      if(cp > 0 && acc) savedAcctEvalTA[acc] = (savedAcctEvalTA[acc]||0) + Math.round(h.qty*cp);
     });
   }
-  // 수동입력 계좌 (연금·금) — savedAcctEval에 없으면 보완
+
+  // 3단계: 계좌별 최종 평가금액 — eval있으면 eval, 없으면 매수원가(보유중인 것) 기준
+  const acctEvalMap = {};
+  Object.keys(acctTxMap).forEach(acc => {
+    const t = acctTxMap[acc];
+    const netCost = t.buy - t.sell; // 현재 보유 원가 추정
+    acctEvalMap[acc] = savedAcctEvalTA[acc] > 0
+      ? savedAcctEvalTA[acc]
+      : (netCost > 0 ? netCost : 0);
+  });
+  // 수동입력 계좌 (연금·금) 보완
   ['삼성연금저축','미래연금저축','우리IRP','미래금현물','미래금'].forEach(acc => {
     const mv = parseFloat(manualEval[acc]) || 0;
-    if (mv > 0 && !(acctEvalMap[acc] > 0)) acctEvalMap[acc] = mv;
+    if(mv > 0) acctEvalMap[acc] = mv;
   });
 
   // 계좌 표시 순서 및 색상
@@ -2515,19 +2536,23 @@ function renderTotalAsset() {
     '미래ISA':'var(--teal)', '미래연금저축':'var(--purple)', '삼성연금저축':'#8b5cf6',
     '우리IRP':'var(--blue)', '미래종합':'var(--green)', '미래금현물':'var(--yellow)', '미래금':'var(--yellow)'
   };
-  // 정렬: ACC_ORDER 순 → 나머지
+  // 정렬: ACC_ORDER 순 → 나머지 (값 없어도 거래내역 있으면 표시)
+  const acctWithData = new Set([...Object.keys(acctEvalMap), ...Object.keys(acctTxMap)]);
   const orderedAccts = [
-    ...ACC_ORDER.filter(a => acctEvalMap[a] > 0),
-    ...Object.keys(acctEvalMap).filter(a => !ACC_ORDER.includes(a) && acctEvalMap[a] > 0)
+    ...ACC_ORDER.filter(a => acctWithData.has(a)),
+    ...Object.keys(acctEvalMap).filter(a => !ACC_ORDER.includes(a) && acctWithData.has(a))
   ];
 
   let stockDetailHtml = '';
   orderedAccts.forEach(acc => {
-    const v = acctEvalMap[acc];
+    const v = acctEvalMap[acc] || 0;
+    const hasSavedEval = (savedAcctEvalTA[acc]||0) > 0;
+    const isManual = ['삼성연금저축','미래연금저축','우리IRP','미래금현물'].includes(acc);
+    const label = hasSavedEval ? '' : isManual ? ' <span style="font-size:9px;color:var(--txt3)">(수동)</span>' : ' <span style="font-size:9px;color:var(--yellow)">(원가추정)</span>';
     const c = ACC_COLOR[acc] || 'var(--txt2)';
     stockDetailHtml += `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:.5px solid var(--bd);font-size:12px">
-      <span style="color:${c};font-weight:600">${acc}</span>
-      <span style="font-variant-numeric:tabular-nums;font-weight:600">${Math.round(v).toLocaleString()}원</span>
+      <span style="color:${c};font-weight:600">${acc}${label}</span>
+      <span style="font-variant-numeric:tabular-nums;font-weight:600">${v>0?Math.round(v).toLocaleString()+'원':'—'}</span>
     </div>`;
   });
   if(deposit>0) stockDetailHtml += `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:.5px solid var(--bd);font-size:12px">
