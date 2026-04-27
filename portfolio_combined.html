@@ -296,10 +296,8 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
   <div class="topnav-tab"   onclick="showTab(1)">거래 입력</div>
   <div class="topnav-tab"   onclick="showTab(2)">거래 내역</div>
   <div class="topnav-tab"   onclick="showTab(4)">보유종목</div>
-  <div class="topnav-tab"   onclick="showTab(13)">실현손익</div>
-  <div class="topnav-tab"   onclick="showTab(16)">계좌요약</div>
   <div class="topnav-tab"   onclick="showTab(0)">대시보드</div>
-  <div class="topnav-tab"   onclick="showTab(3)">배당/분석</div>
+  <div class="topnav-tab"   onclick="showTab(3)">배당/실현손익</div>
   <div class="topnav-tab"   onclick="showTab(11)">⚙ 연동설정</div>
 </nav>
 
@@ -1073,159 +1071,8 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
   </div>
 </div>
 
-<!-- ════════════════════════════════════════════
-  탭 13 : 실현손익 (시트 [주식] 실현손익 동일)
-═════════════════════════════════════════════ -->
-<div id="p13" class="panel">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-    <div>
-      <div style="font-size:18px;font-weight:700">📋 실현손익</div>
-      <div style="font-size:12px;color:var(--txt3);margin-top:2px">매도 거래 → FIFO 자동 계산 · 분할매도 묶음 처리</div>
-    </div>
-    <div style="display:flex;gap:8px;align-items:center">
-      <select id="pnl-filter-acc2" onchange="renderPnlTab()" style="background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:7px 12px;font-size:12px;color:var(--txt);outline:none">
-        <option value="">전체 계좌</option>
-      </select>
-      <select id="pnl-filter-year" onchange="renderPnlTab()" style="background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:7px 12px;font-size:12px;color:var(--txt);outline:none">
-        <option value="">전체 연도</option>
-      </select>
-    </div>
-  </div>
 
-  <!-- KPI 4칸 -->
-  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
-    <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:12px;padding:16px;text-align:center">
-      <div style="font-size:10px;font-weight:700;color:var(--txt3);margin-bottom:6px;letter-spacing:.06em;text-transform:uppercase">누적 실현손익</div>
-      <div style="font-size:22px;font-weight:700;font-variant-numeric:tabular-nums" id="pnl13-total">—</div>
-      <div style="font-size:10px;color:var(--txt3);margin-top:4px" id="pnl13-cnt">—건</div>
-    </div>
-    <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:12px;padding:16px;text-align:center">
-      <div style="font-size:10px;font-weight:700;color:var(--txt3);margin-bottom:6px;letter-spacing:.06em;text-transform:uppercase">연금 실현손익</div>
-      <div style="font-size:22px;font-weight:700;font-variant-numeric:tabular-nums" id="pnl13-pen">—</div>
-      <div style="font-size:10px;color:var(--txt3);margin-top:4px">삼성+미래연금+IRP</div>
-    </div>
-    <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:12px;padding:16px;text-align:center">
-      <div style="font-size:10px;font-weight:700;color:var(--txt3);margin-bottom:6px;letter-spacing:.06em;text-transform:uppercase">ISA 실현손익</div>
-      <div style="font-size:22px;font-weight:700;font-variant-numeric:tabular-nums" id="pnl13-isa">—</div>
-      <div style="font-size:10px;color:var(--teal);margin-top:4px">비과세 계좌</div>
-    </div>
-    <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:12px;padding:16px;text-align:center">
-      <div style="font-size:10px;font-weight:700;color:var(--txt3);margin-bottom:6px;letter-spacing:.06em;text-transform:uppercase">ISA 절세 혜택</div>
-      <div style="font-size:22px;font-weight:700;color:var(--teal);font-variant-numeric:tabular-nums" id="pnl13-tax">—</div>
-      <div style="font-size:10px;color:var(--txt3);margin-top:4px">배당+손익 × 15.4%</div>
-    </div>
-  </div>
-
-  <!-- 종목별 요약 + 계좌별 -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
-    <div class="card">
-      <div style="font-size:12px;font-weight:700;color:var(--txt2);margin-bottom:12px">🏦 계좌별 실현손익</div>
-      <div id="pnl13-by-acc"></div>
-    </div>
-    <div class="card">
-      <div style="font-size:12px;font-weight:700;color:var(--txt2);margin-bottom:12px">📊 종목별 실현손익</div>
-      <div id="pnl13-by-name" style="max-height:300px;overflow-y:auto"></div>
-    </div>
-  </div>
-
-  <!-- 전체 매도 내역 테이블 (시트 실현손익 시트와 동일 구조) -->
-  <div class="card">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-      <div style="font-size:12px;font-weight:700;color:var(--txt2)">전체 매도 내역 <span style="font-size:10px;font-weight:400;color:var(--txt3)">(시트 [주식] 실현손익 동일)</span></div>
-      <div style="font-size:12px;color:var(--txt3)">누적 <b id="pnl13-filt-total" style="color:var(--txt)">—</b></div>
-    </div>
-    <div class="tbl-wrap">
-      <table class="tbl" style="width:100%">
-        <thead><tr>
-          <th>날짜</th><th>계좌</th><th>종목명</th>
-          <th class="num">매수단가</th><th class="num">매도단가</th>
-          <th class="num">수량</th><th class="num">거래비용</th>
-          <th class="num" style="color:var(--green)">실현손익</th>
-          <th class="num" style="color:var(--green)">순실현손익</th>
-          <th>메모</th>
-        </tr></thead>
-        <tbody id="pnl13-rows">
-          <tr><td colspan="10" style="text-align:center;padding:20px;color:var(--txt3)">데이터를 로드하세요</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
-<!-- ════════════════════════════════════════════
-  탭 16 : 계좌요약 (시트 [주식] 계좌요약 동일)
-═════════════════════════════════════════════ -->
-<div id="p16" class="panel">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-    <div>
-      <div style="font-size:18px;font-weight:700">📊 계좌요약</div>
-      <div style="font-size:12px;color:var(--txt3);margin-top:2px">내돈(입금-출금) · 평가금액 · 예수금 · 총자산 · 누적수익</div>
-    </div>
-    <div style="display:flex;gap:8px">
-      <button onclick="renderAcctSummaryTab()" style="padding:7px 14px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">↺ 새로고침</button>
-    </div>
-  </div>
-
-  <!-- 전체합계 히어로 -->
-  <div style="background:linear-gradient(135deg,#1a2744 0%,#1e3a5f 100%);border-radius:14px;padding:20px 24px;margin-bottom:16px">
-    <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:10px">전체 합계</div>
-    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:16px">
-      <div><div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:4px">① 내 돈 (납입)</div><div style="font-size:18px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums" id="as-total-in">—</div></div>
-      <div><div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:4px">② 평가금액</div><div style="font-size:18px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums" id="as-total-eval">—</div></div>
-      <div><div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:4px">③ 예수금</div><div style="font-size:18px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums" id="as-total-cash">—</div></div>
-      <div><div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:4px">④ 총자산 (②+③)</div><div style="font-size:22px;font-weight:700;color:#6aff9e;font-variant-numeric:tabular-nums" id="as-total-asset">—</div></div>
-      <div><div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:4px">⑤ 누적수익 (④-①)</div><div style="font-size:22px;font-weight:700;font-variant-numeric:tabular-nums" id="as-total-profit">—</div><div style="font-size:12px;font-weight:700;margin-top:4px" id="as-total-rate">—</div></div>
-    </div>
-  </div>
-
-  <!-- 계좌별 테이블 (시트 계좌요약 시트 동일) -->
-  <div class="card" style="margin-bottom:16px">
-    <div style="font-size:12px;font-weight:700;color:var(--txt2);margin-bottom:12px">계좌별 수익 요약</div>
-    <div class="tbl-wrap">
-      <table class="tbl" style="width:100%;min-width:900px">
-        <thead><tr>
-          <th>계좌</th><th>성격</th>
-          <th class="num">① 내 돈<br><span style="font-weight:400;font-size:10px">(입금-출금)</span></th>
-          <th class="num">매수금액</th>
-          <th class="num">② 평가금액</th>
-          <th class="num">평가손익</th>
-          <th class="num">③ 예수금</th>
-          <th class="num">④ 총자산<br><span style="font-weight:400;font-size:10px">(②+③)</span></th>
-          <th class="num">⑤ 누적수익<br><span style="font-weight:400;font-size:10px">(④-①)</span></th>
-          <th class="num">수익률</th>
-          <th class="num">분배금</th>
-          <th class="num">실현손익</th>
-        </tr></thead>
-        <tbody id="as-acc-rows">
-          <tr><td colspan="12" style="text-align:center;padding:20px;color:var(--txt3)">데이터를 로드하세요</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- 자산구분별 (연금/주식/금) -->
-  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
-    <div class="card" style="border-top:3px solid var(--purple)">
-      <div style="font-size:11px;font-weight:700;color:var(--purple);margin-bottom:12px">🏦 연금 합계</div>
-      <div id="as-pen-summary"></div>
-    </div>
-    <div class="card" style="border-top:3px solid var(--blue)">
-      <div style="font-size:11px;font-weight:700;color:var(--blue);margin-bottom:12px">📈 주식 합계</div>
-      <div id="as-stk-summary"></div>
-    </div>
-    <div class="card" style="border-top:3px solid var(--yellow)">
-      <div style="font-size:11px;font-weight:700;color:var(--yellow);margin-bottom:12px">🥇 금 합계</div>
-      <div id="as-gold-summary"></div>
-    </div>
-  </div>
-
-  <!-- 수동 평가금액 안내 -->
-  <div style="background:rgba(245,166,35,.07);border:1px solid rgba(245,166,35,.2);border-radius:10px;padding:12px 16px;font-size:11px;color:var(--txt3);line-height:1.7">
-    💡 <b>평가금액</b>은 수동입력(홈 배너) 또는 <b>↺ 현재가 갱신</b>(보유종목 탭)으로 업데이트됩니다.
-    연금·IRP는 GOOGLEFINANCE 자동 조회가 안되므로 시트에서 직접 확인 후 수동입력하세요.
-  </div>
-</div>
-
+<div id="pf-toast" class="toast"></div>
 <div id="pf-toast" class="toast"></div>
 <div id="toast" class="toast"></div>
 
@@ -1265,15 +1112,16 @@ function showTab(i) {
     var match=m.match(/showTab\((\d+)\)/);
     if(match) t.classList.toggle('on', parseInt(match[1])===i);
   });
-  // 패널 전환 — 13개 패널 ID 직접 지정
-  ['p0','p1','p2','p3','p4','p5','p6','p7','p8','p9','p10','p11','p12','p13','p16'].forEach(function(id,j){
-    var el = document.getElementById(id);
-    if(el) el.classList.toggle('on', i===j);
+  // 패널 전환 — 패널 ID → 탭 번호 직접 매핑
+  var panelMap = {'p0':0,'p1':1,'p2':2,'p3':3,'p4':4,'p5':5,'p6':6,'p7':7,'p8':8,'p9':9,'p10':10,'p11':11,'p12':12};
+  Object.entries(panelMap).forEach(function(kv){
+    var el = document.getElementById(kv[0]);
+    if(el) el.classList.toggle('on', i===kv[1]);
   });
   // 주식 탭(0~4) — GAS URL 없으면 설정 탭(11)으로 리다이렉트
-  if((i>=0 && i<=4) || i===13 || i===16) {
+  if(i>=0 && i<=4) {
     if(!getPfUrl()) {
-      ['p0','p1','p2','p3','p4','p13','p16'].forEach(function(id){ var el=document.getElementById(id); if(el) el.classList.remove('on'); });
+      ['p0','p1','p2','p3','p4'].forEach(function(id){ var el=document.getElementById(id); if(el) el.classList.remove('on'); });
       var p11=document.getElementById('p11'); if(p11) p11.classList.add('on');
       pfToast('먼저 GAS Script URL을 입력해주세요','err');
       return;
@@ -1308,8 +1156,6 @@ function showTab(i) {
   if(i===10) { setTimeout(function(){ if(typeof renderSetup==="function") renderSetup(); }, 50); }
   if(i===11) { var _pfu=document.getElementById("cfg-pf-url"); if(_pfu){ var _sv=getPfUrl(); if(_sv) _pfu.value=_sv; } }
   if(i===12) { setTimeout(function(){ renderTotalAsset(); }, 50); }
-  if(i===13) { setTimeout(function(){ if(typeof renderPnlTab==='function') renderPnlTab(); }, 50); }
-  if(i===16) { setTimeout(function(){ if(typeof renderAcctSummaryTab==='function') renderAcctSummaryTab(); }, 50); }
 }
 
 // ── 데이터 ──
