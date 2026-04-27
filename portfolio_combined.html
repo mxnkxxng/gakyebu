@@ -293,10 +293,10 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
   <div class="topnav-tab"   onclick="showTab(10)">설정</div>
   <div class="topnav-sep"></div>
   <div class="topnav-group-label">📊 투자/연금</div>
+  <div class="topnav-tab"   onclick="showTab(0)">홈</div>
   <div class="topnav-tab"   onclick="showTab(1)">거래 입력</div>
   <div class="topnav-tab"   onclick="showTab(2)">거래 내역</div>
   <div class="topnav-tab"   onclick="showTab(4)">보유종목</div>
-  <div class="topnav-tab"   onclick="showTab(0)">대시보드</div>
   <div class="topnav-tab"   onclick="showTab(3)">배당/실현손익</div>
   <div class="topnav-tab"   onclick="showTab(11)">⚙ 연동설정</div>
 </nav>
@@ -504,10 +504,16 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
       </div>
     </div>
 
-    <!-- 계좌별 합계 -->
-    <div class="card" style="margin-bottom:16px">
-      <div style="font-size:12px;font-weight:700;color:var(--txt2);margin-bottom:12px">🏦 계좌별 실현손익</div>
-      <div id="pnl-by-acc"></div>
+    <!-- 계좌별 + 종목별 2열 -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+      <div class="card">
+        <div style="font-size:12px;font-weight:700;color:var(--txt2);margin-bottom:12px">🏦 계좌별 실현손익</div>
+        <div id="pnl-by-acc"></div>
+      </div>
+      <div class="card">
+        <div style="font-size:12px;font-weight:700;color:var(--txt2);margin-bottom:12px">📊 종목별 성과</div>
+        <div id="pnl-by-name"></div>
+      </div>
     </div>
 
     <!-- 건별 내역 -->
@@ -1127,9 +1133,12 @@ function showTab(i) {
       return;
     }
   }
-  // 포트폴리오 탭별 초기화
-  if(i===0) { if(pfTx.length) renderDashboard(); }
-  if(i===4) { renderHoldingsTab(); }
+  // 포트폴리오 탭별 초기화 — 이미 렌더된 탭은 재렌더 안 함
+  if(i===0) { if(pfTx.length && !_pfRendered.dash) { renderDashboard(); _pfRendered.dash=true; } }
+  if(i===3) { showInvTab(_currentInvTab||'realized');
+             if(pfTx.length && !_pfRendered.pnl) { renderPnlTab();      _pfRendered.pnl=true; }
+             if(pfTx.length && !_pfRendered.div) { renderDividendTab(); _pfRendered.div=true; } }
+  if(i===4) { if(!_pfRendered.holdings) { renderHoldingsTab(); _pfRendered.holdings=true; } }
   // 가계부 탭(5~9) — scriptUrl 없으면 설정 탭(10)으로 리다이렉트
   if(i>=5 && i<=9) {
     var gbUrl = localStorage.getItem('scriptUrl')||'';
@@ -1151,7 +1160,6 @@ function showTab(i) {
   if(i===6) { setTimeout(function(){ if(typeof renderInput==='function') renderInput(); }, 50); }
   if(i===7) { setTimeout(function(){ if(typeof renderHist==='function') renderHist(); }, 50); }
   if(i===8) { setTimeout(function(){ if(typeof renderBalance==='function') renderBalance(); }, 50); }
-  if(i===3) { setTimeout(function(){ if(typeof renderReview==='function') renderReview(); showInvTab(_currentInvTab||'realized'); }, 50); }
   if(i===9) { setTimeout(function(){ if(typeof renderAsset==='function') renderAsset(); }, 50); }
   if(i===10) { setTimeout(function(){ if(typeof renderSetup==="function") renderSetup(); }, 50); }
   if(i===11) { var _pfu=document.getElementById("cfg-pf-url"); if(_pfu){ var _sv=getPfUrl(); if(_sv) _pfu.value=_sv; } }
@@ -1160,6 +1168,9 @@ function showTab(i) {
 
 // ── 데이터 ──
 let pfTx = [];
+// 탭별 렌더 완료 플래그 — loadPfData() 시 초기화됨
+const _pfRendered = { dash:false, hist:false, holdings:false, pnl:false, div:false };
+function _resetRendered() { Object.keys(_pfRendered).forEach(k=>_pfRendered[k]=false); }
 
 function pfToast(msg, type='ok') {
   const el = document.getElementById('pf-toast');
@@ -1246,12 +1257,13 @@ async function loadPfData() {
   if (d && d.data) {
     pfTx = d.data;
     try { localStorage.setItem('pf_tx_cache', JSON.stringify(pfTx)); } catch(e){}
-    renderDashboard();
-    renderHistory();
+    _resetRendered(); // 새 데이터 → 플래그 초기화 후 전체 1회 렌더
+    renderDashboard();   _pfRendered.dash=true;
+    renderHistory();     _pfRendered.hist=true;
     renderHistAcctSummary();
-    renderHoldingsTab();
-    renderPnlTab();
-    renderDividendTab();
+    renderHoldingsTab(); _pfRendered.holdings=true;
+    renderPnlTab();      _pfRendered.pnl=true;
+    renderDividendTab(); _pfRendered.div=true;
     buildAcctSelects();
     renderPlan();
     if(typeof loadAssetFromSheet === 'function') loadAssetFromSheet();
@@ -1305,7 +1317,7 @@ function saveManualEval() {
     '미래금현물':   parseFloat(document.getElementById('me-miragold').value)||0,
   };
   try { localStorage.setItem(MANUAL_EVAL_KEY, JSON.stringify(data)); } catch(e){}
-  if(pfTx.length) renderDashboard();
+  if(pfTx.length) { _pfRendered.dash=false; renderDashboard(); _pfRendered.dash=true; }
 }
 function loadManualEvalInputs() {
   try {
@@ -2116,8 +2128,9 @@ async function loadHoldingsFromSheet() {
   document.querySelectorAll('.holdings-update-time').forEach(el=>{ el.textContent=`현재가 ${now} 갱신`; });
   const loaded = Object.values(holdingsData).filter(h=>h.currentPrice>0).length;
   pfToast(`보유종목 ${holdNames.length}종목 / 현재가 ${loaded}개 완료`);
-  renderDashboard();
-  if(typeof renderHoldingsTab==='function') renderHoldingsTab();
+  _pfRendered.dash=false; _pfRendered.holdings=false;
+  renderDashboard();   _pfRendered.dash=true;
+  if(typeof renderHoldingsTab==='function') { renderHoldingsTab(); _pfRendered.holdings=true; }
   if(typeof renderTotalAsset==='function') renderTotalAsset();
 }
 // ================================================================
@@ -2855,6 +2868,20 @@ function renderHoldingsFromFifo() {
 // ════════════════════════════════════════════════════════
 // 탭13: 실현손익 (시트 [주식] 실현손익 동일 구조)
 // ════════════════════════════════════════════════════════
+let _currentInvTab = 'realized';
+function showInvTab(tab) {
+  _currentInvTab = tab;
+  const panels = { realized: document.getElementById('inv-panel-realized'), dividend: document.getElementById('inv-panel-dividend') };
+  const btns   = { realized: document.getElementById('inv-sub-realized'),   dividend: document.getElementById('inv-sub-dividend') };
+  Object.entries(panels).forEach(([k,el]) => { if(el) el.style.display = k===tab ? '' : 'none'; });
+  Object.entries(btns).forEach(([k,el]) => {
+    if(el) {
+      el.style.borderBottom = k===tab ? '2px solid var(--blue)' : '2px solid transparent';
+      el.style.color = k===tab ? 'var(--txt)' : 'var(--txt2)';
+    }
+  });
+}
+
 function renderPnlTab() {
   if(!pfTx.length) return;
   const filterAcc  = (document.getElementById('pnl-filter-acc')||{}).value||'';
@@ -2932,6 +2959,40 @@ function renderPnlTab() {
       <span style="font-size:13px;font-weight:600">${acc} <span style="font-size:11px;color:var(--txt3);font-weight:400">${v.cnt}건</span></span>
       ${fmtPnl(v.pnl)}
     </div>`).join('') || '<div style="color:var(--txt3);font-size:12px;padding:8px">데이터 없음</div>';
+
+  // 종목별 성과 (매도 합산 기준)
+  const nameMap = {};
+  filtered.forEach(r => {
+    if(!nameMap[r.name]) nameMap[r.name]={pnl:0,cost:0,cnt:0,wins:0};
+    nameMap[r.name].pnl  += r.pnl;
+    nameMap[r.name].cost += r.costBasis;
+    nameMap[r.name].cnt++;
+    if(r.pnl>0) nameMap[r.name].wins++;
+  });
+  const nameEl = document.getElementById('pnl-by-name');
+  if(nameEl) {
+    const sorted_names = Object.entries(nameMap).sort((a,b)=>b[1].pnl-a[1].pnl);
+    nameEl.innerHTML = sorted_names.map(([name,v]) => {
+      const rate = v.cost>0 ? (v.pnl/v.cost*100) : 0;
+      const winRate = v.cnt>0 ? Math.round(v.wins/v.cnt*100) : 0;
+      const barW = Math.min(Math.abs(rate), 100);
+      const barCol = rate>=0 ? 'var(--green)' : 'var(--red)';
+      return `<div style="padding:9px 0;border-bottom:1px solid var(--bd)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+          <span style="font-size:12px;font-weight:600">${name}
+            <span style="font-size:10px;color:var(--txt3);font-weight:400;margin-left:4px">${v.cnt}회 매도 · 승률 ${winRate}%</span>
+          </span>
+          <div style="text-align:right">
+            <span style="font-size:12px;font-weight:700;color:${barCol}">${rate>=0?'+':''}${rate.toFixed(2)}%</span>
+            <span style="font-size:11px;color:var(--txt3);margin-left:6px">${v.pnl>=0?'+':''}${Math.round(v.pnl/10000).toLocaleString()}만원</span>
+          </div>
+        </div>
+        <div style="height:4px;background:var(--bg3);border-radius:2px">
+          <div style="width:${barW}%;height:100%;background:${barCol};border-radius:2px;opacity:.7"></div>
+        </div>
+      </div>`;
+    }).join('') || '<div style="color:var(--txt3);font-size:12px;padding:8px">데이터 없음</div>';
+  }
 
   // 건별 테이블
   const totalPnl = filtered.reduce((s,r)=>s+r.pnl,0);
@@ -3885,10 +3946,13 @@ window.addEventListener('DOMContentLoaded', ()=>{
     const cached = localStorage.getItem('pf_tx_cache');
     if(cached) {
       pfTx = JSON.parse(cached);
-      renderDashboard();
-      renderHistory();
+      _resetRendered();
+      renderDashboard();   _pfRendered.dash=true;
+      renderHistory();     _pfRendered.hist=true;
       renderHistAcctSummary();
-      if(typeof renderAcctSummaryTab==='function') renderAcctSummaryTab();
+      renderHoldingsTab(); _pfRendered.holdings=true;
+      renderPnlTab();      _pfRendered.pnl=true;
+      renderDividendTab(); _pfRendered.div=true;
       renderPension();
       buildAcctSelects();
       renderPlan();
