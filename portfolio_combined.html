@@ -3994,12 +3994,15 @@ function pfRenderAcctBalance() {
   const map = {};
   pfTx.forEach(r => {
     const a = r.account || '';
-    if (!map[a]) map[a] = { in:0, out:0, buy:0, sell:0, div:0 };
+    if (!map[a]) map[a] = { in:0, out:0, buy:0, sell:0, div:0, fee:0 };
     const amt = Math.abs(parseFloat(r.amount) || 0);
+    const fee = Math.abs(parseFloat(r.fee) || 0)
+              + Math.abs(parseFloat(r.tax)  || 0)
+              + Math.abs(parseFloat(r.cost) || 0);
     if (r.type === '입금')   map[a].in   += amt;
     if (r.type === '출금')   map[a].out  += amt;
-    if (r.type === '매수')   map[a].buy  += amt;
-    if (r.type === '매도')   map[a].sell += amt;
+    if (r.type === '매수')   { map[a].buy  += amt; map[a].fee += fee; }
+    if (r.type === '매도')   { map[a].sell += amt; map[a].fee += fee; }
     if (r.type === '분배금') map[a].div  += amt;
   });
 
@@ -4015,7 +4018,7 @@ function pfRenderAcctBalance() {
   cards.innerHTML = activeAccts.map(a => {
     const v = map[a];
     const 투자원금 = v.in - v.out;
-    const 예수금   = 투자원금 - v.buy + v.sell + v.div;
+    const 예수금   = 투자원금 - v.buy + v.sell + v.div - v.fee;
     return `<div style="background:var(--bg2);border:1px solid var(--bd);border-radius:10px;padding:12px 14px">
       <div style="font-size:11px;font-weight:700;color:${accColor(a)};margin-bottom:8px">${a}</div>
       <div style="display:flex;flex-direction:column;gap:4px;font-size:12px">
@@ -4131,19 +4134,43 @@ function pfRenderHistory() {
       <td style="padding:9px 12px;text-align:right;color:var(--red);font-variant-numeric:tabular-nums">${taxStr}</td>
       <td style="padding:9px 12px;text-align:right;color:var(--red);font-variant-numeric:tabular-nums">${costStr}</td>
       <td style="padding:9px 12px;color:var(--txt3);font-size:11px">${r.memo || ''}</td>
-      <td style="padding:9px 12px;text-align:center">
-        ${r.rowIndex >= 0 ? `<button onclick="pfDeleteTx(${r.rowIndex},'${(r.date||'')+'_'+(r.name||r.type||'').replace(/'/g,'')}' )" style="background:transparent;border:1px solid var(--bd);border-radius:5px;color:var(--txt3);font-size:11px;padding:3px 8px;cursor:pointer">삭제</button>` : ''}
+      <td style="padding:9px 12px;text-align:center;white-space:nowrap">
+        ${r.rowIndex >= 0 ? `
+          <button onclick="pfOpenEdit(${r.rowIndex})" style="background:var(--bg3);border:1px solid var(--bd);border-radius:5px;color:var(--txt2);font-size:11px;padding:3px 8px;cursor:pointer;margin-right:3px">수정</button>
+          <button onclick="pfDeleteTx(${r.rowIndex},'${(r.date||'')+'_'+(r.name||r.type||'').replace(/'/g,'')}' )" style="background:transparent;border:1px solid var(--bd);border-radius:5px;color:var(--red);font-size:11px;padding:3px 8px;cursor:pointer">삭제</button>
+        ` : ''}
       </td>
     </tr>`;
   }).join('');
 }
 
+// ── 수정 버튼 (거래내역 탭) ──
+function pfOpenEdit(rowIndex) {
+  // 기존 모달 재활용
+  if (typeof openPfEditModal === 'function') {
+    openPfEditModal(rowIndex);
+  }
+}
+
 // ── 삭제 ──
 async function pfDeleteTx(rowIndex, desc) {
-  if (!confirm(`"${desc}" 거래를 삭제할까요?\n(시트에서도 삭제됩니다)`)) return;
-  const ok = await pfPost({ action: 'pf_deleteTx', rowIndex });
-  pfToast('삭제 요청 전송');
-  setTimeout(loadPfData, 2000);
+  if (!confirm(`"${desc}" 거래를 삭제할까요?`)) return;
+
+  // 로컬 pfTx에서 즉시 제거
+  const li = pfTx.findIndex(x => x.rowIndex === rowIndex);
+  if (li >= 0) pfTx.splice(li, 1);
+
+  // GAS 동기화
+  const url = getPfUrl();
+  if (url) {
+    pfPost({ action: 'pf_deleteTx', rowIndex }).then(ok => {
+      if (!ok) pfToast('시트 삭제 실패 (로컬은 삭제됨)', 'err');
+    });
+  }
+
+  pfToast('삭제됐어요!');
+  pfRenderHistory();
+  if (typeof renderDashboard === 'function') { _pfRendered.dash = false; renderDashboard(); _pfRendered.dash = true; }
 }
 
 // ── 배당/분배금 렌더 ──
