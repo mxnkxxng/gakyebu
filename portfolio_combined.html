@@ -260,6 +260,12 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
 /* 가계부 패널은 포트폴리오 .panel 방식으로 동작 */
+.sort-th {
+  background: none; border: none; cursor: pointer; font-size: 12px;
+  font-weight: 500; color: var(--txt3); padding: 0; white-space: nowrap;
+  display: inline-flex; align-items: center; gap: 2px;
+}
+.sort-th:hover { color: var(--txt); }
 </style>
 </head>
 <body>
@@ -444,20 +450,22 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
     <table style="width:100%;border-collapse:collapse;font-size:12px">
       <thead>
         <tr style="border-bottom:1px solid var(--bd)">
-          <th style="padding:9px 12px;text-align:left;color:var(--txt3);font-weight:500;white-space:nowrap">날짜</th>
-          <th style="padding:9px 12px;text-align:left;color:var(--txt3);font-weight:500">계좌</th>
-          <th style="padding:9px 12px;text-align:left;color:var(--txt3);font-weight:500">유형</th>
-          <th style="padding:9px 12px;text-align:left;color:var(--txt3);font-weight:500">종목</th>
-          <th style="padding:9px 12px;text-align:right;color:var(--txt3);font-weight:500">수량</th>
-          <th style="padding:9px 12px;text-align:right;color:var(--txt3);font-weight:500">단가</th>
-          <th style="padding:9px 12px;text-align:right;color:var(--txt3);font-weight:500">금액</th>
-          <th style="padding:9px 12px;text-align:right;color:var(--txt3);font-weight:500">비용합계</th>
+          <th style="padding:9px 12px;text-align:left;white-space:nowrap"><button onclick="pfSort('date')" class="sort-th" id="sth-date">날짜 <span id="si-date"></span></button></th>
+          <th style="padding:9px 12px;text-align:left"><button onclick="pfSort('account')" class="sort-th" id="sth-account">계좌 <span id="si-account"></span></button></th>
+          <th style="padding:9px 12px;text-align:left"><button onclick="pfSort('type')" class="sort-th" id="sth-type">유형 <span id="si-type"></span></button></th>
+          <th style="padding:9px 12px;text-align:left"><button onclick="pfSort('name')" class="sort-th" id="sth-name">종목 <span id="si-name"></span></button></th>
+          <th style="padding:9px 12px;text-align:right"><button onclick="pfSort('qty')" class="sort-th" id="sth-qty">수량 <span id="si-qty"></span></button></th>
+          <th style="padding:9px 12px;text-align:right"><button onclick="pfSort('price')" class="sort-th" id="sth-price">단가 <span id="si-price"></span></button></th>
+          <th style="padding:9px 12px;text-align:right"><button onclick="pfSort('amount')" class="sort-th" id="sth-amount">금액 <span id="si-amount"></span></button></th>
+          <th style="padding:9px 12px;text-align:right;color:var(--txt3);font-weight:500">수수료</th>
+          <th style="padding:9px 12px;text-align:right;color:var(--txt3);font-weight:500">세금</th>
+          <th style="padding:9px 12px;text-align:right;color:var(--txt3);font-weight:500">거래비용</th>
           <th style="padding:9px 12px;text-align:left;color:var(--txt3);font-weight:500">메모</th>
           <th style="padding:9px 12px;width:50px"></th>
         </tr>
       </thead>
       <tbody id="hist-tbody">
-        <tr><td colspan="10" style="padding:40px;text-align:center;color:var(--txt3)">거래내역을 로드하세요</td></tr>
+        <tr><td colspan="12" style="padding:40px;text-align:center;color:var(--txt3)">거래내역을 로드하세요</td></tr>
       </tbody>
     </table>
   </div>
@@ -999,6 +1007,8 @@ function showTab(i) {
 // ── 데이터 ──
 let pfTx = [];
 let pfSugNames = [];
+let pfSortKey = 'date';
+let pfSortDir = 'desc';
 // 탭별 렌더 완료 플래그 — loadPfData() 시 초기화됨
 const _pfRendered = { dash:false, hist:false, holdings:false, pnl:false, div:false };
 function _resetRendered() { Object.keys(_pfRendered).forEach(k=>_pfRendered[k]=false); }
@@ -3133,6 +3143,15 @@ function renderHistory() {
         const pnlHtml = pnl !== null
           ? `<td class="num" style="font-weight:600;color:${pnl>=0?'var(--green)':'var(--red)'}">${approxMark}${pnl>=0?'+':''}${fmtW(Math.abs(pnl))}</td>`
           : `<td class="num" style="color:var(--txt3)">—</td>`;
+        // 금액 부호: 매수·출금 = -, 매도·입금·분배금·배당 = +, 수수료·세금·거래비용 = 항상 -
+        const isPlus  = ['매도','매도.','입금','분배금','배당'].includes(r.type);
+        const isMinus = ['매수','매수.','출금','이용료'].includes(r.type);
+        const signAmt = Math.abs(parseFloat(r.amount)||0);
+        const amtSign = isPlus ? '+' : isMinus ? '−' : '';
+        const amtColor = isPlus ? 'var(--green)' : isMinus ? 'var(--red)' : 'var(--txt)';
+        const feeVal  = Math.abs(parseFloat(r.fee)||0);
+        const taxVal  = Math.abs(parseFloat(r.tax)||0);
+        const costVal = Math.abs(parseFloat(r.cost)||0);
         return `<tr${isGrouped?' style="background:rgba(49,130,246,.025)"':''}>
           <td style="font-variant-numeric:tabular-nums;font-size:11px;color:var(--txt3)">${r.date}</td>
           <td><span class="${accCol(r.account)}">${r.account}</span></td>
@@ -3140,10 +3159,10 @@ function renderHistory() {
           <td>${r.name||'—'}</td>
           <td class="num">${r.qty>0?r.qty+'주':'—'}</td>
           <td class="num">${r.price>0?fmtW(r.price):'—'}</td>
-          <td class="num">${fmtW(r.amount)}</td>
-          <td class="num" style="color:var(--txt3)">${r.fee!=0?fmtW(Math.abs(r.fee)):'—'}</td>
-          <td class="num" style="color:var(--txt3)">${r.tax!=0?fmtW(Math.abs(r.tax)):'—'}</td>
-          <td class="num" style="color:var(--txt3)">${r.cost!=0?fmtW(Math.abs(r.cost)):'—'}</td>
+          <td class="num" style="font-weight:600;color:${amtColor}">${amtSign}${fmtW(signAmt)}</td>
+          <td class="num" style="color:var(--red)">${feeVal>0?'−'+fmtW(feeVal):'—'}</td>
+          <td class="num" style="color:var(--red)">${taxVal>0?'−'+fmtW(taxVal):'—'}</td>
+          <td class="num" style="color:var(--red)">${costVal>0?'−'+fmtW(costVal):'—'}</td>
           ${pnlHtml}
           <td style="color:var(--txt3);font-size:11px">${r.memo||''}</td>
           <td style="text-align:center;white-space:nowrap">
@@ -3746,44 +3765,63 @@ function closePfEditModal() {
 
 async function savePfEdit() {
   if(_pfEditRowIndex === null) return;
+
+  var newData = {
+    date:    document.getElementById('pfe-date').value,
+    account: document.getElementById('pfe-account').value,
+    type:    document.getElementById('pfe-type').value,
+    name:    document.getElementById('pfe-name').value,
+    qty:     parseFloat(document.getElementById('pfe-qty').value)    || 0,
+    price:   parseFloat(document.getElementById('pfe-price').value)  || 0,
+    amount:  parseFloat(document.getElementById('pfe-amount').value) || 0,
+    fee:     parseFloat(document.getElementById('pfe-fee').value)    || 0,
+    tax:     parseFloat(document.getElementById('pfe-tax').value)    || 0,
+    cost:    parseFloat(document.getElementById('pfe-cost').value)   || 0,
+    memo:    document.getElementById('pfe-memo').value,
+  };
+
+  // ── 로컬 pfTx 직접 수정 (GAS 없어도 즉시 반영) ──
+  var localIdx = pfTx.findIndex(function(x){ return x.rowIndex === _pfEditRowIndex; });
+  if(localIdx >= 0) {
+    pfTx[localIdx] = Object.assign({}, pfTx[localIdx], newData);
+  }
+
+  // ── GAS 동기화 (URL 있을 때만) ──
   var url = getPfUrl();
-  if(!url) { pfToast('Script URL을 먼저 설정하세요','err'); return; }
-
-  // 1) 기존 행 삭제
-  var delOk = await pfPost({ action:'pf_deleteTx', rowIndex: _pfEditRowIndex });
-  if(!delOk) { pfToast('삭제 실패','err'); return; }
-
-  // 2) 수정된 내용으로 새 행 추가
-  var addOk = await pfPost({
-    action:   'pf_addTx',
-    date:     document.getElementById('pfe-date').value,
-    account:  document.getElementById('pfe-account').value,
-    type:     document.getElementById('pfe-type').value,
-    name:     document.getElementById('pfe-name').value,
-    qty:      parseFloat(document.getElementById('pfe-qty').value) || '',
-    price:    parseFloat(document.getElementById('pfe-price').value) || '',
-    amount:   parseFloat(document.getElementById('pfe-amount').value) || '',
-    fee:      parseFloat(document.getElementById('pfe-fee').value) || '',
-    tax:      parseFloat(document.getElementById('pfe-tax').value) || '',
-    cost:     parseFloat(document.getElementById('pfe-cost').value) || '',
-    memo:     document.getElementById('pfe-memo').value,
-  });
-  if(!addOk) { pfToast('저장 실패','err'); return; }
+  if(url) {
+    var delOk = await pfPost({ action:'pf_deleteTx', rowIndex: _pfEditRowIndex });
+    if(!delOk) { pfToast('시트 삭제 실패 (로컬은 수정됨)', 'err'); }
+    else {
+      var addOk = await pfPost(Object.assign({ action:'pf_addTx' }, newData));
+      if(!addOk) pfToast('시트 저장 실패 (로컬은 수정됨)', 'err');
+    }
+  }
 
   closePfEditModal();
   pfToast('수정됐어요!');
-  await loadPfData();
+  if(typeof renderHistory  === 'function') renderHistory();
+  if(typeof renderDashboard=== 'function') { _pfRendered.dash=false; renderDashboard(); _pfRendered.dash=true; }
+  if(typeof renderReview   === 'function') renderReview();
 }
 
 async function deletePfTx(rowIndex) {
   if(!confirm('이 거래를 삭제할까요?')) return;
-  var ok = await pfPost({ action:'pf_deleteTx', rowIndex: rowIndex });
-  if(ok) {
-    pfToast('삭제됐어요!');
-    await loadPfData();
-  } else {
-    pfToast('삭제 실패','err');
+
+  // 로컬 pfTx에서 즉시 제거
+  var li = pfTx.findIndex(function(x){ return x.rowIndex === rowIndex; });
+  if(li >= 0) pfTx.splice(li, 1);
+
+  // GAS 동기화 (URL 있을 때만)
+  var url = getPfUrl();
+  if(url) {
+    var ok = await pfPost({ action:'pf_deleteTx', rowIndex: rowIndex });
+    if(!ok) pfToast('시트 삭제 실패 (로컬은 삭제됨)', 'err');
   }
+
+  pfToast('삭제됐어요!');
+  if(typeof renderHistory  === 'function') renderHistory();
+  if(typeof renderDashboard=== 'function') { _pfRendered.dash=false; renderDashboard(); _pfRendered.dash=true; }
+  if(typeof renderReview   === 'function') renderReview();
 }
 
 // ── 초기화 ──
@@ -3848,6 +3886,16 @@ async function pfLoadAndRender() {
   } catch(e) {
     if (statusEl) { statusEl.textContent = '연결 실패: ' + e.message; statusEl.style.color = 'var(--red)'; }
   }
+}
+
+function pfSort(key) {
+  if (pfSortKey === key) {
+    pfSortDir = pfSortDir === 'desc' ? 'asc' : 'desc';
+  } else {
+    pfSortKey = key;
+    pfSortDir = key === 'date' ? 'desc' : 'asc';
+  }
+  pfRenderHistory();
 }
 
 function pfFmtW(n) { return Math.round(n || 0).toLocaleString('ko-KR') + '원'; }
@@ -4007,7 +4055,29 @@ function pfRenderHistory() {
     if (type && r.type !== type)   return false;
     if (name && !(r.name || '').toLowerCase().includes(name)) return false;
     return true;
-  }).slice().sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  });
+
+  // 정렬 적용
+  const sorted = [...filtered].sort((a, b) => {
+    const dir = pfSortDir === 'asc' ? 1 : -1;
+    const k = pfSortKey;
+    const va = k === 'amount' || k === 'qty' || k === 'price'
+      ? (Math.abs(parseFloat(a[k]) || 0))
+      : String(a[k] || '');
+    const vb = k === 'amount' || k === 'qty' || k === 'price'
+      ? (Math.abs(parseFloat(b[k]) || 0))
+      : String(b[k] || '');
+    if (typeof va === 'number') return (va - vb) * dir;
+    return va.localeCompare(vb) * dir;
+  });
+
+  // 정렬 아이콘 업데이트
+  ['date','account','type','name','qty','price','amount'].forEach(k => {
+    const el = document.getElementById('si-' + k);
+    if (el) el.textContent = k === pfSortKey ? (pfSortDir === 'asc' ? ' ↑' : ' ↓') : '';
+    const th = document.getElementById('sth-' + k);
+    if (th) th.style.color = k === pfSortKey ? 'var(--blue)' : 'var(--txt3)';
+  });
 
   // 통계
   const stats = document.getElementById('hist-stats');
@@ -4024,7 +4094,7 @@ function pfRenderHistory() {
   const tbody = document.getElementById('hist-tbody');
   if (!tbody) return;
   if (!filtered.length) {
-    tbody.innerHTML = '<tr><td colspan="10" style="padding:32px;text-align:center;color:var(--txt3)">해당 내역 없음</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="12" style="padding:32px;text-align:center;color:var(--txt3)">해당 내역 없음</td></tr>';
     return;
   }
 
@@ -4036,9 +4106,19 @@ function pfRenderHistory() {
     'background:var(--bg3);color:var(--txt2)';
   const accColor = a => a.includes('ISA') ? 'color:#4ade80' : a.includes('연금') ? 'color:var(--purple)' : a.includes('IRP') ? 'color:var(--blue)' : a.includes('금') ? 'color:var(--yellow)' : 'color:var(--txt2)';
 
-  tbody.innerHTML = filtered.map(r => {
+  tbody.innerHTML = sorted.map(r => {
     const amt  = Math.abs(parseFloat(r.amount) || 0);
-    const fees = (parseFloat(r.fee)||0) + (parseFloat(r.tax)||0) + (parseFloat(r.cost)||0);
+    const fee  = Math.abs(parseFloat(r.fee)    || 0);
+    const tax  = Math.abs(parseFloat(r.tax)    || 0);
+    const cost = Math.abs(parseFloat(r.cost)   || 0);
+    // 매수/출금 → -, 매도/입금/분배금 → +
+    const isMinus = r.type === '매수' || r.type === '출금';
+    const isPlus  = r.type === '매도' || r.type === '입금' || r.type === '분배금';
+    const amtSign = isMinus ? '-' : isPlus ? '+' : '';
+    const amtColor = isMinus ? 'var(--red)' : isPlus ? 'var(--green)' : 'var(--txt)';
+    const feeStr  = fee  ? `-${pfFmtN(fee)}`  : '—';
+    const taxStr  = tax  ? `-${pfFmtN(tax)}`  : '—';
+    const costStr = cost ? `-${pfFmtN(cost)}` : '—';
     return `<tr style="border-bottom:1px solid var(--bd)">
       <td style="padding:9px 12px;white-space:nowrap;color:var(--txt3)">${r.date || ''}</td>
       <td style="padding:9px 12px;font-size:11px;font-weight:600;${accColor(r.account || '')}">${r.account || ''}</td>
@@ -4046,8 +4126,10 @@ function pfRenderHistory() {
       <td style="padding:9px 12px;font-weight:500">${r.name || '—'}</td>
       <td style="padding:9px 12px;text-align:right;color:var(--txt2)">${r.qty || 0}</td>
       <td style="padding:9px 12px;text-align:right;color:var(--txt2);font-variant-numeric:tabular-nums">${r.price ? pfFmtN(r.price) : '—'}</td>
-      <td style="padding:9px 12px;text-align:right;font-weight:600;font-variant-numeric:tabular-nums">${amt ? pfFmtW(amt) : '—'}</td>
-      <td style="padding:9px 12px;text-align:right;color:var(--txt3);font-variant-numeric:tabular-nums">${fees ? pfFmtN(fees) : ''}</td>
+      <td style="padding:9px 12px;text-align:right;font-weight:600;font-variant-numeric:tabular-nums;color:${amtColor}">${amt ? amtSign + pfFmtW(amt) : '—'}</td>
+      <td style="padding:9px 12px;text-align:right;color:var(--red);font-variant-numeric:tabular-nums">${feeStr}</td>
+      <td style="padding:9px 12px;text-align:right;color:var(--red);font-variant-numeric:tabular-nums">${taxStr}</td>
+      <td style="padding:9px 12px;text-align:right;color:var(--red);font-variant-numeric:tabular-nums">${costStr}</td>
       <td style="padding:9px 12px;color:var(--txt3);font-size:11px">${r.memo || ''}</td>
       <td style="padding:9px 12px;text-align:center">
         ${r.rowIndex >= 0 ? `<button onclick="pfDeleteTx(${r.rowIndex},'${(r.date||'')+'_'+(r.name||r.type||'').replace(/'/g,'')}' )" style="background:transparent;border:1px solid var(--bd);border-radius:5px;color:var(--txt3);font-size:11px;padding:3px 8px;cursor:pointer">삭제</button>` : ''}
