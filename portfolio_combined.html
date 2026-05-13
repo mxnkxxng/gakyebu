@@ -3562,7 +3562,8 @@ function toggleFields() {
   const isTrade  = ['매수','매도','매수.','매도.'].includes(t);
   const needsAmt = ['입금','출금','이용료','mmf'].includes(t);
   const needsName= ['매수','매도','분배금','재투자'].includes(t);
-  document.getElementById('price-fields').style.display = isTrade ? 'grid' : 'none';
+  const priceFields = document.getElementById('price-fields') || document.getElementById('fg-qty-price');
+  if(priceFields) priceFields.style.display = isTrade ? 'grid' : 'none';
   document.getElementById('fg-name').style.display      = needsName ? 'block' : 'none';
   // 금액 단독 입력란 (이용료/입금/출금/mmf)
   let amtOnly = document.getElementById('amount-only-row');
@@ -3574,7 +3575,8 @@ function toggleFields() {
       amtOnly.style.gridTemplateColumns = '1fr 3fr';
       amtOnly.innerHTML = '<div class="form-group"><label>금액 (원)</label><input type="number" id="f-amount-only" placeholder="0"></div>'
         + '<div class="form-group"><label>메모</label><input type="text" id="f-memo-only" placeholder="선택사항"></div>';
-      document.getElementById('price-fields').insertAdjacentElement('afterend', amtOnly);
+      const _pf = document.getElementById('price-fields') || document.getElementById('fg-qty-price');
+      if(_pf) _pf.insertAdjacentElement('afterend', amtOnly);
     }
     amtOnly.style.display = 'grid';
   } else {
