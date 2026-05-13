@@ -3954,8 +3954,8 @@ function pfRenderDash() {
     accMap[a].cnt++;
     if (r.type === '입금')   { accMap[a].in   += amt; totalIn  += amt; }
     if (r.type === '출금')   { accMap[a].in   -= amt; }
-    if (r.type === '매수')   { accMap[a].buy  += amt; totalBuy += amt; }
-    if (r.type === '매도')   { accMap[a].sell += amt; }
+    if (r.type === '매수' || r.type === '매수.')  { accMap[a].buy  += amt; totalBuy += amt; }
+    if (r.type === '매도' || r.type === '매도.')  { accMap[a].sell += amt; }
     if (r.type === '분배금') { accMap[a].div  += amt; totalDiv += amt; }
   });
 
@@ -4001,8 +4001,10 @@ function pfRenderAcctBalance() {
               + Math.abs(parseFloat(r.cost) || 0);
     if (r.type === '입금')   map[a].in   += amt;
     if (r.type === '출금')   map[a].out  += amt;
-    if (r.type === '매수')   { map[a].buy  += amt; map[a].fee += fee; }
-    if (r.type === '매도')   { map[a].sell += amt; map[a].fee += fee; }
+    if (r.type === '이자' || r.type === 'mmf') map[a].in += amt;
+    if (r.type === '이용료') map[a].out  += amt;
+    if (r.type === '매수' || r.type === '매수.')  { map[a].buy  += amt; map[a].fee += fee; }
+    if (r.type === '매도' || r.type === '매도.')  { map[a].sell += amt; map[a].fee += fee; }
     if (r.type === '분배금') map[a].div  += amt;
   });
 
@@ -4101,8 +4103,8 @@ function pfRenderHistory() {
     return;
   }
 
-  const typeColor = t => t === '매수' ? 'background:rgba(79,142,247,.15);color:var(--blue)' :
-    t === '매도'   ? 'background:rgba(245,101,101,.15);color:var(--red)' :
+  const typeColor = t => (t === '매수' || t === '매수.') ? 'background:rgba(79,142,247,.15);color:var(--blue)' :
+    (t === '매도' || t === '매도.')   ? 'background:rgba(245,101,101,.15);color:var(--red)' :
     t === '입금'   ? 'background:rgba(62,207,142,.12);color:var(--green)' :
     t === '출금'   ? 'background:rgba(245,101,101,.1);color:var(--red)' :
     t === '분배금' ? 'background:rgba(159,122,234,.15);color:var(--purple)' :
@@ -4115,8 +4117,8 @@ function pfRenderHistory() {
     const tax  = Math.abs(parseFloat(r.tax)    || 0);
     const cost = Math.abs(parseFloat(r.cost)   || 0);
     // 매수/출금 → -, 매도/입금/분배금 → +
-    const isMinus = r.type === '매수' || r.type === '출금';
-    const isPlus  = r.type === '매도' || r.type === '입금' || r.type === '분배금';
+    const isMinus = r.type === '매수' || r.type === '매수.' || r.type === '출금';
+    const isPlus  = r.type === '매도' || r.type === '매도.' || r.type === '입금' || r.type === '분배금';
     const amtSign = isMinus ? '-' : isPlus ? '+' : '';
     const amtColor = isMinus ? 'var(--red)' : isPlus ? 'var(--green)' : 'var(--txt)';
     const feeStr  = fee  ? `-${pfFmtN(fee)}`  : '—';
@@ -4228,16 +4230,16 @@ function pfCalcFifo() {
   const sorted = [...pfTx].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
 
   sorted.forEach(r => {
-    if (r.type !== '매수' && r.type !== '매도' && r.type !== '재투자') return;
+    if (r.type !== '매수' && r.type !== '매수.' && r.type !== '매도' && r.type !== '매도.' && r.type !== '재투자') return;
     const key = (r.name || '') + '|' + (r.account || '');
     const qty = Math.abs(parseFloat(r.qty) || 0);
     const price = Math.abs(parseFloat(r.price) || 0) ||
       (qty > 0 ? Math.abs(parseFloat(r.amount) || 0) / qty : 0);
 
-    if (r.type === '매수' || r.type === '재투자') {
+    if (r.type === '매수' || r.type === '매수.' || r.type === '재투자') {
       if (!queues[key]) queues[key] = [];
       queues[key].push({ qty, price });
-    } else if (r.type === '매도') {
+    } else if (r.type === '매도' || r.type === '매도.') {
       if (!queues[key]) queues[key] = [];
       let remaining = qty;
       while (remaining > 0 && queues[key].length > 0) {
@@ -4365,7 +4367,7 @@ function pfOnTypeChange() {
   const costs    = document.getElementById('fg-costs');
   if (nameGrp)  nameGrp.style.display  = (t === '입금' || t === '출금') ? 'none' : '';
   if (qtyPrice) qtyPrice.style.display = (t === '입금' || t === '출금') ? 'none' : '';
-  if (costs)    costs.style.display    = (t === '매수' || t === '매도') ? '' : 'none';
+  if (costs)    costs.style.display    = (t === '매수' || t === '매수.' || t === '매도' || t === '매도.') ? '' : 'none';
 }
 
 function pfCalcAmt() {
