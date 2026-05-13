@@ -1312,6 +1312,8 @@ function renderHistAcctSummary() {
     if(r.type==='매도'||r.type==='매도.')  accMap[acc] += amt;
     if(r.type==='분배금') accMap[acc] += amt;
     if(r.type==='이용료') accMap[acc] -= amt;
+    if(r.type==='이자'||r.type==='mmf') accMap[acc] += amt;
+    accMap[acc] -= (Math.abs(parseFloat(r.fee)||0)+Math.abs(parseFloat(r.tax)||0));
   });
   const ACC_ORDER = ['미래ISA','미래연금저축','삼성연금저축','우리IRP','미래종합','미래금현물'];
   const ordered = [...ACC_ORDER.filter(a=>accMap[a]!==undefined), ...Object.keys(accMap).filter(a=>!ACC_ORDER.includes(a))];
@@ -1337,7 +1339,7 @@ function renderDashboard() {
     const fee=Math.abs(parseFloat(r.fee)||0);
     const yr=(r.date||'').slice(0,4);
     const acc=r.account||'';
-    if(!accMap[acc]) accMap[acc]={in:0,out:0,buy:0,sell:0,div:0,fee:0};
+    if(!accMap[acc]) accMap[acc]={in:0,out:0,buy:0,sell:0,div:0,fee:0,util:0,int:0};
     if(r.type==='입금'){  totalIn+=amt;  accMap[acc].in+=amt;
       if(yr==='2026'){ in26+=amt;
         if(PEN_ACCS.includes(acc)) pen26+=amt;
@@ -1348,6 +1350,8 @@ function renderDashboard() {
     if(r.type==='매수'||r.type==='매수.'){ totalBuy+=amt;  accMap[acc].buy+=amt; }
     if(r.type==='매도'||r.type==='매도.'){ totalSell+=amt; accMap[acc].sell+=amt; }
     if(r.type==='분배금'){ totalDiv+=amt; accMap[acc].div+=amt; }
+    if(r.type==='이용료'){ accMap[acc].util+=amt; }
+    if(r.type==='이자'||r.type==='mmf'){ accMap[acc].int+=amt; }
     accMap[acc].fee+=fee;
   });
 
@@ -1443,16 +1447,16 @@ function renderDashboard() {
   });
 
   const penEval=(acctEvalMap['미래연금저축']||0)+(acctEvalMap['삼성연금저축']||0)+(acctEvalMap['우리IRP']||0);
-  const penCash=(accMap['미래연금저축']?accMap['미래연금저축'].in-accMap['미래연금저축'].out-accMap['미래연금저축'].buy+accMap['미래연금저축'].sell+accMap['미래연금저축'].div:0)
-               +(accMap['삼성연금저축']?accMap['삼성연금저축'].in-accMap['삼성연금저축'].out-accMap['삼성연금저축'].buy+accMap['삼성연금저축'].sell+accMap['삼성연금저축'].div:0)
-               +(accMap['우리IRP']?accMap['우리IRP'].in-accMap['우리IRP'].out-accMap['우리IRP'].buy+accMap['우리IRP'].sell+accMap['우리IRP'].div:0);
+  const penCash=(accMap['미래연금저축']?accMap['미래연금저축'].in-accMap['미래연금저축'].out-accMap['미래연금저축'].buy+accMap['미래연금저축'].sell+accMap['미래연금저축'].div+(accMap['미래연금저축'].int||0)-(accMap['미래연금저축'].fee||0)-(accMap['미래연금저축'].util||0):0)
+               +(accMap['삼성연금저축']?accMap['삼성연금저축'].in-accMap['삼성연금저축'].out-accMap['삼성연금저축'].buy+accMap['삼성연금저축'].sell+accMap['삼성연금저축'].div+(accMap['삼성연금저축'].int||0)-(accMap['삼성연금저축'].fee||0)-(accMap['삼성연금저축'].util||0):0)
+               +(accMap['우리IRP']?accMap['우리IRP'].in-accMap['우리IRP'].out-accMap['우리IRP'].buy+accMap['우리IRP'].sell+accMap['우리IRP'].div+(accMap['우리IRP'].int||0)-(accMap['우리IRP'].fee||0)-(accMap['우리IRP'].util||0):0);
   const penTotal=penEval+Math.max(0,penCash);
   const stkEval=(acctEvalMap['미래ISA']||0)+(acctEvalMap['미래종합']||0);
-  const stkCash=(accMap['미래ISA']?accMap['미래ISA'].in-accMap['미래ISA'].out-accMap['미래ISA'].buy+accMap['미래ISA'].sell+accMap['미래ISA'].div:0)
-               +(accMap['미래종합']?accMap['미래종합'].in-accMap['미래종합'].out-accMap['미래종합'].buy+accMap['미래종합'].sell+accMap['미래종합'].div:0);
+  const stkCash=(accMap['미래ISA']?accMap['미래ISA'].in-accMap['미래ISA'].out-accMap['미래ISA'].buy+accMap['미래ISA'].sell+accMap['미래ISA'].div+(accMap['미래ISA'].int||0)-(accMap['미래ISA'].fee||0)-(accMap['미래ISA'].util||0):0)
+               +(accMap['미래종합']?accMap['미래종합'].in-accMap['미래종합'].out-accMap['미래종합'].buy+accMap['미래종합'].sell+accMap['미래종합'].div+(accMap['미래종합'].int||0)-(accMap['미래종합'].fee||0)-(accMap['미래종합'].util||0):0);
   const stkTotal=stkEval+Math.max(0,stkCash);
   const goldEval=(acctEvalMap['미래금현물']||0);
-  const goldCash=accMap['미래금현물']?accMap['미래금현물'].in-accMap['미래금현물'].out-accMap['미래금현물'].buy+accMap['미래금현물'].sell+accMap['미래금현물'].div:0;
+  const goldCash=accMap['미래금현물']?accMap['미래금현물'].in-accMap['미래금현물'].out-accMap['미래금현물'].buy+accMap['미래금현물'].sell+accMap['미래금현물'].div+(accMap['미래금현물'].int||0)-(accMap['미래금현물'].fee||0)-(accMap['미래금현물'].util||0):0;
   const goldTotal=goldEval+Math.max(0,goldCash);
   const grandTotal=penTotal+stkTotal+goldTotal||totalAsset||1;
 
@@ -1505,14 +1509,14 @@ function renderDashboard() {
   const accType={'미래ISA':'ISA','미래연금저축':'연금','삼성연금저축':'연금','우리IRP':'IRP','미래종합':'일반','미래금현물':'금'};
   let tIn=0,tEval=0,tCash=0,tTot=0,tDiv=0,tReal=0;
   const accRows=accOrder.map(acc=>{
-    const v=accMap[acc]||{in:0,out:0,buy:0,sell:0,div:0,fee:0};
+    const v=accMap[acc]||{in:0,out:0,buy:0,sell:0,div:0,fee:0,util:0,int:0};
     // 평가금액: holdingsData 기반 값 우선, 없으면 수동 입력값 사용
     const hEvalFromHoldings=(acctEvalMap[acc]||0);
     const hEvalManual=(manualEval[acc]||0);
     const hEval = hEvalFromHoldings>0 ? hEvalFromHoldings : hEvalManual;
     const hasManual = hEvalFromHoldings===0 && hEvalManual>0;
     const netIn = v.in - v.out;  // 내 돈 = 입금 - 출금
-    const cash=v.in-v.out-v.buy+v.sell+v.div;
+    const cash=v.in-v.out-v.buy+v.sell+v.div+v.int-v.fee-v.util;
     const tot=hEval+Math.max(0,cash);
     const profit=tot-netIn; const realized=accRealized[acc]||0;
     tIn+=netIn; tEval+=hEval; tCash+=Math.max(0,cash); tTot+=tot; tDiv+=v.div; tReal+=realized;
