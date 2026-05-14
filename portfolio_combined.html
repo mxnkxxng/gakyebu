@@ -3991,21 +3991,26 @@ function pfRenderAcctBalance() {
   if (!wrap || !cards || !pfTx.length) { if(wrap) wrap.style.display='none'; return; }
 
   const accts = ['미래ISA','미래연금저축','삼성연금저축','우리IRP','미래종합','미래금현물'];
+
+  // ── 거래 집계 ──
   const map = {};
   pfTx.forEach(r => {
     const a = r.account || '';
-    if (!map[a]) map[a] = { cash:0, buy:0, div:0, in:0, out:0 };
-    // ✅ 시트와 동일: amount+fee+tax 부호 그대로 합산
+    if (!map[a]) map[a] = { cash:0, in:0, out:0, div:0 };
     const amt = parseFloat(r.amount) || 0;
     const fee = parseFloat(r.fee)    || 0;
     const tax = parseFloat(r.tax)    || 0;
+    // 예수금: amount+fee+tax 부호 그대로 (시트 공식과 동일)
     map[a].cash += amt + fee + tax;
-    // 표시용 별도 집계
-    if (r.type === '입금')                          map[a].in  += Math.abs(amt);
-    if (r.type === '출금')                          map[a].out += Math.abs(amt);
-    if (r.type === '매수' || r.type === '매수.')    map[a].buy += Math.abs(amt);
-    if (r.type === '분배금')                        map[a].div += Math.abs(amt);
+    if (r.type === '입금')   map[a].in  += Math.abs(amt);
+    if (r.type === '출금')   map[a].out += Math.abs(amt);
+    if (r.type === '분배금') map[a].div += Math.abs(amt);
   });
+
+  // ── 평가금액: savedAcctEval(현재가 기반) + manualEval(연금·금 수동입력) ──
+  let savedEval = {};
+  try { savedEval = JSON.parse(localStorage.getItem('pf_acct_eval')||'{}'); } catch(e){}
+  const manualEval = (typeof getManualEval === 'function') ? getManualEval() : {};
 
   const accColor = a =>
     a.includes('ISA')  ? '#4ade80' :
@@ -4013,33 +4018,48 @@ function pfRenderAcctBalance() {
     a.includes('IRP')  ? 'var(--blue)' :
     a.includes('금')   ? 'var(--yellow)' : 'var(--txt2)';
 
+  const row = (label, value, color='var(--txt)') =>
+    `<div style="display:flex;justify-content:space-between;gap:12px">
+      <span style="color:var(--txt3)">${label}</span>
+      <span style="font-variant-numeric:tabular-nums;color:${color}">${value}</span>
+    </div>`;
+  const divider = `<div style="height:1px;background:var(--bd);margin:3px 0"></div>`;
+
   const activeAccts = accts.filter(a => map[a]);
   if (!activeAccts.length) { wrap.style.display='none'; return; }
 
   cards.innerHTML = activeAccts.map(a => {
     const v = map[a];
-    const 예수금 = v.cash;
     const 투자원금 = v.in - v.out;
-    return `<div style="background:var(--bg2);border:1px solid var(--bd);border-radius:10px;padding:12px 14px">
+    const 예수금   = v.cash;
+    const 평가금액 = savedEval[a] || manualEval[a] || 0;
+    const 총자산   = 평가금액 + 예수금;
+    const 수익     = 총자산 + v.div - 투자원금;
+    const 수익률   = 투자원금 > 0 ? (수익 / 투자원금 * 100) : null;
+    const 수익색   = 수익 >= 0 ? 'var(--green)' : 'var(--red)';
+    const 수익률문자 = 수익률 !== null
+      ? `${수익 >= 0 ? '+' : ''}${수익률.toFixed(2)}%`
+      : '—';
+    const has평가 = 평가금액 > 0;
+
+    return `<div style="background:var(--bg2);border:1px solid var(--bd);border-radius:10px;padding:12px 14px;min-width:160px">
       <div style="font-size:11px;font-weight:700;color:${accColor(a)};margin-bottom:8px">${a}</div>
       <div style="display:flex;flex-direction:column;gap:4px;font-size:12px">
-        <div style="display:flex;justify-content:space-between;gap:12px">
-          <span style="color:var(--txt3)">투자원금</span>
-          <span style="font-weight:600;font-variant-numeric:tabular-nums">${pfFmtW(투자원금)}</span>
+        ${row('투자원금', pfFmtW(투자원금), 'var(--txt2)')}
+        ${has평가 ? row('평가금액', pfFmtW(평가금액), 'var(--txt)') : ''}
+        ${row('예수금', pfFmtW(예수금), 예수금 >= 0 ? 'var(--green)' : 'var(--red)')}
+        ${divider}
+        ${has평가
+          ? row('총자산', pfFmtW(총자산), 'var(--txt)')
+          : ''}
+        <div style="display:flex;justify-content:space-between;gap:12px;align-items:center">
+          <span style="color:var(--txt3)">수익률</span>
+          <span style="font-weight:700;font-size:13px;font-variant-numeric:tabular-nums;color:${수익색}">
+            ${수익률문자}
+            <span style="font-size:10px;font-weight:400;margin-left:2px">(${pfFmtW(수익)})</span>
+          </span>
         </div>
-        <div style="display:flex;justify-content:space-between;gap:12px">
-          <span style="color:var(--txt3)">매수금액</span>
-          <span style="color:var(--blue);font-variant-numeric:tabular-nums">${pfFmtW(v.buy)}</span>
-        </div>
-        <div style="height:1px;background:var(--bd);margin:2px 0"></div>
-        <div style="display:flex;justify-content:space-between;gap:12px">
-          <span style="color:var(--txt3)">예수금</span>
-          <span style="font-weight:700;color:${예수금>=0?'var(--green)':'var(--red)'};font-variant-numeric:tabular-nums">${pfFmtW(예수금)}</span>
-        </div>
-        ${map[a].div ? `<div style="display:flex;justify-content:space-between;gap:12px">
-          <span style="color:var(--txt3)">분배금</span>
-          <span style="color:var(--purple);font-variant-numeric:tabular-nums">+${pfFmtW(map[a].div)}</span>
-        </div>` : ''}
+        ${v.div ? row('분배금 누적', '+' + pfFmtW(v.div), 'var(--purple)') : ''}
       </div>
     </div>`;
   }).join('');
