@@ -1171,7 +1171,7 @@ async function loadPfData() {
     try { localStorage.setItem('pf_tx_cache', JSON.stringify(pfTx)); } catch(e){}
     _resetRendered();
     try { renderDashboard();   _pfRendered.dash=true;    } catch(e){ console.warn('renderDashboard 오류:', e); }
-    try { renderHistory();     _pfRendered.hist=true;    } catch(e){ console.warn('renderHistory 오류:', e); }
+    try { pfRenderHistory();   _pfRendered.hist=true;    } catch(e){ console.warn('pfRenderHistory 오류:', e); }
     try { renderHistAcctSummary(); } catch(e){}
     try { renderTotalAsset(); } catch(e){ console.warn('renderTotalAsset 오류:', e); }
     try { renderHoldingsTab(); _pfRendered.holdings=true; } catch(e){ console.warn('renderHoldingsTab 오류:', e); }
@@ -3931,7 +3931,7 @@ window.addEventListener('DOMContentLoaded', ()=>{
       pfTx = JSON.parse(cached);
       _resetRendered();
       try { renderDashboard();   _pfRendered.dash=true;    } catch(e){ console.warn('renderDashboard:', e); }
-      try { renderHistory();     _pfRendered.hist=true;    } catch(e){ console.warn('renderHistory:', e); }
+      try { pfRenderHistory();   _pfRendered.hist=true;    } catch(e){ console.warn('pfRenderHistory:', e); }
       try { renderHistAcctSummary(); } catch(e){}
       try { renderHoldingsTab(); _pfRendered.holdings=true; } catch(e){}
       try { renderPnlTab();      _pfRendered.pnl=true;    } catch(e){}
