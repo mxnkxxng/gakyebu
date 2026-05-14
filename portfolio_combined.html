@@ -1102,12 +1102,21 @@ async function pfFetch(action, extra) {
     let params = `action=${action}&callback=${cbName}`;
     if (extra) params += '&' + extra;
     script.src = `${url}?${params}`;
+    // 15초 타임아웃
+    const timer = setTimeout(() => {
+      delete window[cbName];
+      if (document.body.contains(script)) document.body.removeChild(script);
+      console.warn('pfFetch timeout:', action);
+      resolve(null);
+    }, 15000);
     window[cbName] = (data) => {
+      clearTimeout(timer);
       delete window[cbName];
       if (document.body.contains(script)) document.body.removeChild(script);
       resolve(data);
     };
     script.onerror = () => {
+      clearTimeout(timer);
       delete window[cbName];
       if (document.body.contains(script)) document.body.removeChild(script);
       resolve(null);
@@ -1134,11 +1143,14 @@ async function loadPfData() {
     });
     return;
   }
+  const _st = document.getElementById('pf-load-status');
+  const _ss = (msg, c) => { if(_st){ _st.textContent=msg; _st.style.color=c||'var(--txt3)'; console.log('[PF]', msg); } };
+  _ss('① GAS 연결 중...');
   pfToast('데이터 로딩 중...');
-  loadManualEvalInputs(); // 수동 평가금액 입력값 복원
-  // GAS asset → manualEval 동기화 (연금 평가금액)
-  try {
-    const assetD = await pfFetch('asset');
+  loadManualEvalInputs();
+
+  // asset 동기화 (실패해도 계속)
+  pfFetch('asset').then(assetD => {
     if(assetD && assetD.asset) {
       const a = assetD.asset;
       const KEY_MAP = {'미래에셋_연금':'미래연금저축','삼성증권_연금':'삼성연금저축','우리_IRP':'우리IRP','미래에셋_ISA':'미래ISA','미래에셋_금':'미래금현물','미래에셋_종합':'미래종합'};
@@ -1148,8 +1160,12 @@ async function loadPfData() {
       Object.entries(KEY_MAP).forEach(([gasKey, accName])=>{ if(a[gasKey]>0){ stored[accName]=a[gasKey]; updated=true; } });
       if(updated) { try { localStorage.setItem(MANUAL_EVAL_KEY, JSON.stringify(stored)); } catch(e){} loadManualEvalInputs(); }
     }
-  } catch(e){}
+  }).catch(()=>{});
+
+  // 거래내역 fetch (핵심)
+  _ss('② pf_entries 요청 중...');
   const d = await pfFetch('pf_entries');
+  _ss('③ 응답: ' + (d===null ? 'null(타임아웃/오류)' : d.data ? d.data.length+'건' : JSON.stringify(d).slice(0,60)));
   if (d && d.data) {
     pfTx = d.data;
     try { localStorage.setItem('pf_tx_cache', JSON.stringify(pfTx)); } catch(e){}
@@ -1167,12 +1183,14 @@ async function loadPfData() {
     try { renderPlan(); } catch(e){}
     try { if(typeof loadAssetFromSheet === 'function') loadAssetFromSheet(); } catch(e){}
     pfToast('거래내역 로드 완료!');
+    _ss(pfTx.length+'건 로드 완료 ✓','var(--green)');
     const statusEl = document.getElementById('pf-load-status');
     if (statusEl) { statusEl.textContent = pfTx.length + '건 로드 완료 ✓'; statusEl.style.color = 'var(--green)'; }
     const syncEl = document.getElementById('manual-eval-sync-status');
     if(syncEl) { const ev = getManualEval(); const filled = ['미래연금저축','삼성연금저축','우리IRP'].filter(a=>ev[a]>0); syncEl.textContent = filled.length ? '✓ 연금 평가금액 로드: '+filled.join(', ') : '⚠ 연금 평가금액 미설정'; syncEl.style.color = filled.length ? 'var(--green)' : 'var(--yellow)'; }
   } else {
     pfToast('로드 실패 — Script URL 확인하세요','err');
+    _ss('❌ 응답 없음 — GAS 권한/URL 확인','var(--red)');
   }
 }
 
