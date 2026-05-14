@@ -4326,6 +4326,18 @@ async function pfDeleteTx(rowIndex, desc) {
   pfToast('삭제됐어요!');
   pfRenderHistory();
   if (typeof renderDashboard === 'function') { _pfRendered.dash = false; renderDashboard(); _pfRendered.dash = true; }
+  // 보유종목 시트 자동 업데이트
+  setTimeout(async () => {
+    try {
+      const holdings = Object.values(pfCalcFifo2()).map(h => ({
+        name: h.name, account: h.account,
+        qty: Math.round(h.qty * 10000) / 10000,
+        avgPrice: Math.round(h.avgPrice),
+        costBasis: Math.round(h.costBasis),
+      }));
+      await pfPost({ action: 'pf_syncHoldings', holdings });
+    } catch(e) { console.warn('보유종목 동기화 실패:', e); }
+  }, 500);
 }
 
 // ── 배당/분배금 렌더 ──
@@ -4761,7 +4773,21 @@ async function pfSubmit() {
   if (ok) {
     pfToast('저장 완료! ✓', 'ok');
     pfClearForm();
-    setTimeout(loadPfData, 2500);
+    // 거래내역 다시 로드 후 보유종목 자동 동기화
+    setTimeout(async () => {
+      await loadPfData();
+      // 보유종목 시트 자동 업데이트
+      try {
+        const holdings = Object.values(pfCalcFifo2()).map(h => ({
+          name: h.name, account: h.account,
+          qty: Math.round(h.qty * 10000) / 10000,
+          avgPrice: Math.round(h.avgPrice),
+          costBasis: Math.round(h.costBasis),
+        }));
+        await pfPost({ action: 'pf_syncHoldings', holdings });
+        pfToast('보유종목 시트 업데이트 완료 ✓', 'ok');
+      } catch(e) { console.warn('보유종목 동기화 실패:', e); }
+    }, 2500);
   } else {
     pfToast('전송됨 — 시트에서 확인하세요', '');
     setTimeout(loadPfData, 2500);
