@@ -1153,18 +1153,19 @@ async function loadPfData() {
   if (d && d.data) {
     pfTx = d.data;
     try { localStorage.setItem('pf_tx_cache', JSON.stringify(pfTx)); } catch(e){}
-    _resetRendered(); // 새 데이터 → 플래그 초기화 후 전체 1회 렌더
-    renderDashboard();   _pfRendered.dash=true;
-    renderHistory();     _pfRendered.hist=true;
-    renderHistAcctSummary();
-    renderTotalAsset();  // 전체자산 카드 업데이트
-    renderHoldingsTab(); _pfRendered.holdings=true;
-    renderPnlTab();      _pfRendered.pnl=true;
-    renderDividendTab(); _pfRendered.div=true;
-    pfRenderHoldings2();
-    buildAcctSelects();
-    renderPlan();
-    if(typeof loadAssetFromSheet === 'function') loadAssetFromSheet();
+    _resetRendered();
+    try { renderDashboard();   _pfRendered.dash=true;    } catch(e){ console.warn('renderDashboard 오류:', e); }
+    try { renderHistory();     _pfRendered.hist=true;    } catch(e){ console.warn('renderHistory 오류:', e); }
+    try { renderHistAcctSummary(); } catch(e){}
+    try { renderTotalAsset(); } catch(e){ console.warn('renderTotalAsset 오류:', e); }
+    try { renderHoldingsTab(); _pfRendered.holdings=true; } catch(e){ console.warn('renderHoldingsTab 오류:', e); }
+    try { renderPnlTab();      _pfRendered.pnl=true;    } catch(e){ console.warn('renderPnlTab 오류:', e); }
+    try { renderDividendTab(); _pfRendered.div=true;    } catch(e){ console.warn('renderDividendTab 오류:', e); }
+    try { pfRenderHoldings2(); } catch(e){ console.warn('pfRenderHoldings2 오류:', e); }
+    try { renderTotalAsset(); } catch(e){}
+    try { buildAcctSelects(); } catch(e){}
+    try { renderPlan(); } catch(e){}
+    try { if(typeof loadAssetFromSheet === 'function') loadAssetFromSheet(); } catch(e){}
     pfToast('거래내역 로드 완료!');
     const syncEl = document.getElementById('manual-eval-sync-status');
     if(syncEl) { const ev = getManualEval(); const filled = ['미래연금저축','삼성연금저축','우리IRP'].filter(a=>ev[a]>0); syncEl.textContent = filled.length ? '✓ 연금 평가금액 로드: '+filled.join(', ') : '⚠ 연금 평가금액 미설정'; syncEl.style.color = filled.length ? 'var(--green)' : 'var(--yellow)'; }
@@ -1593,7 +1594,7 @@ function renderDashboard() {
   }).join('');
   const totalPnlRow=tTot-tIn;
   const totalRateFmt=tIn>0?((tTot-tIn)/tIn*100):0;
-  document.getElementById('acc-summary-v2').innerHTML=`
+  const _accSumEl = document.getElementById('acc-summary-v2'); if(_accSumEl) _accSumEl.innerHTML=`
     <table class="tbl" style="width:100%">
       <thead><tr><th>계좌</th><th class="num">납입원금</th><th class="num">평가금액</th><th class="num">예수금</th><th class="num">총자산</th><th class="num">누적수익</th><th class="num">수익률</th><th class="num">분배금</th><th class="num">실현손익</th></tr></thead>
       <tbody>${accRows}
@@ -3189,7 +3190,7 @@ function renderHistory() {
   });
   Object.entries(groupPnlMap).forEach(([gk, g]) => { groupCounts[gk] = g.count; });
 
-  document.getElementById('history-tx').innerHTML = rows.length
+  (document.getElementById('history-tx')||{}).innerHTML = rows.length
     ? rows.map(r=>{
         const isSell = r.type==='매도'||r.type==='매도.';
         const pnl = isSell && pnlMap[r.rowIndex] !== undefined ? pnlMap[r.rowIndex] : null;
@@ -3676,7 +3677,7 @@ function resetForm() {
 function renderTodayTx() {
   const today = new Date().toISOString().split('T')[0];
   const rows  = pfTx.filter(r=>r.date===today);
-  document.getElementById('today-tx').innerHTML = rows.length
+  (document.getElementById('today-tx')||{}).innerHTML = rows.length
     ? rows.map(r=>`
         <tr>
           <td><span class="${accCol(r.account)}">${r.account}</span></td>
@@ -3703,7 +3704,7 @@ function savePfConfig() {
     syncUrlInputs();  // 거래내역 탭 URL 입력창도 동기화
   }
   if (pw) { try{ localStorage.setItem(PF_PW_KEY, btoa(encodeURIComponent(pw))); }catch(e){} }
-  document.getElementById('cfg-msg').textContent = '저장 완료! 데이터를 불러옵니다...';
+  (document.getElementById('cfg-msg')||{}).textContent = '저장 완료! 데이터를 불러옵니다...';
   setTimeout(()=>loadPfData(), 300);
 }
 
@@ -3782,17 +3783,17 @@ function runSim() {
   const monthly = parseInt(document.getElementById('sim-monthly').value);
   const rate    = parseFloat(document.getElementById('sim-rate').value);
   const divRate = parseFloat(document.getElementById('sim-div').value);
-  document.getElementById('sim-m-out').textContent = monthly+'만원';
-  document.getElementById('sim-r-out').textContent = rate.toFixed(1)+'%';
-  document.getElementById('sim-d-out').textContent = divRate.toFixed(1)+'%';
+  (document.getElementById('sim-m-out')||{}).textContent = monthly+'만원';
+  (document.getElementById('sim-r-out')||{}).textContent = rate.toFixed(1)+'%';
+  (document.getElementById('sim-d-out')||{}).textContent = divRate.toFixed(1)+'%';
   const START=2090, mr=rate/100/12;
   const project = y => { let a=START; for(let m=0;m<y*12;m++) a=a*(1+mr)+monthly; return {asset:Math.round(a), div:Math.round(a*divRate/100/12)}; };
-  document.getElementById('sim-results').innerHTML = [5,10,15,20].map(y=>{
+  (document.getElementById('sim-results')||{}).innerHTML = [5,10,15,20].map(y=>{
     const d=project(y);
     return `<div class="kpi"><div class="kpi-label">${y}년 후</div><div class="kpi-val pos">${d.asset.toLocaleString()}만</div><div class="kpi-sub" style="color:var(--purple)">월 배당 ~${d.div}만원</div></div>`;
   }).join('');
   let t100=null; for(let y=1;y<=30;y++){ if(project(y).div>=100){t100=y;break;} }
-  document.getElementById('sim-roadmap').innerHTML = [
+  (document.getElementById('sim-roadmap')||{}).innerHTML = [
     {y:5,  color:'#3182f6', desc:`자산 ${project(5).asset.toLocaleString()}만원 · 월 배당 ${project(5).div}만원 · 통신비 커버`},
     {y:10, color:'#0b9e6a', desc:`자산 ${project(10).asset.toLocaleString()}만원 · 월 배당 ${project(10).div}만원 · 자가 증식 시작`},
     {y:t100||20, color:'#6c4ab0', desc:`자산 ${project(t100||20).asset.toLocaleString()}만원 · 🎯 월 배당 100만원 달성`},
@@ -3897,14 +3898,33 @@ window.addEventListener('DOMContentLoaded', ()=>{
   // 모달 바깥 클릭시 닫기
   const _modal = document.getElementById('pf-edit-modal');
   if(_modal) _modal.addEventListener('click', function(e){ if(e.target===this) closePfEditModal(); });
-  document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
-  const savedUrl = getPfUrl();
+  const fdate = document.getElementById('f-date');
+  if(fdate) fdate.value = new Date().toISOString().split('T')[0];
   syncUrlInputs();
   toggleFields();
   renderPlan();
-  loadManualEvalInputs(); // 저장된 수동 평가금액 복원
-  // URL 있으면 자동 로드 (캐시 아닌 실데이터)
-  try{ if(getPfUrl()) loadPfData(); }catch(e){}
+  loadManualEvalInputs();
+
+  try {
+    const cached = localStorage.getItem('pf_tx_cache');
+    if (cached) {
+      pfTx = JSON.parse(cached);
+      _resetRendered();
+      try { renderDashboard();   _pfRendered.dash=true;    } catch(e){ console.warn('renderDashboard:', e); }
+      try { renderHistory();     _pfRendered.hist=true;    } catch(e){ console.warn('renderHistory:', e); }
+      try { renderHistAcctSummary(); } catch(e){}
+      try { renderHoldingsTab(); _pfRendered.holdings=true; } catch(e){}
+      try { renderPnlTab();      _pfRendered.pnl=true;    } catch(e){}
+      try { renderDividendTab(); _pfRendered.div=true;    } catch(e){}
+      try { pfRenderHoldings2(); } catch(e){}
+      try { renderTotalAsset(); } catch(e){}
+      try { buildAcctSelects(); } catch(e){}
+      try { renderPlan(); } catch(e){}
+    }
+  } catch(e) { console.warn('캐시 복원 실패:', e); }
+
+  // URL 있으면 백그라운드에서 최신 데이터로 갱신
+  try { if(getPfUrl()) loadPfData(); } catch(e) {}
 });
 
 
@@ -6339,7 +6359,7 @@ function saveGbConfig() {
   try { if(sid) localStorage.setItem('sheetId', sid); if(surl) localStorage.setItem('scriptUrl', surl); } catch(e){}
   // saveSheetConfig 재귀 호출 제거 (통합됨)
   if(typeof syncUrlInputs==="function") syncUrlInputs();
-  document.getElementById('gb-load-status').textContent = '저장됐어요! 시트에서 불러오기를 눌러주세요.';
+  (document.getElementById('gb-load-status')||{}).textContent = '저장됐어요! 시트에서 불러오기를 눌러주세요.';
 }
 
 // saveSheetConfig 재정의 — 가계부+주식 동시 저장/로드
