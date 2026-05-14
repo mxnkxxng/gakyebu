@@ -1305,10 +1305,13 @@ function renderHistAcctSummary() {
   pfTx.forEach(r=>{
     const acc = r.account||'기타';
     if(!accMap[acc]) accMap[acc] = 0;
-    // 부호 그대로 합산: CSV에서 매수=음수, 매도/입금=양수로 이미 저장됨
-    accMap[acc] += (parseFloat(r.amount)||0);
-    accMap[acc] += (parseFloat(r.fee)||0);
-    accMap[acc] += (parseFloat(r.tax)||0);
+    const amt = Math.abs(parseFloat(r.amount)||0);
+    if(r.type==='입금')   accMap[acc] += amt;
+    if(r.type==='출금')   accMap[acc] -= amt;
+    if(r.type==='매수'||r.type==='매수.')  accMap[acc] -= amt;
+    if(r.type==='매도'||r.type==='매도.')  accMap[acc] += amt;
+    if(r.type==='분배금') accMap[acc] += amt;
+    if(r.type==='이용료') accMap[acc] -= amt;
   });
   const ACC_ORDER = ['미래ISA','미래연금저축','삼성연금저축','우리IRP','미래종합','미래금현물'];
   const ordered = [...ACC_ORDER.filter(a=>accMap[a]!==undefined), ...Object.keys(accMap).filter(a=>!ACC_ORDER.includes(a))];
@@ -1334,7 +1337,7 @@ function renderDashboard() {
     const fee=Math.abs(parseFloat(r.fee)||0);
     const yr=(r.date||'').slice(0,4);
     const acc=r.account||'';
-    if(!accMap[acc]) accMap[acc]={in:0,out:0,buy:0,sell:0,div:0,fee:0,cashAmt:0};
+    if(!accMap[acc]) accMap[acc]={in:0,out:0,buy:0,sell:0,div:0,fee:0};
     if(r.type==='입금'){  totalIn+=amt;  accMap[acc].in+=amt;
       if(yr==='2026'){ in26+=amt;
         if(PEN_ACCS.includes(acc)) pen26+=amt;
@@ -1346,8 +1349,6 @@ function renderDashboard() {
     if(r.type==='매도'||r.type==='매도.'){ totalSell+=amt; accMap[acc].sell+=amt; }
     if(r.type==='분배금'){ totalDiv+=amt; accMap[acc].div+=amt; }
     accMap[acc].fee+=fee;
-    // 예수금: 부호 그대로 합산 (매수=음수, 이용료/수수료=음수 이미 반영)
-    accMap[acc].cashAmt += (parseFloat(r.amount)||0) + (parseFloat(r.fee)||0) + (parseFloat(r.tax)||0);
   });
 
   const pnlMap=calcRealizedPnL(pfTx);
@@ -1442,16 +1443,16 @@ function renderDashboard() {
   });
 
   const penEval=(acctEvalMap['미래연금저축']||0)+(acctEvalMap['삼성연금저축']||0)+(acctEvalMap['우리IRP']||0);
-  const penCash=(accMap['미래연금저축']?accMap['미래연금저축'].cashAmt:0)
-               +(accMap['삼성연금저축']?accMap['삼성연금저축'].cashAmt:0)
-               +(accMap['우리IRP']?accMap['우리IRP'].cashAmt:0);
+  const penCash=(accMap['미래연금저축']?accMap['미래연금저축'].in-accMap['미래연금저축'].out-accMap['미래연금저축'].buy+accMap['미래연금저축'].sell+accMap['미래연금저축'].div:0)
+               +(accMap['삼성연금저축']?accMap['삼성연금저축'].in-accMap['삼성연금저축'].out-accMap['삼성연금저축'].buy+accMap['삼성연금저축'].sell+accMap['삼성연금저축'].div:0)
+               +(accMap['우리IRP']?accMap['우리IRP'].in-accMap['우리IRP'].out-accMap['우리IRP'].buy+accMap['우리IRP'].sell+accMap['우리IRP'].div:0);
   const penTotal=penEval+Math.max(0,penCash);
   const stkEval=(acctEvalMap['미래ISA']||0)+(acctEvalMap['미래종합']||0);
-  const stkCash=(accMap['미래ISA']?accMap['미래ISA'].cashAmt:0)
-               +(accMap['미래종합']?accMap['미래종합'].cashAmt:0);
+  const stkCash=(accMap['미래ISA']?accMap['미래ISA'].in-accMap['미래ISA'].out-accMap['미래ISA'].buy+accMap['미래ISA'].sell+accMap['미래ISA'].div:0)
+               +(accMap['미래종합']?accMap['미래종합'].in-accMap['미래종합'].out-accMap['미래종합'].buy+accMap['미래종합'].sell+accMap['미래종합'].div:0);
   const stkTotal=stkEval+Math.max(0,stkCash);
   const goldEval=(acctEvalMap['미래금현물']||0);
-  const goldCash=accMap['미래금현물']?accMap['미래금현물'].cashAmt:0;
+  const goldCash=accMap['미래금현물']?accMap['미래금현물'].in-accMap['미래금현물'].out-accMap['미래금현물'].buy+accMap['미래금현물'].sell+accMap['미래금현물'].div:0;
   const goldTotal=goldEval+Math.max(0,goldCash);
   const grandTotal=penTotal+stkTotal+goldTotal||totalAsset||1;
 
@@ -1504,14 +1505,14 @@ function renderDashboard() {
   const accType={'미래ISA':'ISA','미래연금저축':'연금','삼성연금저축':'연금','우리IRP':'IRP','미래종합':'일반','미래금현물':'금'};
   let tIn=0,tEval=0,tCash=0,tTot=0,tDiv=0,tReal=0;
   const accRows=accOrder.map(acc=>{
-    const v=accMap[acc]||{in:0,out:0,buy:0,sell:0,div:0,fee:0,cashAmt:0};
+    const v=accMap[acc]||{in:0,out:0,buy:0,sell:0,div:0,fee:0};
     // 평가금액: holdingsData 기반 값 우선, 없으면 수동 입력값 사용
     const hEvalFromHoldings=(acctEvalMap[acc]||0);
     const hEvalManual=(manualEval[acc]||0);
     const hEval = hEvalFromHoldings>0 ? hEvalFromHoldings : hEvalManual;
     const hasManual = hEvalFromHoldings===0 && hEvalManual>0;
     const netIn = v.in - v.out;  // 내 돈 = 입금 - 출금
-    const cash=v.cashAmt||0;
+    const cash=v.in-v.out-v.buy+v.sell+v.div;
     const tot=hEval+Math.max(0,cash);
     const profit=tot-netIn; const realized=accRealized[acc]||0;
     tIn+=netIn; tEval+=hEval; tCash+=Math.max(0,cash); tTot+=tot; tDiv+=v.div; tReal+=realized;
@@ -3562,8 +3563,7 @@ function toggleFields() {
   const isTrade  = ['매수','매도','매수.','매도.'].includes(t);
   const needsAmt = ['입금','출금','이용료','mmf'].includes(t);
   const needsName= ['매수','매도','분배금','재투자'].includes(t);
-  const priceFields = document.getElementById('price-fields') || document.getElementById('fg-qty-price');
-  if(priceFields) priceFields.style.display = isTrade ? 'grid' : 'none';
+  document.getElementById('price-fields').style.display = isTrade ? 'grid' : 'none';
   document.getElementById('fg-name').style.display      = needsName ? 'block' : 'none';
   // 금액 단독 입력란 (이용료/입금/출금/mmf)
   let amtOnly = document.getElementById('amount-only-row');
@@ -3575,8 +3575,7 @@ function toggleFields() {
       amtOnly.style.gridTemplateColumns = '1fr 3fr';
       amtOnly.innerHTML = '<div class="form-group"><label>금액 (원)</label><input type="number" id="f-amount-only" placeholder="0"></div>'
         + '<div class="form-group"><label>메모</label><input type="text" id="f-memo-only" placeholder="선택사항"></div>';
-      const _pf = document.getElementById('price-fields') || document.getElementById('fg-qty-price');
-      if(_pf) _pf.insertAdjacentElement('afterend', amtOnly);
+      document.getElementById('price-fields').insertAdjacentElement('afterend', amtOnly);
     }
     amtOnly.style.display = 'grid';
   } else {
@@ -3955,8 +3954,8 @@ function pfRenderDash() {
     accMap[a].cnt++;
     if (r.type === '입금')   { accMap[a].in   += amt; totalIn  += amt; }
     if (r.type === '출금')   { accMap[a].in   -= amt; }
-    if (r.type === '매수' || r.type === '매수.')  { accMap[a].buy  += amt; totalBuy += amt; }
-    if (r.type === '매도' || r.type === '매도.')  { accMap[a].sell += amt; }
+    if (r.type === '매수')   { accMap[a].buy  += amt; totalBuy += amt; }
+    if (r.type === '매도')   { accMap[a].sell += amt; }
     if (r.type === '분배금') { accMap[a].div  += amt; totalDiv += amt; }
   });
 
@@ -3995,18 +3994,17 @@ function pfRenderAcctBalance() {
   const map = {};
   pfTx.forEach(r => {
     const a = r.account || '';
-    if (!map[a]) map[a] = { in:0, out:0, buy:0, sell:0, div:0, fee:0 };
-    const amt = Math.abs(parseFloat(r.amount) || 0);
-    const fee = Math.abs(parseFloat(r.fee) || 0)
-              + Math.abs(parseFloat(r.tax)  || 0)
-              + Math.abs(parseFloat(r.cost) || 0);
-    if (r.type === '입금')   map[a].in   += amt;
-    if (r.type === '출금')   map[a].out  += amt;
-    if (r.type === '이자' || r.type === 'mmf') map[a].in += amt;
-    if (r.type === '이용료') map[a].out  += amt;
-    if (r.type === '매수' || r.type === '매수.')  { map[a].buy  += amt; map[a].fee += fee; }
-    if (r.type === '매도' || r.type === '매도.')  { map[a].sell += amt; map[a].fee += fee; }
-    if (r.type === '분배금') map[a].div  += amt;
+    if (!map[a]) map[a] = { cash:0, buy:0, div:0, in:0, out:0 };
+    // ✅ 시트와 동일: amount+fee+tax 부호 그대로 합산
+    const amt = parseFloat(r.amount) || 0;
+    const fee = parseFloat(r.fee)    || 0;
+    const tax = parseFloat(r.tax)    || 0;
+    map[a].cash += amt + fee + tax;
+    // 표시용 별도 집계
+    if (r.type === '입금')                          map[a].in  += Math.abs(amt);
+    if (r.type === '출금')                          map[a].out += Math.abs(amt);
+    if (r.type === '매수' || r.type === '매수.')    map[a].buy += Math.abs(amt);
+    if (r.type === '분배금')                        map[a].div += Math.abs(amt);
   });
 
   const accColor = a =>
@@ -4020,8 +4018,8 @@ function pfRenderAcctBalance() {
 
   cards.innerHTML = activeAccts.map(a => {
     const v = map[a];
+    const 예수금 = v.cash;
     const 투자원금 = v.in - v.out;
-    const 예수금   = 투자원금 - v.buy + v.sell + v.div - v.fee;
     return `<div style="background:var(--bg2);border:1px solid var(--bd);border-radius:10px;padding:12px 14px">
       <div style="font-size:11px;font-weight:700;color:${accColor(a)};margin-bottom:8px">${a}</div>
       <div style="display:flex;flex-direction:column;gap:4px;font-size:12px">
@@ -4038,9 +4036,9 @@ function pfRenderAcctBalance() {
           <span style="color:var(--txt3)">예수금</span>
           <span style="font-weight:700;color:${예수금>=0?'var(--green)':'var(--red)'};font-variant-numeric:tabular-nums">${pfFmtW(예수금)}</span>
         </div>
-        ${v.div ? `<div style="display:flex;justify-content:space-between;gap:12px">
+        ${map[a].div ? `<div style="display:flex;justify-content:space-between;gap:12px">
           <span style="color:var(--txt3)">분배금</span>
-          <span style="color:var(--purple);font-variant-numeric:tabular-nums">+${pfFmtW(v.div)}</span>
+          <span style="color:var(--purple);font-variant-numeric:tabular-nums">+${pfFmtW(map[a].div)}</span>
         </div>` : ''}
       </div>
     </div>`;
@@ -4104,8 +4102,8 @@ function pfRenderHistory() {
     return;
   }
 
-  const typeColor = t => (t === '매수' || t === '매수.') ? 'background:rgba(79,142,247,.15);color:var(--blue)' :
-    (t === '매도' || t === '매도.')   ? 'background:rgba(245,101,101,.15);color:var(--red)' :
+  const typeColor = t => t === '매수' ? 'background:rgba(79,142,247,.15);color:var(--blue)' :
+    t === '매도'   ? 'background:rgba(245,101,101,.15);color:var(--red)' :
     t === '입금'   ? 'background:rgba(62,207,142,.12);color:var(--green)' :
     t === '출금'   ? 'background:rgba(245,101,101,.1);color:var(--red)' :
     t === '분배금' ? 'background:rgba(159,122,234,.15);color:var(--purple)' :
@@ -4118,8 +4116,8 @@ function pfRenderHistory() {
     const tax  = Math.abs(parseFloat(r.tax)    || 0);
     const cost = Math.abs(parseFloat(r.cost)   || 0);
     // 매수/출금 → -, 매도/입금/분배금 → +
-    const isMinus = r.type === '매수' || r.type === '매수.' || r.type === '출금';
-    const isPlus  = r.type === '매도' || r.type === '매도.' || r.type === '입금' || r.type === '분배금';
+    const isMinus = r.type === '매수' || r.type === '출금';
+    const isPlus  = r.type === '매도' || r.type === '입금' || r.type === '분배금';
     const amtSign = isMinus ? '-' : isPlus ? '+' : '';
     const amtColor = isMinus ? 'var(--red)' : isPlus ? 'var(--green)' : 'var(--txt)';
     const feeStr  = fee  ? `-${pfFmtN(fee)}`  : '—';
@@ -4231,16 +4229,16 @@ function pfCalcFifo() {
   const sorted = [...pfTx].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
 
   sorted.forEach(r => {
-    if (r.type !== '매수' && r.type !== '매수.' && r.type !== '매도' && r.type !== '매도.' && r.type !== '재투자') return;
+    if (r.type !== '매수' && r.type !== '매도' && r.type !== '재투자') return;
     const key = (r.name || '') + '|' + (r.account || '');
     const qty = Math.abs(parseFloat(r.qty) || 0);
     const price = Math.abs(parseFloat(r.price) || 0) ||
       (qty > 0 ? Math.abs(parseFloat(r.amount) || 0) / qty : 0);
 
-    if (r.type === '매수' || r.type === '매수.' || r.type === '재투자') {
+    if (r.type === '매수' || r.type === '재투자') {
       if (!queues[key]) queues[key] = [];
       queues[key].push({ qty, price });
-    } else if (r.type === '매도' || r.type === '매도.') {
+    } else if (r.type === '매도') {
       if (!queues[key]) queues[key] = [];
       let remaining = qty;
       while (remaining > 0 && queues[key].length > 0) {
@@ -4368,7 +4366,7 @@ function pfOnTypeChange() {
   const costs    = document.getElementById('fg-costs');
   if (nameGrp)  nameGrp.style.display  = (t === '입금' || t === '출금') ? 'none' : '';
   if (qtyPrice) qtyPrice.style.display = (t === '입금' || t === '출금') ? 'none' : '';
-  if (costs)    costs.style.display    = (t === '매수' || t === '매수.' || t === '매도' || t === '매도.') ? '' : 'none';
+  if (costs)    costs.style.display    = (t === '매수' || t === '매도') ? '' : 'none';
 }
 
 function pfCalcAmt() {
