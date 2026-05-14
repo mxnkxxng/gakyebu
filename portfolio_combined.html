@@ -440,11 +440,7 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
     <button onclick="loadPfData()" style="padding:7px 14px;background:var(--bg3);border:1px solid var(--bd);border-radius:8px;color:var(--txt2);font-size:12px;cursor:pointer">↺ 새로고침</button>
   </div>
 
-  <!-- 계좌별 잔고 -->
-  <div id="acct-balance-wrap" style="margin-bottom:16px;display:none">
-    <div style="font-size:11px;font-weight:600;color:var(--txt3);letter-spacing:.05em;text-transform:uppercase;margin-bottom:8px">계좌별 잔고</div>
-    <div id="acct-balance-cards"></div>
-  </div>
+  <!-- 계좌별 잔고 카드는 전체자산(p12) 탭에 표시 -->
 
   <!-- 통계 -->
   <div id="hist-stats" style="display:flex;gap:20px;padding:4px 0 16px;flex-wrap:wrap"></div>
@@ -894,7 +890,12 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
       </div>
     </div>
   </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+  <!-- 계좌별 잔고 카드 -->
+<div id="acct-balance-wrap" style="margin-bottom:20px;display:none">
+  <div id="acct-balance-cards"></div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
     <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:14px;padding:20px">
       <div style="font-size:12px;font-weight:700;color:var(--txt2);margin-bottom:14px;display:flex;align-items:center;gap:6px">
         📈 주식·연금 계좌별
@@ -1156,6 +1157,7 @@ async function loadPfData() {
     renderDashboard();   _pfRendered.dash=true;
     renderHistory();     _pfRendered.hist=true;
     renderHistAcctSummary();
+    renderTotalAsset();  // 전체자산 카드 업데이트
     renderHoldingsTab(); _pfRendered.holdings=true;
     renderPnlTab();      _pfRendered.pnl=true;
     renderDividendTab(); _pfRendered.div=true;
@@ -2301,6 +2303,8 @@ async function fullSync() {
 
 // ── 전체 자산 통합 뷰 (탭12) ──
 function renderTotalAsset() {
+  // 계좌별 잔고 카드 렌더 (p12에 위치)
+  if (typeof pfRenderAcctBalance === 'function') pfRenderAcctBalance();
   const fmtW2 = n => {
     const v = Math.round(Math.abs(parseFloat(String(n).replace(/[^0-9.\-]/g,''))||0));
     if(!v) return '—';
@@ -4171,7 +4175,6 @@ function pfRenderAcctBalance() {
 
 // ── 거래내역 렌더 ──
 function pfRenderHistory() {
-  pfRenderAcctBalance();
   const acc  = (document.getElementById('fil-acc')  || {}).value || '';
   const type = (document.getElementById('fil-type') || {}).value || '';
   const name = ((document.getElementById('fil-name') || {}).value || '').toLowerCase();
@@ -6353,7 +6356,9 @@ function saveSheetConfig(){
   if(typeof showToast==='function') showToast('저장 완료! 데이터를 불러옵니다...');
   setTimeout(function(){
     if(typeof loadFromSheet==='function') loadFromSheet();
-    if(typeof loadPfData==='function') loadPfData();
+    if(typeof loadPfData==='function') loadPfData().then(function(){
+      if(typeof showTab==='function') showTab(12); // 전체자산 탭으로 이동
+    });
   }, 300);
 }
 </script>
