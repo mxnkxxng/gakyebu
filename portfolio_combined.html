@@ -418,8 +418,8 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
   <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
     <input id="pf-url-input" type="url" placeholder="Apps Script 웹앱 URL"
       style="flex:1;min-width:260px;padding:9px 12px;background:var(--bg2);border:1px solid var(--bd);border-radius:8px;color:var(--txt);font-size:12px;outline:none"
-      oninput="try{localStorage.setItem('scriptUrl',this.value.trim());}catch(e){}">
-    <button onclick="pfLoadAndRender()"
+      oninput="try{localStorage.setItem('scriptUrl',this.value.trim());syncUrlInputs();}catch(e){}">
+    <button onclick="loadPfData()"
       style="padding:9px 18px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">
       ↺ 거래내역 불러오기
     </button>
@@ -1167,6 +1167,8 @@ async function loadPfData() {
     try { renderPlan(); } catch(e){}
     try { if(typeof loadAssetFromSheet === 'function') loadAssetFromSheet(); } catch(e){}
     pfToast('거래내역 로드 완료!');
+    const statusEl = document.getElementById('pf-load-status');
+    if (statusEl) { statusEl.textContent = pfTx.length + '건 로드 완료 ✓'; statusEl.style.color = 'var(--green)'; }
     const syncEl = document.getElementById('manual-eval-sync-status');
     if(syncEl) { const ev = getManualEval(); const filled = ['미래연금저축','삼성연금저축','우리IRP'].filter(a=>ev[a]>0); syncEl.textContent = filled.length ? '✓ 연금 평가금액 로드: '+filled.join(', ') : '⚠ 연금 평가금액 미설정'; syncEl.style.color = filled.length ? 'var(--green)' : 'var(--yellow)'; }
   } else {
