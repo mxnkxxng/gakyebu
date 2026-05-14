@@ -3614,12 +3614,16 @@ function deleteJournal(idx){
 
 // ── 거래 입력 ──
 function toggleFields() {
-  const t = document.getElementById('f-type').value;
-  const isTrade  = ['매수','매도','매수.','매도.'].includes(t);
-  const needsAmt = ['입금','출금','이용료','mmf'].includes(t);
-  const needsName= ['매수','매도','분배금','재투자'].includes(t);
-  document.getElementById('price-fields').style.display = isTrade ? 'grid' : 'none';
-  document.getElementById('fg-name').style.display      = needsName ? 'block' : 'none';
+  const t = document.getElementById('f-type');
+  if (!t) return;  // 폼이 아직 없으면 스킵
+  const val = t.value;
+  const isTrade  = ['매수','매도','매수.','매도.'].includes(val);
+  const needsAmt = ['입금','출금','이용료','mmf'].includes(val);
+  const needsName= ['매수','매도','분배금','재투자'].includes(val);
+  const priceFields = document.getElementById('price-fields');
+  const fgName      = document.getElementById('fg-name');
+  if (priceFields) priceFields.style.display = isTrade ? 'grid' : 'none';
+  if (fgName)      fgName.style.display      = needsName ? 'block' : 'none';
   // 금액 단독 입력란 (이용료/입금/출금/mmf)
   let amtOnly = document.getElementById('amount-only-row');
   if(needsAmt) {
@@ -3630,7 +3634,7 @@ function toggleFields() {
       amtOnly.style.gridTemplateColumns = '1fr 3fr';
       amtOnly.innerHTML = '<div class="form-group"><label>금액 (원)</label><input type="number" id="f-amount-only" placeholder="0"></div>'
         + '<div class="form-group"><label>메모</label><input type="text" id="f-memo-only" placeholder="선택사항"></div>';
-      document.getElementById('price-fields').insertAdjacentElement('afterend', amtOnly);
+      if (priceFields) priceFields.insertAdjacentElement('afterend', amtOnly);
     }
     amtOnly.style.display = 'grid';
   } else {
