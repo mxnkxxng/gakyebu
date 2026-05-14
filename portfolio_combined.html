@@ -296,12 +296,14 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
   <div class="topnav-tab"   onclick="showTab(6)">입력</div>
   <div class="topnav-tab"   onclick="showTab(7)">내역</div>
   <div class="topnav-tab"   onclick="showTab(8)">잔고</div>
-  <div class="topnav-tab"   onclick="showTab(10)">설정</div>
+
   <div class="topnav-sep"></div>
   <div class="topnav-group-label">📊 투자/연금</div>
   <div class="topnav-tab"   onclick="showTab(1)">거래 입력</div>
   <div class="topnav-tab"   onclick="showTab(2)">거래 내역</div>
   <div class="topnav-tab"   onclick="showTab(13)">보유종목</div>
+  <div class="topnav-sep"></div>
+  <div class="topnav-tab"   onclick="showTab(10)">⚙️ 설정</div>
 </nav>
 
 
@@ -819,8 +821,9 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
     <div class="field"><label>시트 ID</label>
       <input type="text" id="sheet-id2" placeholder="스프레드시트 URL의 /d/ 뒤 ID"/>
     </div>
-    <div class="field"><label>Apps Script URL</label>
-      <input type="text" id="script-url2" placeholder="https://script.google.com/macros/s/.../exec"/>
+    <div class="field"><label>Apps Script URL <span style="font-size:10px;color:var(--sub)">(가계부 + 주식 공통)</span></label>
+      <input type="text" id="script-url2" placeholder="https://script.google.com/macros/s/.../exec"
+        oninput="try{localStorage.setItem('scriptUrl',this.value.trim());if(typeof syncUrlInputs==='function')syncUrlInputs();}catch(e){}"/>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <button onclick="saveSheetConfig()" style="padding:11px;background:var(--blue);color:#fff;border:none;border-radius:var(--rs);font-size:13px;font-weight:700;cursor:pointer">저장 &amp; 연결</button>
@@ -5937,7 +5940,11 @@ function loadAssetFromSheet(){
 function renderSetup(){
   var sid=localStorage.getItem('sheetId')||'',surl=localStorage.getItem('scriptUrl')||'';
   if(sid)document.getElementById('sheet-id2').value=sid;
-  if(surl)document.getElementById('script-url2').value=surl;
+  // Apps Script URL은 scriptUrl 키 (가계부+주식 공통)
+  var urlInput=document.getElementById('script-url2');
+  if(urlInput) urlInput.value=surl;
+  // 주식 URL 입력창도 동기화
+  if(typeof syncUrlInputs==='function') syncUrlInputs();
   var dot=document.getElementById('sheets-dot');if(dot)dot.style.background=(sid&&surl)?'var(--green)':'var(--hint)';
   renderCurrentConfig();
 }
@@ -6326,6 +6333,24 @@ function saveGbConfig() {
   // 기존 가계부 saveSheetConfig 함수 호출
   if(typeof saveSheetConfig === 'function') saveSheetConfig();
   document.getElementById('gb-load-status').textContent = '저장됐어요! 시트에서 불러오기를 눌러주세요.';
+}
+
+// saveSheetConfig 재정의 — 가계부+주식 동시 저장/로드
+function saveSheetConfig(){
+  var sid  = document.getElementById('sheet-id2').value.trim();
+  var surl = document.getElementById('script-url2').value.trim();
+  if(!surl){ if(typeof showToast==='function') showToast('Script URL을 입력해주세요'); return; }
+  try{
+    if(sid) localStorage.setItem('sheetId', sid);
+    localStorage.setItem('scriptUrl', surl);  // 가계부+주식 공통 키
+  }catch(e){}
+  if(typeof renderSetup==='function') renderSetup();
+  if(typeof syncUrlInputs==='function') syncUrlInputs();
+  if(typeof showToast==='function') showToast('저장 완료! 데이터를 불러옵니다...');
+  setTimeout(function(){
+    if(typeof loadFromSheet==='function') loadFromSheet();
+    if(typeof loadPfData==='function') loadPfData();
+  }, 300);
 }
 </script>
 
