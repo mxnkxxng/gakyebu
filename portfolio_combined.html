@@ -317,7 +317,7 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:20px;flex-wrap:wrap">
       <input id="pf-url-input2" type="url" placeholder="Apps Script 웹앱 URL"
         style="flex:1;min-width:200px;padding:9px 12px;background:var(--bg2);border:1px solid var(--bd);border-radius:8px;color:var(--txt);font-size:12px;outline:none"
-        oninput="try{localStorage.setItem('pf_script_url',this.value.trim());syncUrlInputs();}catch(e){}">
+        oninput="try{localStorage.setItem('scriptUrl',this.value.trim());syncUrlInputs();}catch(e){}">
       <span id="pf-url-saved" style="font-size:11px;color:var(--green);display:none">저장됨 ✓</span>
     </div>
 
@@ -416,7 +416,7 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
   <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
     <input id="pf-url-input" type="url" placeholder="Apps Script 웹앱 URL"
       style="flex:1;min-width:260px;padding:9px 12px;background:var(--bg2);border:1px solid var(--bd);border-radius:8px;color:var(--txt);font-size:12px;outline:none"
-      oninput="try{localStorage.setItem('pf_script_url',this.value.trim());}catch(e){}">
+      oninput="try{localStorage.setItem('scriptUrl',this.value.trim());}catch(e){}">
     <button onclick="pfLoadAndRender()"
       style="padding:9px 18px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">
       ↺ 거래내역 불러오기
@@ -975,7 +975,7 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
 //  포트폴리오 JS
 // ════════════════════════════════════════════════════════════════
 
-const PF_URL_KEY = 'pf_script_url';
+const PF_URL_KEY = 'scriptUrl'; // 가계부와 동일한 키로 통합
 const PF_PW_KEY  = 'pf_pw';
 const DEFAULT_PW = btoa(encodeURIComponent('1234'));
 
@@ -3685,8 +3685,13 @@ function renderTodayTx() {
 function savePfConfig() {
   const url = document.getElementById('cfg-pf-url').value.trim();
   const pw  = document.getElementById('cfg-pw').value;
-  if(url) { try{ localStorage.setItem(PF_URL_KEY,url); }catch(e){} }
-  if(pw)  { try{ localStorage.setItem(PF_PW_KEY, btoa(encodeURIComponent(pw))); }catch(e){} }
+  if (url) {
+    try {
+      localStorage.setItem(PF_URL_KEY, url);  // 'scriptUrl' — 가계부와 공유
+    } catch(e) {}
+    syncUrlInputs();  // 거래내역 탭 URL 입력창도 동기화
+  }
+  if (pw) { try{ localStorage.setItem(PF_PW_KEY, btoa(encodeURIComponent(pw))); }catch(e){} }
   document.getElementById('cfg-msg').textContent = '저장 완료! 데이터를 불러옵니다...';
   setTimeout(()=>loadPfData(), 300);
 }
@@ -3887,30 +3892,14 @@ window.addEventListener('DOMContentLoaded', ()=>{
   toggleFields();
   renderPlan();
   loadManualEvalInputs(); // 저장된 수동 평가금액 복원
-  // 캐시에서 거래내역 복원 (새로고침해도 유지)
-  try {
-    const cached = localStorage.getItem('pf_tx_cache');
-    if(cached) {
-      pfTx = JSON.parse(cached);
-      _resetRendered();
-      renderDashboard();   _pfRendered.dash=true;
-      renderHistory();     _pfRendered.hist=true;
-      renderHistAcctSummary();
-      renderHoldingsTab(); _pfRendered.holdings=true;
-      renderPnlTab();      _pfRendered.pnl=true;
-      renderDividendTab(); _pfRendered.div=true;
-      renderPension();
-      buildAcctSelects();
-      renderPlan();
-    }
-  } catch(e){}
-  try{ if(sessionStorage.getItem('pf_auth')==='1') loadPfData(); }catch(e){}
+  // URL 있으면 자동 로드 (캐시 아닌 실데이터)
+  try{ if(getPfUrl()) loadPfData(); }catch(e){}
 });
 
 
 // ── URL 입력 동기화 & 로드 ──
 function syncUrlInputs() {
-  const url = (function(){ try{ return localStorage.getItem('pf_script_url')||''; }catch(e){ return ''; } })();
+  const url = getPfUrl(); // 통합키 'scriptUrl' 사용
   ['pf-url-input','pf-url-input2'].forEach(id => {
     const el = document.getElementById(id);
     if (el && el.value !== url) el.value = url;
@@ -3918,7 +3907,7 @@ function syncUrlInputs() {
 }
 
 async function pfLoadAndRender() {
-  const url = (function(){ try{ return localStorage.getItem('pf_script_url')||''; }catch(e){ return ''; } })();
+  const url = (function(){ try{ return localStorage.getItem('scriptUrl')||''; }catch(e){ return ''; } })();
   const statusEl = document.getElementById('pf-load-status');
   if (!url) {
     if (statusEl) { statusEl.textContent = 'URL을 먼저 입력하세요'; statusEl.style.color = 'var(--red)'; }
@@ -3961,14 +3950,14 @@ function pfFmtN(n) { return Math.round(n || 0).toLocaleString('ko-KR'); }
 // ── URL 저장/로드 ──
 function pfSaveUrl() {
   const url = (document.getElementById('cfg-pf-url').value || '').trim();
-  try { localStorage.setItem('pf_script_url', url); } catch(e) {}
+  try { localStorage.setItem('scriptUrl', url); } catch(e) {}
   const msg = document.getElementById('cfg-msg');
   if (msg) { msg.textContent = '저장됨 ✓'; setTimeout(() => msg.textContent = '', 2000); }
   if (url) loadPfData();
 }
 
 function pfGetUrl() {
-  try { return localStorage.getItem('pf_script_url') || ''; } catch(e) { return ''; }
+  try { return localStorage.getItem('scriptUrl') || ''; } catch(e) { return ''; }
 }
 
 // ── JSONP ──
