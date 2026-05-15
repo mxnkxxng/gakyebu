@@ -1058,7 +1058,7 @@ const fmtW = n => {
   return Math.round(Math.abs(v)).toLocaleString()+'원';
 };
 const typeTag = t => {
-  const m={'매수':'tag-buy','매수.':'tag-buy','매도':'tag-sell','매도.':'tag-sell','입금':'tag-in','출금':'tag-out','분배금':'tag-div'};
+  const m={'매수':'tag-buy','매도':'tag-sell','입금':'tag-in','출금':'tag-out','분배금':'tag-div'};
   return `<span class="tag ${m[t]||'tag-etc'}">${t}</span>`;
 };
 const accCol = a => {
@@ -1363,8 +1363,8 @@ function renderHistAcctSummary() {
     const amt = Math.abs(parseFloat(r.amount)||0);
     if(r.type==='입금')   accMap[acc] += amt;
     if(r.type==='출금')   accMap[acc] -= amt;
-    if(r.type==='매수'||r.type==='매수.')  accMap[acc] -= amt;
-    if(r.type==='매도'||r.type==='매도.')  accMap[acc] += amt;
+    if(r.type==='매수'||r.type==='매수')  accMap[acc] -= amt;
+    if(r.type==='매도'||r.type==='매도')  accMap[acc] += amt;
     if(r.type==='분배금') accMap[acc] += amt;
     if(r.type==='이용료') accMap[acc] -= amt;
   });
@@ -1400,8 +1400,8 @@ function renderDashboard() {
       }
     }
     if(r.type==='출금'){  totalOut+=amt; accMap[acc].out+=amt; }
-    if(r.type==='매수'||r.type==='매수.'){ totalBuy+=amt;  accMap[acc].buy+=amt; }
-    if(r.type==='매도'||r.type==='매도.'){ totalSell+=amt; accMap[acc].sell+=amt; }
+    if(r.type==='매수'||r.type==='매수'){ totalBuy+=amt;  accMap[acc].buy+=amt; }
+    if(r.type==='매도'||r.type==='매도'){ totalSell+=amt; accMap[acc].sell+=amt; }
     if(r.type==='분배금'){ totalDiv+=amt; accMap[acc].div+=amt; }
     accMap[acc].fee+=fee;
   });
@@ -1410,7 +1410,7 @@ function renderDashboard() {
   const accRealized={};
   let totalRealized=0;
   pfTx.forEach(r=>{
-    if((r.type==='매도'||r.type==='매도.')&&pnlMap[r.rowIndex]!==undefined){
+    if((r.type==='매도'||r.type==='매도')&&pnlMap[r.rowIndex]!==undefined){
       const acc=r.account||'';
       accRealized[acc]=(accRealized[acc]||0)+pnlMap[r.rowIndex];
       totalRealized+=pnlMap[r.rowIndex];
@@ -1455,7 +1455,7 @@ function renderDashboard() {
   se('h-div-sub', pfTx.filter(r=>r.type==='분배금').length+'회 수령');
   const realEl=document.getElementById('h-realized');
   if(realEl){ realEl.textContent=(totalRealized>=0?'+':'')+fmtW(totalRealized); realEl.style.color=col(totalRealized); }
-  se('h-realized-sub', '매도 '+pfTx.filter(r=>r.type==='매도'||r.type==='매도.').length+'건');
+  se('h-realized-sub', '매도 '+pfTx.filter(r=>r.type==='매도'||r.type==='매도').length+'건');
 
   // ② 투자 판단 지표 (보유종목 기반)
   const holdItems=Object.entries(holdingsData);
@@ -1751,7 +1751,7 @@ function renderIsaTaxStatus(txList) {
   isaTx.forEach(r => {
     const type = classifyName(r.name);
     if (r.type==='분배금') divByType[type] += Math.abs(parseFloat(r.amount)||0);
-    if ((r.type==='매도'||r.type==='매도.') && pnlMap[r.rowIndex]!==undefined) {
+    if ((r.type==='매도'||r.type==='매도') && pnlMap[r.rowIndex]!==undefined) {
       realizedByType[type] += pnlMap[r.rowIndex];
     }
   });
@@ -1843,10 +1843,10 @@ function calcFifoForDashboard(txList) {
     const tax  = Math.abs(parseFloat(r.tax)||0);
     const cost = Math.abs(parseFloat(r.cost)||0);
 
-    if (r.type==='매수'||r.type==='매수.'||r.type==='재투자') {
+    if (r.type==='매수'||r.type==='매수'||r.type==='재투자') {
       if (!lots[key]) lots[key]=[];
       if (qty>0) lots[key].push({qty, unitCost:(amt+fee+tax+cost)/qty});
-    } else if (r.type==='매도'||r.type==='매도.') {
+    } else if (r.type==='매도'||r.type==='매도') {
       if (!lots[key]) lots[key]=[];
       let rem=qty>0?qty:0, costBasis=0;
       const q=lots[key];
@@ -2177,10 +2177,10 @@ async function saveToSheet() {
   sorted.forEach(r=>{
     const key=(r.account||'')+'|'+(r.name||'');
     const qty=parseFloat(r.qty)||0, amt=Math.abs(parseFloat(r.amount)||0);
-    if(r.type==='매수'||r.type==='매수.'||r.type==='재투자'){
+    if(r.type==='매수'||r.type==='매수'||r.type==='재투자'){
       if(!bq[key]) bq[key]=[];
       if(qty>0) bq[key].push({qty, unitPrice:amt/qty});
-    } else if(r.type==='매도'||r.type==='매도.'){
+    } else if(r.type==='매도'||r.type==='매도'){
       sells.push({...r, _key:key, _qty:qty, _amt:amt,
         _fee:Math.abs(parseFloat(r.fee)||0), _tax:Math.abs(parseFloat(r.tax)||0), _cost:Math.abs(parseFloat(r.cost)||0)});
     }
@@ -2365,8 +2365,8 @@ function renderTotalAsset() {
   pfTx.forEach(r=>{
     if(r.type==='입금') deposit += Math.abs(parseFloat(r.amount)||0);
     if(r.type==='출금') deposit -= Math.abs(parseFloat(r.amount)||0);
-    if(r.type==='매수'||r.type==='매수.') deposit -= Math.abs(parseFloat(r.amount)||0);
-    if(r.type==='매도'||r.type==='매도.') deposit += Math.abs(parseFloat(r.amount)||0);
+    if(r.type==='매수'||r.type==='매수') deposit -= Math.abs(parseFloat(r.amount)||0);
+    if(r.type==='매도'||r.type==='매도') deposit += Math.abs(parseFloat(r.amount)||0);
     if(r.type==='분배금') deposit += Math.abs(parseFloat(r.amount)||0);
   });
   deposit = Math.max(0, deposit);
@@ -2395,8 +2395,8 @@ function renderTotalAsset() {
     const amt = Math.abs(parseFloat(r.amount)||0);
     if(r.type==='입금')                          acctTxMap[acc].in   += amt;
     else if(r.type==='출금')                     acctTxMap[acc].out  += amt;
-    else if(r.type==='매수'||r.type==='매수.')   acctTxMap[acc].buy  += amt;
-    else if(r.type==='매도'||r.type==='매도.')   acctTxMap[acc].sell += amt;
+    else if(r.type==='매수'||r.type==='매수')   acctTxMap[acc].buy  += amt;
+    else if(r.type==='매도'||r.type==='매도')   acctTxMap[acc].sell += amt;
     else if(r.type==='분배금'||r.type==='배당')  acctTxMap[acc].div  += amt;
   });
 
@@ -2649,10 +2649,10 @@ function calcGroupedPnL(txList) {
     const fee = Math.abs(parseFloat(r.fee)||0);
     const tax = Math.abs(parseFloat(r.tax)||0);
     const cost= Math.abs(parseFloat(r.cost)||0);
-    if(r.type==='매수'||r.type==='매수.') {
+    if(r.type==='매수'||r.type==='매수') {
       if(!buyQueues[key]) buyQueues[key]=[];
       if(qty>0) buyQueues[key].push({qty, unitPrice: amt/qty});
-    } else if(r.type==='매도'||r.type==='매도.') {
+    } else if(r.type==='매도'||r.type==='매도') {
       sellRows.push({...r, _key:key, _qty:qty, _amt:amt, _fee:fee, _tax:tax, _cost:cost});
     }
   });
@@ -2815,13 +2815,13 @@ function renderPnlTab() {
   // 계좌 필터 옵션
   const accSel = document.getElementById('pnl-filter-acc');
   if(accSel && accSel.options.length <= 1) {
-    const accts = [...new Set(pfTx.filter(r=>r.type==='매도'||r.type==='매도.').map(r=>r.account||'').filter(Boolean))];
+    const accts = [...new Set(pfTx.filter(r=>r.type==='매도'||r.type==='매도').map(r=>r.account||'').filter(Boolean))];
     accts.forEach(a=>{ const o=document.createElement('option'); o.value=a; o.textContent=a; accSel.appendChild(o); });
   }
   // 연도 필터 옵션
   const yrSel = document.getElementById('pnl-filter-year');
   if(yrSel && yrSel.options.length <= 1) {
-    const years = [...new Set(pfTx.filter(r=>r.type==='매도'||r.type==='매도.').map(r=>(r.date||'').slice(0,4)).filter(Boolean))].sort().reverse();
+    const years = [...new Set(pfTx.filter(r=>r.type==='매도'||r.type==='매도').map(r=>(r.date||'').slice(0,4)).filter(Boolean))].sort().reverse();
     years.forEach(y=>{ const o=document.createElement('option'); o.value=y; o.textContent=y+'년'; yrSel.appendChild(o); });
   }
 
@@ -2832,10 +2832,10 @@ function renderPnlTab() {
     const key = (r.account||'')+'|'+(r.name||'');
     const qty = parseFloat(r.qty)||0;
     const amt = Math.abs(parseFloat(r.amount)||0);
-    if(r.type==='매수'||r.type==='매수.'||r.type==='재투자') {
+    if(r.type==='매수'||r.type==='매수'||r.type==='재투자') {
       if(!buyQueues[key]) buyQueues[key]=[];
       if(qty>0) buyQueues[key].push({qty, unitPrice: amt/qty});
-    } else if(r.type==='매도'||r.type==='매도.') {
+    } else if(r.type==='매도'||r.type==='매도') {
       sellRows.push({...r, _key:key, _qty:qty, _amt:amt,
         _fee:Math.abs(parseFloat(r.fee)||0), _tax:Math.abs(parseFloat(r.tax)||0), _cost:Math.abs(parseFloat(r.cost)||0)});
     }
@@ -2987,8 +2987,8 @@ function renderAcctSummaryTab() {
     const amt = Math.abs(parseFloat(r.amount)||0);
     if(r.type==='입금')  accData[acc].in   += amt;
     if(r.type==='출금')  accData[acc].out  += amt;
-    if(r.type==='매수'||r.type==='매수.')  accData[acc].buy  += amt;
-    if(r.type==='매도'||r.type==='매도.')  accData[acc].sell += amt;
+    if(r.type==='매수'||r.type==='매수')  accData[acc].buy  += amt;
+    if(r.type==='매도'||r.type==='매도')  accData[acc].sell += amt;
     if(r.type==='분배금') accData[acc].div  += amt;
     if(r.type==='이용료') accData[acc].util += amt;
     accData[acc].fee += Math.abs(parseFloat(r.fee)||0)+Math.abs(parseFloat(r.tax)||0)+Math.abs(parseFloat(r.cost)||0);
@@ -2996,7 +2996,7 @@ function renderAcctSummaryTab() {
 
   // 실현손익 계좌별
   const accReal = {};
-  pfTx.filter(r=>r.type==='매도'||r.type==='매도.').forEach(r=>{
+  pfTx.filter(r=>r.type==='매도'||r.type==='매도').forEach(r=>{
     const acc=r.account||'';
     accReal[acc]=(accReal[acc]||0)+(pnlMap[r.rowIndex]||0);
   });
@@ -3180,7 +3180,7 @@ function renderHistory() {
   const rowGroupKey = {};
   const groupCounts = {};
   pfTx.forEach(r => {
-    if(r.type==='매도'||r.type==='매도.') {
+    if(r.type==='매도'||r.type==='매도') {
       const gk = (r.date||'')+'|'+(r.account||'')+'|'+(r.name||'');
       rowGroupKey[r.rowIndex] = gk;
     }
@@ -3189,7 +3189,7 @@ function renderHistory() {
 
   (document.getElementById('history-tx')||{}).innerHTML = rows.length
     ? rows.map(r=>{
-        const isSell = r.type==='매도'||r.type==='매도.';
+        const isSell = r.type==='매도'||r.type==='매도';
         const pnl = isSell && pnlMap[r.rowIndex] !== undefined ? pnlMap[r.rowIndex] : null;
         const gk = rowGroupKey[r.rowIndex];
         const isGrouped = gk && groupCounts[gk] > 1;
@@ -3201,8 +3201,8 @@ function renderHistory() {
           ? `<td class="num" style="font-weight:600;color:${pnl>=0?'var(--green)':'var(--red)'}">${approxMark}${pnl>=0?'+':''}${fmtW(Math.abs(pnl))}</td>`
           : `<td class="num" style="color:var(--txt3)">—</td>`;
         // 금액 부호: 매수·출금 = -, 매도·입금·분배금·배당 = +, 수수료·세금·거래비용 = 항상 -
-        const isPlus  = ['매도','매도.','입금','분배금','배당'].includes(r.type);
-        const isMinus = ['매수','매수.','출금','이용료'].includes(r.type);
+        const isPlus  = ['매도','입금','분배금','배당'].includes(r.type);
+        const isMinus = ['매수','출금','이용료'].includes(r.type);
         const signAmt = Math.abs(parseFloat(r.amount)||0);
         const amtSign = isPlus ? '+' : isMinus ? '−' : '';
         const amtColor = isPlus ? 'var(--green)' : isMinus ? 'var(--red)' : 'var(--txt)';
@@ -3307,7 +3307,7 @@ function renderReview() {
   // FIFO 실현손익 계좌별 집계 (분할매도 묶음 처리 적용)
   const { pnlMap: reviewPnlMap } = calcGroupedPnL(pfTx);
   const accRealized2 = {};
-  pfTx.filter(r=>r.type==='매도'||r.type==='매도.').forEach(r=>{
+  pfTx.filter(r=>r.type==='매도'||r.type==='매도').forEach(r=>{
     if(reviewPnlMap[r.rowIndex]!==undefined){
       const acc=r.account||'';
       accRealized2[acc]=(accRealized2[acc]||0)+reviewPnlMap[r.rowIndex];
@@ -3326,8 +3326,8 @@ function renderReview() {
     if(r.type==='입금'){
       accIn[acc][yr]=(accIn[acc][yr]||0)+amt;
     }
-    if(r.type==='매수'||r.type==='매수.') accBuy[acc]+=amt;
-    if(r.type==='매도'||r.type==='매도.') accSell[acc]+=amt;
+    if(r.type==='매수'||r.type==='매수') accBuy[acc]+=amt;
+    if(r.type==='매도'||r.type==='매도') accSell[acc]+=amt;
     if(r.type==='분배금'){
       accDiv[acc]+=amt;
       if(r.name){ if(!divByName[r.name]) divByName[r.name]={total:0,cnt:0,acc}; divByName[r.name].total+=amt; divByName[r.name].cnt++; }
@@ -3425,7 +3425,7 @@ function renderReview() {
   };
   const TARGET_SECTOR={ '미국(S&P500)':35, '미국(나스닥)':15, '미국(배당)':20, '국내ETF':15, '국내주식':10, '기타':5 };
   pfTx.forEach(r=>{
-    if(r.type!=='매수'&&r.type!=='매수.') return;
+    if(r.type!=='매수') return;
     const sector=SECTOR_MAP[r.name]||'기타';
     sectorBuy[sector]=(sectorBuy[sector]||0)+Math.abs(parseFloat(r.amount)||0);
   });
@@ -3509,7 +3509,7 @@ function renderReview() {
   const realEl=document.getElementById('rv-realized');
   if(realEl){
     const realPnlMap = calcRealizedPnL(pfTx);
-    const sells=pfTx.filter(r=>r.type==='매도'||r.type==='매도.').sort((a,b)=>b.date.localeCompare(a.date));
+    const sells=pfTx.filter(r=>r.type==='매도'||r.type==='매도').sort((a,b)=>b.date.localeCompare(a.date));
     const totalRealized = sells.reduce((s,r)=> s + (realPnlMap[r.rowIndex]||0), 0);
     realEl.innerHTML=sells.length?`
       <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
@@ -3619,7 +3619,7 @@ function toggleFields() {
   const t = document.getElementById('f-type');
   if (!t) return;  // 폼이 아직 없으면 스킵
   const val = t.value;
-  const isTrade  = ['매수','매도','매수.','매도.'].includes(val);
+  const isTrade  = ['매수','매도'].includes(val);
   const needsAmt = ['입금','출금','이용료','mmf'].includes(val);
   const needsName= ['매수','매도','분배금','재투자'].includes(val);
   const priceFields = document.getElementById('price-fields');
@@ -4389,32 +4389,45 @@ function pfRenderDiv() {
 // ── 보유종목 FIFO 계산 ──
 // 시트 수식과 동일한 보유종목 계산
 function pfCalcFifo() {
-  const map = {};
-  pfTx.forEach(r => {
+  const sorted = [...pfTx].sort((a, b) => (a.date||'').localeCompare(b.date||''));
+  const queues  = {};  // key → {lots:[{qty,cost}], deficit:0}
+
+  sorted.forEach(r => {
     if (!r.name) return;
     const key = (r.name||'') + '|' + (r.account||'');
-    if (!map[key]) map[key] = { name:r.name, account:r.account, buy_qty:0, buy_amt:0, sell_qty:0, buy_dot_qty:0, sell_dot_qty:0 };
-    const qty = Math.abs(parseFloat(r.qty)||0);
-    const amt = Math.abs(parseFloat(r.amount)||0);
-    if (r.type==='매수')  { map[key].buy_qty     += qty; map[key].buy_amt += amt; }
-    if (r.type==='매수.') { map[key].buy_dot_qty += qty; }
-    if (r.type==='매도')  { map[key].sell_qty    += qty; }
-    if (r.type==='매도.') { map[key].sell_dot_qty+= qty; }
+    if (!queues[key]) queues[key] = { name:r.name, account:r.account, lots:[], deficit:0 };
+    const q   = queues[key];
+    let qty   = Math.abs(parseFloat(r.qty)||0);
+    let amt   = Math.abs(parseFloat(r.amount)||0);
+
+    if (r.type==='매수' || r.type==='재투자') {
+      // deficit 먼저 흡수
+      if (q.deficit > 0) {
+        const absorb = Math.min(q.deficit, qty);
+        amt  = amt * (1 - absorb/qty);
+        qty -= absorb;
+        q.deficit -= absorb;
+      }
+      if (qty > 0.001) q.lots.push({ qty, cost: amt });
+
+    } else if (r.type==='매도' || r.type==='매도') {
+      let rem = qty;
+      while (rem > 0 && q.lots.length > 0) {
+        const f = q.lots[0];
+        if (f.qty <= rem) { rem -= f.qty; q.lots.shift(); }
+        else { f.cost -= f.cost * (rem/f.qty); f.qty -= rem; rem = 0; }
+      }
+      if (rem > 0) q.deficit += rem;  // 큐 부족 → 나중 매수에서 차감
+    }
   });
 
   const holdings = {};
-  Object.entries(map).forEach(([key, v]) => {
-    const qty = v.buy_qty + v.buy_dot_qty - v.sell_qty - v.sell_dot_qty;
-    if (qty < 0.001) return;
-    let avgPrice = 0, costBasis = 0;
-    if (v.buy_qty > 0) {
-      const unitPrice = v.buy_amt / v.buy_qty;
-      const soldCost  = Math.ceil(unitPrice * v.sell_qty);
-      costBasis = v.buy_amt - soldCost;
-      avgPrice  = qty > 0 ? Math.round(costBasis / qty) : 0;
-      costBasis = qty * avgPrice;
-    }
-    holdings[key] = { name:v.name, account:v.account, qty, avgPrice, costBasis };
+  Object.entries(queues).forEach(([key, q]) => {
+    const totalQty  = q.lots.reduce((s, l) => s + l.qty, 0);
+    if (totalQty < 0.001) return;
+    const totalCost = q.lots.reduce((s, l) => s + l.cost, 0);
+    const avgPrice  = Math.round(totalCost / totalQty);
+    holdings[key] = { name:q.name, account:q.account, qty:totalQty, avgPrice, costBasis:Math.round(totalCost) };
   });
   return holdings;
 }
@@ -4626,34 +4639,46 @@ function pfRenderHoldings2() {
     : '<div style="padding:40px;text-align:center;color:var(--txt3)">보유종목 없음</div>';
 }
 
-// 보유종목 계산 (합산 방식 - 날짜순 FIFO 대신 전체 합산)
 function pfCalcFifo2() {
-  const map = {};
-  pfTx.forEach(r => {
+  const sorted = [...pfTx].sort((a, b) => (a.date||'').localeCompare(b.date||''));
+  const queues  = {};  // key → {lots:[{qty,cost}], deficit:0}
+
+  sorted.forEach(r => {
     if (!r.name) return;
     const key = (r.name||'') + '|' + (r.account||'');
-    if (!map[key]) map[key] = { name:r.name, account:r.account, buy_qty:0, buy_amt:0, sell_qty:0, buy_dot_qty:0, sell_dot_qty:0 };
-    const qty = Math.abs(parseFloat(r.qty)||0);
-    const amt = Math.abs(parseFloat(r.amount)||0);
-    if (r.type==='매수')  { map[key].buy_qty     += qty; map[key].buy_amt += amt; }
-    if (r.type==='매수.') { map[key].buy_dot_qty += qty; }
-    if (r.type==='매도')  { map[key].sell_qty    += qty; }
-    if (r.type==='매도.') { map[key].sell_dot_qty+= qty; }
+    if (!queues[key]) queues[key] = { name:r.name, account:r.account, lots:[], deficit:0 };
+    const q   = queues[key];
+    let qty   = Math.abs(parseFloat(r.qty)||0);
+    let amt   = Math.abs(parseFloat(r.amount)||0);
+
+    if (r.type==='매수' || r.type==='재투자') {
+      // deficit 먼저 흡수
+      if (q.deficit > 0) {
+        const absorb = Math.min(q.deficit, qty);
+        amt  = amt * (1 - absorb/qty);
+        qty -= absorb;
+        q.deficit -= absorb;
+      }
+      if (qty > 0.001) q.lots.push({ qty, cost: amt });
+
+    } else if (r.type==='매도' || r.type==='매도') {
+      let rem = qty;
+      while (rem > 0 && q.lots.length > 0) {
+        const f = q.lots[0];
+        if (f.qty <= rem) { rem -= f.qty; q.lots.shift(); }
+        else { f.cost -= f.cost * (rem/f.qty); f.qty -= rem; rem = 0; }
+      }
+      if (rem > 0) q.deficit += rem;  // 큐 부족 → 나중 매수에서 차감
+    }
   });
 
   const holdings = {};
-  Object.entries(map).forEach(([key, v]) => {
-    const qty = v.buy_qty + v.buy_dot_qty - v.sell_qty - v.sell_dot_qty;
-    if (qty < 0.001) return;
-    let avgPrice = 0, costBasis = 0;
-    if (v.buy_qty > 0) {
-      const unitPrice = v.buy_amt / v.buy_qty;
-      const soldCost  = Math.ceil(unitPrice * v.sell_qty);
-      costBasis = v.buy_amt - soldCost;
-      avgPrice  = qty > 0 ? Math.round(costBasis / qty) : 0;
-      costBasis = qty * avgPrice;
-    }
-    holdings[key] = { name:v.name, account:v.account, qty, avgPrice, costBasis };
+  Object.entries(queues).forEach(([key, q]) => {
+    const totalQty  = q.lots.reduce((s, l) => s + l.qty, 0);
+    if (totalQty < 0.001) return;
+    const totalCost = q.lots.reduce((s, l) => s + l.cost, 0);
+    const avgPrice  = Math.round(totalCost / totalQty);
+    holdings[key] = { name:q.name, account:q.account, qty:totalQty, avgPrice, costBasis:Math.round(totalCost) };
   });
   return holdings;
 }
