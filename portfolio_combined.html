@@ -1107,9 +1107,19 @@ async function pfPost(body) {
   if (!url) { pfToast('Script URL을 먼저 설정하세요','err'); return false; }
   try {
     const r = await fetch(url, {method:'POST', headers:{'Content-Type':'text/plain'}, body:JSON.stringify(body)});
-    const d = await r.json();
+    const text = await r.text();
+    console.log('[pfPost] 응답:', text.slice(0,200));
+    const d = JSON.parse(text);
+    if (!d.ok) {
+      console.error('[pfPost] 오류:', d.error);
+      pfToast('저장 실패: ' + (d.error||'알 수 없는 오류'), 'err');
+    }
     return d.ok;
-  } catch(e) { return false; }
+  } catch(e) {
+    console.error('[pfPost] 네트워크 오류:', e);
+    pfToast('네트워크 오류 — GAS URL 확인하세요', 'err');
+    return false;
+  }
 }
 
 async function loadPfData() {
@@ -1145,6 +1155,7 @@ async function loadPfData() {
   _ss('③ 응답: ' + (d===null ? 'null(타임아웃/오류)' : d.data ? d.data.length+'건' : JSON.stringify(d).slice(0,60)));
   if (d && d.data) {
     pfTx = d.data;
+    pfSugNames = [...new Set(pfTx.map(r => r.name).filter(Boolean))].sort();
     try { localStorage.setItem('pf_tx_cache', JSON.stringify(pfTx)); } catch(e){}
     _resetRendered();
     try { renderDashboard();   _pfRendered.dash=true;    } catch(e){ console.warn('renderDashboard 오류:', e); }
@@ -3906,6 +3917,7 @@ window.addEventListener('DOMContentLoaded', ()=>{
     const cached = localStorage.getItem('pf_tx_cache');
     if (cached) {
       pfTx = JSON.parse(cached);
+      pfSugNames = [...new Set(pfTx.map(r => r.name).filter(Boolean))].sort();
       _resetRendered();
       try { renderDashboard();   _pfRendered.dash=true;    } catch(e){ console.warn('renderDashboard:', e); }
       try { pfRenderHistory();   _pfRendered.hist=true;    } catch(e){ console.warn('pfRenderHistory:', e); }
@@ -4390,43 +4402,34 @@ function pfRenderDiv() {
 // 시트 수식과 동일한 보유종목 계산
 function pfCalcFifo() {
   const sorted = [...pfTx].sort((a, b) => (a.date||'').localeCompare(b.date||''));
-  const queues  = {};  // key → {lots:[{qty,cost}], deficit:0}
+  const queues = {};
 
   sorted.forEach(r => {
     if (!r.name) return;
-    const key = (r.name||'') + '|' + (r.account||'');
-    if (!queues[key]) queues[key] = { name:r.name, account:r.account, lots:[], deficit:0 };
-    const q   = queues[key];
-    let qty   = Math.abs(parseFloat(r.qty)||0);
-    let amt   = Math.abs(parseFloat(r.amount)||0);
+    const key = (r.name||'') + '|' + (r.account||'').replace(/\s/g,'');
+    const acc = (r.account||'').replace(/\s/g,'');
+    if (!queues[key]) queues[key] = { name:r.name, account:acc, lots:[] };
+    const qty = Math.abs(parseFloat(r.qty)||0);
+    const amt = Math.abs(parseFloat(r.amount)||0);
 
-    if (r.type==='매수' || r.type==='재투자') {
-      // deficit 먼저 흡수
-      if (q.deficit > 0) {
-        const absorb = Math.min(q.deficit, qty);
-        amt  = amt * (1 - absorb/qty);
-        qty -= absorb;
-        q.deficit -= absorb;
-      }
-      if (qty > 0.001) q.lots.push({ qty, cost: amt });
-
-    } else if (r.type==='매도' || r.type==='매도') {
+    if (r.type==='매수' || r.type==='매수.' || r.type==='재투자') {
+      queues[key].lots.push({ qty, cost: amt });
+    } else if (r.type==='매도' || r.type==='매도.') {
       let rem = qty;
-      while (rem > 0 && q.lots.length > 0) {
-        const f = q.lots[0];
-        if (f.qty <= rem) { rem -= f.qty; q.lots.shift(); }
+      while (rem > 0 && queues[key].lots.length > 0) {
+        const f = queues[key].lots[0];
+        if (f.qty <= rem) { rem -= f.qty; queues[key].lots.shift(); }
         else { f.cost -= f.cost * (rem/f.qty); f.qty -= rem; rem = 0; }
       }
-      if (rem > 0) q.deficit += rem;  // 큐 부족 → 나중 매수에서 차감
     }
   });
 
   const holdings = {};
   Object.entries(queues).forEach(([key, q]) => {
-    const totalQty  = q.lots.reduce((s, l) => s + l.qty, 0);
+    const totalQty = q.lots.reduce((s, l) => s + l.qty, 0);
     if (totalQty < 0.001) return;
     const totalCost = q.lots.reduce((s, l) => s + l.cost, 0);
-    const avgPrice  = Math.round(totalCost / totalQty);
+    const avgPrice = Math.round(totalCost / totalQty);
     holdings[key] = { name:q.name, account:q.account, qty:totalQty, avgPrice, costBasis:Math.round(totalCost) };
   });
   return holdings;
@@ -4641,43 +4644,34 @@ function pfRenderHoldings2() {
 
 function pfCalcFifo2() {
   const sorted = [...pfTx].sort((a, b) => (a.date||'').localeCompare(b.date||''));
-  const queues  = {};  // key → {lots:[{qty,cost}], deficit:0}
+  const queues = {};
 
   sorted.forEach(r => {
     if (!r.name) return;
-    const key = (r.name||'') + '|' + (r.account||'');
-    if (!queues[key]) queues[key] = { name:r.name, account:r.account, lots:[], deficit:0 };
-    const q   = queues[key];
-    let qty   = Math.abs(parseFloat(r.qty)||0);
-    let amt   = Math.abs(parseFloat(r.amount)||0);
+    const key = (r.name||'') + '|' + (r.account||'').replace(/\s/g,'');
+    const acc = (r.account||'').replace(/\s/g,'');
+    if (!queues[key]) queues[key] = { name:r.name, account:acc, lots:[] };
+    const qty = Math.abs(parseFloat(r.qty)||0);
+    const amt = Math.abs(parseFloat(r.amount)||0);
 
-    if (r.type==='매수' || r.type==='재투자') {
-      // deficit 먼저 흡수
-      if (q.deficit > 0) {
-        const absorb = Math.min(q.deficit, qty);
-        amt  = amt * (1 - absorb/qty);
-        qty -= absorb;
-        q.deficit -= absorb;
-      }
-      if (qty > 0.001) q.lots.push({ qty, cost: amt });
-
-    } else if (r.type==='매도' || r.type==='매도') {
+    if (r.type==='매수' || r.type==='매수.' || r.type==='재투자') {
+      queues[key].lots.push({ qty, cost: amt });
+    } else if (r.type==='매도' || r.type==='매도.') {
       let rem = qty;
-      while (rem > 0 && q.lots.length > 0) {
-        const f = q.lots[0];
-        if (f.qty <= rem) { rem -= f.qty; q.lots.shift(); }
+      while (rem > 0 && queues[key].lots.length > 0) {
+        const f = queues[key].lots[0];
+        if (f.qty <= rem) { rem -= f.qty; queues[key].lots.shift(); }
         else { f.cost -= f.cost * (rem/f.qty); f.qty -= rem; rem = 0; }
       }
-      if (rem > 0) q.deficit += rem;  // 큐 부족 → 나중 매수에서 차감
     }
   });
 
   const holdings = {};
   Object.entries(queues).forEach(([key, q]) => {
-    const totalQty  = q.lots.reduce((s, l) => s + l.qty, 0);
+    const totalQty = q.lots.reduce((s, l) => s + l.qty, 0);
     if (totalQty < 0.001) return;
     const totalCost = q.lots.reduce((s, l) => s + l.cost, 0);
-    const avgPrice  = Math.round(totalCost / totalQty);
+    const avgPrice = Math.round(totalCost / totalQty);
     holdings[key] = { name:q.name, account:q.account, qty:totalQty, avgPrice, costBasis:Math.round(totalCost) };
   });
   return holdings;
@@ -4787,28 +4781,20 @@ async function pfSubmit() {
 
   const ok = await pfPost(body);
   if (btn) { btn.disabled = false; btn.textContent = '시트에 저장'; }
+  console.log('[pfSubmit] ok =', ok, '| body =', JSON.stringify(body).slice(0,100));
 
   if (ok) {
     pfToast('저장 완료! ✓', 'ok');
     pfClearForm();
-    // 거래내역 다시 로드 후 보유종목 자동 동기화
+    // 거래내역 즉시 재로드
     setTimeout(async () => {
       await loadPfData();
-      // 보유종목 시트 자동 업데이트
-      try {
-        const holdings = Object.values(pfCalcFifo2()).map(h => ({
-          name: h.name, account: h.account,
-          qty: Math.round(h.qty * 10000) / 10000,
-          avgPrice: Math.round(h.avgPrice),
-          costBasis: Math.round(h.costBasis),
-        }));
-        await pfPost({ action: 'pf_syncHoldings', holdings });
-        pfToast('보유종목 시트 업데이트 완료 ✓', 'ok');
-      } catch(e) { console.warn('보유종목 동기화 실패:', e); }
-    }, 2500);
+      // 보유종목 시트 백그라운드 업데이트 (별도로)
+      pfSyncHoldingsToSheet().catch(e => console.warn('보유종목 동기화 실패:', e));
+    }, 1000);
   } else {
     pfToast('전송됨 — 시트에서 확인하세요', '');
-    setTimeout(loadPfData, 2500);
+    setTimeout(loadPfData, 1000);
   }
 }
 
