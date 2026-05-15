@@ -894,20 +894,20 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
     <div style="font-variant-numeric:tabular-nums;font-size:36px;font-weight:700;color:#fff;letter-spacing:-.5px" id="ta-total">—</div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:20px">
       <div style="background:rgba(255,255,255,.08);border-radius:10px;padding:14px 16px">
-        <div style="font-size:10px;color:rgba(255,255,255,.45);margin-bottom:6px;font-weight:600;letter-spacing:.06em">📈 주식·연금</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.45);margin-bottom:6px;font-weight:600;letter-spacing:.06em">📈 주식·연금 총자산</div>
         <div style="font-size:18px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums" id="ta-stock">—</div>
-        <div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:3px" id="ta-stock-sub">현재가 로드 필요</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:3px" id="ta-stock-sub">평가금액 + 예수금</div>
       </div>
       <div style="background:rgba(255,255,255,.08);border-radius:10px;padding:14px 16px">
         <div style="font-size:10px;color:rgba(255,255,255,.45);margin-bottom:6px;font-weight:600;letter-spacing:.06em">💰 가계부 자산</div>
         <div style="font-size:18px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums" id="ta-household">—</div>
         <div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:3px">현금·부동산 (투자계좌 제외)</div>
       </div>
-      <div style="background:rgba(255,255,255,.08);border-radius:10px;padding:14px 16px">
-        <div style="font-size:10px;color:rgba(255,255,255,.45);margin-bottom:6px;font-weight:600;letter-spacing:.06em">📊 주식 수익률</div>
-        <div style="font-size:18px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums" id="ta-stock-rate">—</div>
-        <div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:3px">납입 대비 평가</div>
-      </div>
+
+
+
+
+
     </div>
   </div>
   <!-- 계좌별 잔고 카드 -->
@@ -2386,16 +2386,17 @@ function renderTotalAsset() {
   const unrealized = evalTotal > 0 ? evalTotal - fifo.totalCostBasis - deposit : null;
   const stockRate = netIn>0 && evalTotal>0 ? (evalTotal-netIn)/netIn*100 : null;
 
-  document.getElementById('ta-stock').textContent = evalTotal > 0
-    ? Math.round(evalTotal).toLocaleString()+'원'
-    : '현재가 로드 필요';
-  document.getElementById('ta-stock-sub').textContent = evalAvail>0
-    ? `${evalAvail}종목 현재가 로드됨`
-    : '↺ 현재가 갱신 필요';
+  // 주식·연금 총자산 = 평가금액 + 예수금
+  const stockTotalAsset = evalTotal + deposit;
+  document.getElementById('ta-stock').textContent = stockTotalAsset > 0
+    ? Math.round(stockTotalAsset).toLocaleString()+'원'
+    : '데이터 로드 필요';
+  document.getElementById('ta-stock-sub').textContent = evalTotal > 0
+    ? `평가 ${Math.round(evalTotal).toLocaleString()}원 + 예수 ${Math.round(deposit).toLocaleString()}원`
+    : '평가금액 로드 필요';
   document.getElementById('ta-stock-rate').textContent = stockRate !== null
     ? (stockRate>=0?'+':'')+stockRate.toFixed(2)+'%' : '—';
-  const taStockRateEl = document.getElementById('ta-stock-rate');
-  if(stockRate!==null) taStockRateEl.style.color = stockRate>=0?'#6aff9e':'#ff8a8a';
+
 
   // 주식 계좌별 상세
   // 1단계: 거래내역에서 계좌별 순납입·매수원가 집계 (항상 가능)
@@ -2465,12 +2466,12 @@ function renderTotalAsset() {
     </div>`;
   });
   if(deposit>0) stockDetailHtml += `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:.5px solid var(--bd);font-size:12px">
-    <span style="color:var(--txt3)">예수금 여력</span>
+    <span style="color:var(--txt3)">예수금</span>
     <span style="font-variant-numeric:tabular-nums;color:var(--txt3)">${Math.round(deposit).toLocaleString()}원</span>
   </div>`;
   if(evalTotal>0) stockDetailHtml += `<div style="display:flex;justify-content:space-between;padding:8px 0 0;font-size:13px;font-weight:700">
     <span>합계</span>
-    <span style="font-variant-numeric:tabular-nums;color:var(--blue)">${Math.round(evalTotal).toLocaleString()}원</span>
+    <span style="font-variant-numeric:tabular-nums;color:var(--blue)">${Math.round(evalTotal+deposit).toLocaleString()}원</span>
   </div>`;
   if(!stockDetailHtml) stockDetailHtml = '<div style="font-size:12px;color:var(--txt3);padding:12px 0">주식 탭에서 데이터를 먼저 로드하세요</div>';
   if(priceTime) stockDetailHtml += `<div style="font-size:10px;color:var(--txt3);margin-top:8px">📡 현재가 ${priceTime} 기준</div>`;
