@@ -4079,121 +4079,116 @@ function pfRenderAcctBalance() {
 
   const accts = ['미래ISA','미래연금저축','삼성연금저축','우리IRP','미래종합','미래금현물'];
 
-  // ── 거래 집계 ──
   const map = {};
   pfTx.forEach(r => {
-    const a = r.account || '';
+    const a = (r.account||'').replace(/\s/g,'');
     if (!map[a]) map[a] = { cash:0, in:0, out:0, div:0 };
-    const amt = parseFloat(r.amount) || 0;
-    const fee = parseFloat(r.fee)    || 0;
-    const tax = parseFloat(r.tax)    || 0;
+    const amt = parseFloat(r.amount)||0, fee = parseFloat(r.fee)||0, tax = parseFloat(r.tax)||0;
     map[a].cash += amt + fee + tax;
-    if (r.type === '입금')   map[a].in  += Math.abs(amt);
-    if (r.type === '출금')   map[a].out += Math.abs(amt);
-    if (r.type === '분배금') map[a].div += Math.abs(amt);
+    if (r.type==='입금')   map[a].in  += Math.abs(amt);
+    if (r.type==='출금')   map[a].out += Math.abs(amt);
+    if (r.type==='분배금') map[a].div += Math.abs(amt);
   });
 
-  // ── 평가금액 ──
   let savedEval = {};
   try { savedEval = JSON.parse(localStorage.getItem('pf_acct_eval')||'{}'); } catch(e){}
-  const manualEval = (typeof getManualEval === 'function') ? getManualEval() : {};
+  const manualEval = (typeof getManualEval==='function') ? getManualEval() : {};
 
   const activeAccts = accts.filter(a => map[a]);
-  if (!activeAccts.length) { wrap.style.display='none'; return; }
+  if (!activeAccts.length) { if(wrap) wrap.style.display='none'; if(wrap2) wrap2.style.display='none'; return; }
 
-  // ── 전체 합산 ──
-  let 전체투자원금 = 0, 전체평가 = 0, 전체예수금 = 0, 전체분배금 = 0;
+  // 전체 합산
+  let 전체투자=0, 전체평가=0, 전체예수=0, 전체분배=0;
   activeAccts.forEach(a => {
-    const v = map[a];
-    전체투자원금 += v.in - v.out;
-    전체예수금   += v.cash;
-    전체분배금   += v.div;
-    전체평가     += savedEval[a] || manualEval[a] || 0;
+    전체투자 += map[a].in - map[a].out;
+    전체예수 += map[a].cash;
+    전체분배 += map[a].div;
+    전체평가 += savedEval[a] || manualEval[a] || 0;
   });
-  const 전체총자산 = 전체평가 + 전체예수금;
-  const 전체수익   = 전체총자산 + 전체분배금 - 전체투자원금;
-  const 전체수익률 = 전체투자원금 > 0 ? 전체수익 / 전체투자원금 * 100 : null;
+  const 전체총자산 = 전체평가 + 전체예수;
+  const 전체수익   = 전체총자산 + 전체분배 - 전체투자;
+  const 전체수익률 = 전체투자 > 0 ? 전체수익/전체투자*100 : null;
   const 전체색     = 전체수익 >= 0 ? 'var(--green)' : 'var(--red)';
+  const fmt = v => Math.abs(v).toLocaleString()+'원';
+  const fmtS = (v, plus=false) => (plus&&v>0?'+':'') + v.toLocaleString()+'원';
 
   const accDot = a =>
-    a.includes('ISA')  ? '#4ade80' :
-    a.includes('연금') ? 'var(--purple)' :
-    a.includes('IRP')  ? 'var(--blue)' :
-    a.includes('금')   ? 'var(--yellow)' : 'var(--txt3)';
+    a.includes('ISA') ? '#4ade80' : a.includes('연금') ? 'var(--purple)' :
+    a.includes('IRP') ? 'var(--blue)' : a.includes('금') ? 'var(--yellow)' : 'var(--txt3)';
 
-  const fmt  = v => v.toLocaleString() + '원';
-  const fmtS = (v, plus=false) => (plus && v > 0 ? '+' : '') + v.toLocaleString() + '원';
-
-  // ── 계좌별 rows ──
+  // 계좌별 행
   const acctRows = activeAccts.map(a => {
     const v = map[a];
-    const 투자원금 = v.in - v.out;
-    const 예수금   = v.cash;
-    const 평가금액 = savedEval[a] || manualEval[a] || 0;
-    const 총자산   = 평가금액 + 예수금;
-    const 수익     = 총자산 + v.div - 투자원금;
-    const 수익률   = 투자원금 > 0 ? 수익 / 투자원금 * 100 : null;
-    const 색       = 수익 >= 0 ? 'var(--green)' : 'var(--red)';
-    const 수익률문자 = 수익률 !== null ? `${수익률 >= 0 ? '+' : ''}${수익률.toFixed(1)}%` : '—';
+    const 투자 = v.in - v.out;
+    const 예수 = v.cash;
+    const 평가 = savedEval[a] || manualEval[a] || 0;
+    const 총자산 = 평가 + 예수;
+    const 수익 = 총자산 + v.div - 투자;
+    const 수익률 = 투자 > 0 ? 수익/투자*100 : null;
+    const 색 = 수익 >= 0 ? 'var(--green)' : 'var(--red)';
+    const 율문자 = 수익률!==null ? (수익률>=0?'+':'')+수익률.toFixed(1)+'%' : '—';
 
-    return `<div style="display:grid;grid-template-columns:80px 1fr 1fr 1fr 1fr 80px;gap:4px 8px;align-items:center;
-                padding:8px 0;border-bottom:1px solid var(--bd);font-size:12px">
+    return `<div style="display:grid;grid-template-columns:80px 1fr 1fr 1fr 1fr 80px;gap:4px 8px;
+                align-items:center;padding:8px 0;border-bottom:1px solid var(--bd);font-size:12px">
       <div style="display:flex;align-items:center;gap:5px">
         <span style="width:6px;height:6px;border-radius:50%;background:${accDot(a)};flex-shrink:0;display:inline-block"></span>
         <span style="font-weight:600;color:var(--txt2);font-size:11px">${a}</span>
       </div>
       <div style="text-align:right">
         <div style="font-size:10px;color:var(--txt3);margin-bottom:1px">투자원금</div>
-        <div style="font-variant-numeric:tabular-nums;color:var(--txt2)">${fmt(투자원금)}</div>
+        <div style="font-variant-numeric:tabular-nums;color:var(--txt2)">${fmt(투자)}</div>
       </div>
       <div style="text-align:right">
-        <div style="font-size:10px;color:var(--txt3);margin-bottom:1px">${평가금액 ? '평가+예수' : '예수금'}</div>
-        <div style="font-variant-numeric:tabular-nums">${평가금액 ? fmt(총자산) : fmt(예수금)}</div>
+        <div style="font-size:10px;color:var(--txt3);margin-bottom:1px">${평가?'평가금액':'—'}</div>
+        <div style="font-variant-numeric:tabular-nums">${평가?fmt(평가):'—'}</div>
       </div>
       <div style="text-align:right">
         <div style="font-size:10px;color:var(--txt3);margin-bottom:1px">예수금</div>
-        <div style="font-variant-numeric:tabular-nums;color:${예수금>=0?'var(--green)':'var(--red)'}">${fmt(예수금)}</div>
+        <div style="font-variant-numeric:tabular-nums;color:${예수>=0?'var(--green)':'var(--red)'}">${fmt(예수)}</div>
       </div>
       <div style="text-align:right">
         <div style="font-size:10px;color:var(--txt3);margin-bottom:1px">분배금</div>
-        <div style="font-variant-numeric:tabular-nums;color:var(--purple)">${v.div ? '+' + fmt(v.div) : '—'}</div>
+        <div style="font-variant-numeric:tabular-nums;color:var(--purple)">${v.div?'+'+fmt(v.div):'—'}</div>
       </div>
       <div style="text-align:right">
-        <div style="font-size:13px;font-weight:700;color:${색};font-variant-numeric:tabular-nums">${수익률문자}</div>
-        <div style="font-size:10px;color:${색};font-variant-numeric:tabular-nums">${fmtS(수익, true)}</div>
+        <div style="font-size:13px;font-weight:700;color:${색};font-variant-numeric:tabular-nums">${율문자}</div>
+        <div style="font-size:10px;color:${색};font-variant-numeric:tabular-nums">${fmtS(수익,true)}</div>
       </div>
     </div>`;
   }).join('');
 
-  // ── 큰 요약 카드 + 계좌 rows ──
-  cards.innerHTML = `
+  const html = `
     <!-- 큰 요약 카드 -->
     <div style="background:linear-gradient(135deg,var(--bg2) 0%,var(--bg3) 100%);
                 border:1px solid var(--bd);border-radius:16px;padding:20px 24px;margin-bottom:12px">
-      <div style="font-size:11px;font-weight:700;color:var(--txt3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px">
-        📊 투자 계좌 전체
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:16px">
+      <div style="font-size:11px;font-weight:700;color:var(--txt3);letter-spacing:.1em;margin-bottom:16px">📊 투자 계좌 전체</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px 20px">
         <div>
           <div style="font-size:11px;color:var(--txt3);margin-bottom:4px">투자원금</div>
-          <div style="font-size:18px;font-weight:700;font-variant-numeric:tabular-nums">${fmt(전체투자원금)}</div>
+          <div style="font-size:17px;font-weight:700;font-variant-numeric:tabular-nums">${fmt(전체투자)}</div>
         </div>
         <div>
-          <div style="font-size:11px;color:var(--txt3);margin-bottom:4px">${전체평가 ? '총자산 (평가+예수)' : '예수금'}</div>
-          <div style="font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--blue)">${fmt(전체평가 ? 전체총자산 : 전체예수금)}</div>
+          <div style="font-size:11px;color:var(--txt3);margin-bottom:4px">평가금액</div>
+          <div style="font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--blue)">${전체평가?fmt(전체평가):'—'}</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--txt3);margin-bottom:4px">수익률</div>
+          <div style="font-size:22px;font-weight:800;font-variant-numeric:tabular-nums;color:${전체색}">
+            ${전체수익률!==null?(전체수익률>=0?'+':'')+전체수익률.toFixed(2)+'%':'—'}
+          </div>
+          <div style="font-size:11px;color:${전체색};margin-top:2px">${fmtS(전체수익,true)}</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--txt3);margin-bottom:4px">예수금</div>
+          <div style="font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--green)">${fmt(전체예수)}</div>
         </div>
         <div>
           <div style="font-size:11px;color:var(--txt3);margin-bottom:4px">분배금 누적</div>
-          <div style="font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--purple)">${전체분배금 ? '+' + fmt(전체분배금) : '—'}</div>
+          <div style="font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--purple)">${전체분배?'+'+fmt(전체분배):'—'}</div>
         </div>
         <div>
-          <div style="font-size:11px;color:var(--txt3);margin-bottom:4px">총 수익률</div>
-          <div style="font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;color:${전체색}">
-            ${전체수익률 !== null ? (전체수익률 >= 0 ? '+' : '') + 전체수익률.toFixed(2) + '%' : '—'}
-          </div>
-          <div style="font-size:11px;color:${전체색};font-variant-numeric:tabular-nums;margin-top:2px">
-            ${fmtS(전체수익, true)}
-          </div>
+          <div style="font-size:11px;color:var(--txt3);margin-bottom:4px">총자산</div>
+          <div style="font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--blue)">${fmt(전체총자산)}</div>
         </div>
       </div>
     </div>
@@ -4203,16 +4198,15 @@ function pfRenderAcctBalance() {
       <div style="font-size:10px;font-weight:700;color:var(--txt3);letter-spacing:.08em;padding:10px 0 6px;
                   display:grid;grid-template-columns:80px 1fr 1fr 1fr 1fr 80px;gap:4px 8px">
         <span>계좌</span><span style="text-align:right">투자원금</span>
-        <span style="text-align:right">총자산</span><span style="text-align:right">예수금</span>
+        <span style="text-align:right">평가금액</span><span style="text-align:right">예수금</span>
         <span style="text-align:right">분배금</span><span style="text-align:right">수익률</span>
       </div>
       ${acctRows}
     </div>`;
 
-  if(wrap) { wrap.style.display = 'block'; }
-  if(wrap2 && cards2) { cards2.innerHTML = cards ? cards.innerHTML : ''; wrap2.style.display = 'block'; }
+  if(wrap && cards)  { cards.innerHTML = html;  wrap.style.display='block'; }
+  if(wrap2 && cards2){ cards2.innerHTML = html; wrap2.style.display='block'; }
 }
-
 // ── 거래내역 렌더 ──
 function pfRenderHistory() {
   pfRenderAcctBalance();
