@@ -4707,7 +4707,7 @@ async function pfSyncHoldingsToSheet() {
   try {
     const res = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ action: 'pf_syncHoldings', holdings }),
     });
     const d = await res.json();
