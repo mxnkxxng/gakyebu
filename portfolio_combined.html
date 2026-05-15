@@ -2372,16 +2372,11 @@ function renderTotalAsset() {
   });
 
   // 예수금 (입금-출금-매수+매도 합)
+  // 예수금: pfRenderAcctBalance와 동일한 공식 (amount+fee+tax 부호 그대로)
   let deposit = 0;
   pfTx.forEach(r=>{
-    if(r.type==='입금') deposit += Math.abs(parseFloat(r.amount)||0);
-    if(r.type==='출금') deposit -= Math.abs(parseFloat(r.amount)||0);
-    if(r.type==='매수'||r.type==='매수') deposit -= Math.abs(parseFloat(r.amount)||0);
-    if(r.type==='매도'||r.type==='매도') deposit += Math.abs(parseFloat(r.amount)||0);
-    if(r.type==='분배금') deposit += Math.abs(parseFloat(r.amount)||0);
+    deposit += (parseFloat(r.amount)||0) + (parseFloat(r.fee)||0) + (parseFloat(r.tax)||0);
   });
-  deposit = Math.max(0, deposit);
-  evalTotal += deposit;
 
   const unrealized = evalTotal > 0 ? evalTotal - fifo.totalCostBasis - deposit : null;
   const stockRate = netIn>0 && evalTotal>0 ? (evalTotal-netIn)/netIn*100 : null;
@@ -2470,7 +2465,7 @@ function renderTotalAsset() {
     <span style="font-variant-numeric:tabular-nums;color:var(--txt3)">${Math.round(deposit).toLocaleString()}원</span>
   </div>`;
   if(evalTotal>0) stockDetailHtml += `<div style="display:flex;justify-content:space-between;padding:8px 0 0;font-size:13px;font-weight:700">
-    <span>합계</span>
+    <span>총자산 (평가+예수)</span>
     <span style="font-variant-numeric:tabular-nums;color:var(--blue)">${Math.round(evalTotal+deposit).toLocaleString()}원</span>
   </div>`;
   if(!stockDetailHtml) stockDetailHtml = '<div style="font-size:12px;color:var(--txt3);padding:12px 0">주식 탭에서 데이터를 먼저 로드하세요</div>';
