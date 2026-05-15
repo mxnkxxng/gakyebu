@@ -4389,53 +4389,35 @@ function pfRenderDiv() {
 // ── 보유종목 FIFO 계산 ──
 // 시트 수식과 동일한 보유종목 계산
 function pfCalcFifo() {
-  const sorted = [...pfTx].sort((a, b) => (a.date||'').localeCompare(b.date||''));
-  const queues = {};  // key → [{qty, cost}]
-
-  sorted.forEach(r => {
+  const map = {};
+  pfTx.forEach(r => {
     if (!r.name) return;
     const key = (r.name||'') + '|' + (r.account||'');
+    if (!map[key]) map[key] = { name:r.name, account:r.account, buy_qty:0, buy_amt:0, sell_qty:0, buy_dot_qty:0, sell_dot_qty:0 };
     const qty = Math.abs(parseFloat(r.qty)||0);
     const amt = Math.abs(parseFloat(r.amount)||0);
-
-    if (r.type==='매수' || r.type==='매수.' || r.type==='재투자') {
-      if (!queues[key]) queues[key] = { lots:[], name:r.name, account:r.account };
-      queues[key].lots.push({ qty, cost: amt });
-    } else if (r.type==='매도' || r.type==='매도.') {
-      if (!queues[key]) queues[key] = { lots:[], name:r.name, account:r.account };
-      let rem = qty;
-      while (rem > 0 && queues[key].lots.length > 0) {
-        const front = queues[key].lots[0];
-        if (front.qty <= rem) {
-          rem -= front.qty;
-          queues[key].lots.shift();
-        } else {
-          const ratio = rem / front.qty;
-          front.cost -= front.cost * ratio;
-          front.qty  -= rem;
-          rem = 0;
-        }
-      }
-    }
+    if (r.type==='매수')  { map[key].buy_qty     += qty; map[key].buy_amt += amt; }
+    if (r.type==='매수.') { map[key].buy_dot_qty += qty; }
+    if (r.type==='매도')  { map[key].sell_qty    += qty; }
+    if (r.type==='매도.') { map[key].sell_dot_qty+= qty; }
   });
 
   const holdings = {};
-  Object.entries(queues).forEach(([key, v]) => {
-    const totalQty  = v.lots.reduce((s, l) => s + l.qty, 0);
-    if (totalQty < 0.001) return;
-    const totalCost = v.lots.reduce((s, l) => s + l.cost, 0);
-    const avgPrice  = Math.round(totalCost / totalQty);
-    holdings[key] = {
-      name: v.name, account: v.account,
-      qty: totalQty,
-      avgPrice,
-      costBasis: Math.round(totalCost),
-    };
+  Object.entries(map).forEach(([key, v]) => {
+    const qty = v.buy_qty + v.buy_dot_qty - v.sell_qty - v.sell_dot_qty;
+    if (qty < 0.001) return;
+    let avgPrice = 0, costBasis = 0;
+    if (v.buy_qty > 0) {
+      const unitPrice = v.buy_amt / v.buy_qty;
+      const soldCost  = Math.ceil(unitPrice * v.sell_qty);
+      costBasis = v.buy_amt - soldCost;
+      avgPrice  = qty > 0 ? Math.round(costBasis / qty) : 0;
+      costBasis = qty * avgPrice;
+    }
+    holdings[key] = { name:v.name, account:v.account, qty, avgPrice, costBasis };
   });
   return holdings;
 }
-
-// ── 보유종목 탭 렌더 ──
 function pfRenderHoldings() {
   if (!pfTx.length) return;
   const holdings = pfCalcFifo();
@@ -4644,50 +4626,34 @@ function pfRenderHoldings2() {
     : '<div style="padding:40px;text-align:center;color:var(--txt3)">보유종목 없음</div>';
 }
 
-// 시트 수식과 동일한 보유종목 계산
+// 보유종목 계산 (합산 방식 - 날짜순 FIFO 대신 전체 합산)
 function pfCalcFifo2() {
-  const sorted = [...pfTx].sort((a, b) => (a.date||'').localeCompare(b.date||''));
-  const queues = {};  // key → [{qty, cost}]
-
-  sorted.forEach(r => {
+  const map = {};
+  pfTx.forEach(r => {
     if (!r.name) return;
     const key = (r.name||'') + '|' + (r.account||'');
+    if (!map[key]) map[key] = { name:r.name, account:r.account, buy_qty:0, buy_amt:0, sell_qty:0, buy_dot_qty:0, sell_dot_qty:0 };
     const qty = Math.abs(parseFloat(r.qty)||0);
     const amt = Math.abs(parseFloat(r.amount)||0);
-
-    if (r.type==='매수' || r.type==='매수.' || r.type==='재투자') {
-      if (!queues[key]) queues[key] = { lots:[], name:r.name, account:r.account };
-      queues[key].lots.push({ qty, cost: amt });
-    } else if (r.type==='매도' || r.type==='매도.') {
-      if (!queues[key]) queues[key] = { lots:[], name:r.name, account:r.account };
-      let rem = qty;
-      while (rem > 0 && queues[key].lots.length > 0) {
-        const front = queues[key].lots[0];
-        if (front.qty <= rem) {
-          rem -= front.qty;
-          queues[key].lots.shift();
-        } else {
-          const ratio = rem / front.qty;
-          front.cost -= front.cost * ratio;
-          front.qty  -= rem;
-          rem = 0;
-        }
-      }
-    }
+    if (r.type==='매수')  { map[key].buy_qty     += qty; map[key].buy_amt += amt; }
+    if (r.type==='매수.') { map[key].buy_dot_qty += qty; }
+    if (r.type==='매도')  { map[key].sell_qty    += qty; }
+    if (r.type==='매도.') { map[key].sell_dot_qty+= qty; }
   });
 
   const holdings = {};
-  Object.entries(queues).forEach(([key, v]) => {
-    const totalQty  = v.lots.reduce((s, l) => s + l.qty, 0);
-    if (totalQty < 0.001) return;
-    const totalCost = v.lots.reduce((s, l) => s + l.cost, 0);
-    const avgPrice  = Math.round(totalCost / totalQty);
-    holdings[key] = {
-      name: v.name, account: v.account,
-      qty: totalQty,
-      avgPrice,
-      costBasis: Math.round(totalCost),
-    };
+  Object.entries(map).forEach(([key, v]) => {
+    const qty = v.buy_qty + v.buy_dot_qty - v.sell_qty - v.sell_dot_qty;
+    if (qty < 0.001) return;
+    let avgPrice = 0, costBasis = 0;
+    if (v.buy_qty > 0) {
+      const unitPrice = v.buy_amt / v.buy_qty;
+      const soldCost  = Math.ceil(unitPrice * v.sell_qty);
+      costBasis = v.buy_amt - soldCost;
+      avgPrice  = qty > 0 ? Math.round(costBasis / qty) : 0;
+      costBasis = qty * avgPrice;
+    }
+    holdings[key] = { name:v.name, account:v.account, qty, avgPrice, costBasis };
   });
   return holdings;
 }
