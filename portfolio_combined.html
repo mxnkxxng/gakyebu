@@ -2394,8 +2394,8 @@ function renderTotalAsset() {
   document.getElementById('ta-stock-sub').textContent = evalTotal > 0
     ? `평가 ${Math.round(evalTotal).toLocaleString()}원 + 예수 ${Math.round(deposit).toLocaleString()}원`
     : '평가금액 로드 필요';
-  document.getElementById('ta-stock-rate').textContent = stockRate !== null
-    ? (stockRate>=0?'+':'')+stockRate.toFixed(2)+'%' : '—';
+  // ta-stock-rate 제거됨
+
 
 
   // 주식 계좌별 상세
@@ -5296,6 +5296,7 @@ function addEntry(){
   entries.unshift(entry);saveEntries();
   document.getElementById('gb-f-amount').value='';document.getElementById('gb-f-memo').value='';
   showToast('\uCD94\uAC00\uB410\uC5B4\uC694!');renderHome();renderHist();
+    if(typeof renderTotalAsset==='function') setTimeout(renderTotalAsset, 100);
   var url=getScriptUrl();
   if(url){
     var p=JSON.parse(JSON.stringify(entry));p.id=String(p.id);p.action='addEntry';
