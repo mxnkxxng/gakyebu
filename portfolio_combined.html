@@ -2354,23 +2354,14 @@ function renderTotalAsset() {
   const totalRealized = Object.values(pnlMap).reduce((s,v)=>s+v, 0);
 
   // 평가금액 (보유종목 현재가 기반 + 수동입력)
+  // 평가금액: sheetPrices 기반 (pfRenderAcctBalance와 동일한 소스)
+  let sheetPricesTA = {};
+  try { sheetPricesTA = JSON.parse(localStorage.getItem('pf_sheet_prices')||'{}'); } catch(e){}
+  const fifoH2 = pfCalcFifo2();
   let evalTotal = 0, evalAvail = 0;
-  const PEN_ACCS = ['삼성연금저축','미래연금저축','우리IRP'];
-  const GOLD_ACCS = ['미래금현물','미래금'];
-  PEN_ACCS.forEach(acc=>{ evalTotal += parseFloat(manualEval[acc])||0; });
-  GOLD_ACCS.forEach(acc=>{ evalTotal += parseFloat(manualEval[acc])||0; });
-
-  // ISA·종합: holdingsData 기반 평가금액
-  let isaEval = 0;
-  Object.entries(fifo.holdByName).forEach(([name,h])=>{
-    const hd = holdingsData[name]||{};
-    const cp = parseFloat(hd.currentPrice)||0;
-    if(cp>0){
-      const ev = Math.round(h.qty * cp);
-      evalTotal += ev;
-      isaEval += ev;
-      evalAvail++;
-    }
+  Object.values(fifoH2).forEach(h => {
+    const cp = sheetPricesTA[h.name+'|'+h.account] || sheetPricesTA[h.name] || 0;
+    if(cp > 0) { evalTotal += h.qty * cp; evalAvail++; }
   });
 
   // 예수금 (입금-출금-매수+매도 합)
