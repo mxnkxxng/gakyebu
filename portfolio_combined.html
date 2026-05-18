@@ -2478,23 +2478,19 @@ function renderTotalAsset() {
   ];
 
   let stockDetailHtml = '';
-  // 계좌별 FIFO 매수원가 집계
-  const acctCostMap = {};
-  const fifo2 = calcFifoForDashboard(pfTx);
-  Object.values(fifo2.holdByName).forEach(h => {
-    const acc = h.account||'';
-    acctCostMap[acc] = (acctCostMap[acc]||0) + h.costBasis;
+  // 계좌별 FIFO 매수원가
+  const _acctCost = {};
+  Object.values(calcFifoForDashboard(pfTx).holdByName).forEach(h => {
+    _acctCost[h.account||''] = (_acctCost[h.account||'']||0) + h.costBasis;
   });
-
   orderedAccts.forEach(acc => {
     const v = acctEvalMap[acc] || 0;
-    const cost = acctCostMap[acc] || 0;
-    const pnl = v > 0 && cost > 0 ? v - cost : null;
+    const cost = _acctCost[acc] || 0;
+    const pnl = v>0&&cost>0 ? v-cost : null;
     const hasSavedEval = (savedAcctEvalTA[acc]||0) > 0;
     const isManual = ['삼성연금저축','미래연금저축','우리IRP','미래금현물'].includes(acc);
     const label = hasSavedEval ? '' : isManual ? ' <span style="font-size:9px;color:var(--txt3)">(수동)</span>' : ' <span style="font-size:9px;color:var(--yellow)">(원가추정)</span>';
     const c = ACC_COLOR[acc] || 'var(--txt2)';
-    const pnlStr = pnl!==null ? ` <span style="font-size:10px;color:${pnl>=0?'var(--green)':'var(--red)'}">${pnl>=0?'+':''}${Math.round(pnl).toLocaleString()}원</span>` : '';
     stockDetailHtml += `<div style="padding:6px 0;border-bottom:.5px solid var(--bd);font-size:12px">
       <div style="display:flex;justify-content:space-between">
         <span style="color:${c};font-weight:600">${acc}${label}</span>
@@ -2502,7 +2498,7 @@ function renderTotalAsset() {
       </div>
       ${cost>0?`<div style="display:flex;justify-content:space-between;margin-top:2px">
         <span style="color:var(--txt3);font-size:10px">매수원가</span>
-        <span style="font-variant-numeric:tabular-nums;font-size:10px;color:var(--txt2)">${Math.round(cost).toLocaleString()}원${pnlStr}</span>
+        <span style="font-variant-numeric:tabular-nums;font-size:10px;color:var(--txt2)">${Math.round(cost).toLocaleString()}원${pnl!==null?` <span style="color:${pnl>=0?'var(--green)':'var(--red)'}">${pnl>=0?'+':''}${Math.round(pnl).toLocaleString()}원</span>`:''}</span>
       </div>`:''}
     </div>`;
   });
@@ -4581,13 +4577,12 @@ function pfRenderHoldings2() {
   // 현재가: pf_sheet_prices 우선, 없으면 pf_holdings_data
   let sheetPrices = {};
   try { sheetPrices = JSON.parse(localStorage.getItem('pf_sheet_prices') || '{}'); } catch(e) {}
-  let holdingsData2 = {};
-  try { holdingsData2 = JSON.parse(localStorage.getItem('pf_holdings_data') || '{}'); } catch(e) {}
+  let _hd2 = {};
+  try { _hd2 = JSON.parse(localStorage.getItem('pf_holdings_data') || '{}'); } catch(e) {}
   function getCP2(name, account) {
     return sheetPrices[name+'|'+account] || sheetPrices[name]
-      || (holdingsData2[name] ? parseFloat(holdingsData2[name].currentPrice)||0 : 0);
+      || (_hd2[name] ? parseFloat(_hd2[name].currentPrice)||0 : 0);
   }
-
   // 요약
   let totalCost = 0, totalEval = 0;
   entries.forEach(h => {
