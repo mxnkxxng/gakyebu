@@ -1123,6 +1123,7 @@ async function pfPost(body) {
 }
 
 async function loadPfData() {
+  pfTx = []; // 중복 방지 초기화
   const url = getPfUrl();
   if (!url) {
     document.querySelectorAll('#p0 .loading, #p2 .loading, #p3 .loading').forEach(el=>{
@@ -1292,7 +1293,7 @@ function renderHoldingsTab() {
       acctCost += Math.round(h.costBasis);
       if(evalAmt>0) acctEval += evalAmt;
       totalCost += Math.round(h.costBasis);
-      if(evalAmt>0) totalEval += evalAmt;
+      if(evalAmt>0) { totalEval += evalAmt; totalPnl += evalPnl; }
       const pnlStr = evalPnl!==null ? `<span style="color:${col(evalPnl)};font-weight:700">${evalPnl>=0?'+':''}${fmtW(Math.abs(evalPnl))}</span>` : '—';
       const pctStr = evalPct!==null ? `<span style="color:${col(evalPct)}">${evalPct>=0?'+':''}${evalPct.toFixed(1)}%</span>` : '—';
       return `<tr>
@@ -4086,9 +4087,19 @@ function pfRenderAcctBalance() {
     if (r.type==='분배금') map[a].div += Math.abs(amt);
   });
 
-  let savedEval = {};
-  try { savedEval = JSON.parse(localStorage.getItem('pf_acct_eval')||'{}'); } catch(e){}
-  const manualEval = (typeof getManualEval==='function') ? getManualEval() : {};
+  // sheetPrices로 계좌별 평가금액 계산 (보유종목 탭과 동일한 소스)
+  let sheetPrices = {};
+  try { sheetPrices = JSON.parse(localStorage.getItem('pf_sheet_prices')||'{}'); } catch(e){}
+
+  // FIFO로 보유수량 계산
+  const fifoHoldings = pfCalcFifo2();
+  // 계좌별 평가금액 합산
+  const acctEvalFromSheet = {};
+  Object.values(fifoHoldings).forEach(h => {
+    const acc = (h.account||'').replace(/\s/g,'');
+    const cp = sheetPrices[h.name + '|' + h.account] || sheetPrices[h.name] || 0;
+    if (cp > 0) acctEvalFromSheet[acc] = (acctEvalFromSheet[acc]||0) + h.qty * cp;
+  });
 
   const activeAccts = accts.filter(a => map[a]);
   if (!activeAccts.length) { if(wrap) wrap.style.display='none'; if(wrap2) wrap2.style.display='none'; return; }
@@ -4099,7 +4110,7 @@ function pfRenderAcctBalance() {
     전체투자 += map[a].in - map[a].out;
     전체예수 += map[a].cash;
     전체분배 += map[a].div;
-    전체평가 += savedEval[a] || manualEval[a] || 0;
+    전체평가 += acctEvalFromSheet[a] || 0;
   });
   const 전체총자산 = 전체평가 + 전체예수;
   const 전체수익   = 전체총자산 + 전체분배 - 전체투자;
@@ -4117,7 +4128,7 @@ function pfRenderAcctBalance() {
     const v = map[a];
     const 투자 = v.in - v.out;
     const 예수 = v.cash;
-    const 평가 = savedEval[a] || manualEval[a] || 0;
+    const 평가 = acctEvalFromSheet[a] || 0;
     const 총자산 = 평가 + 예수;
     const 수익 = 총자산 + v.div - 투자;
     const 수익률 = 투자 > 0 ? 수익/투자*100 : null;
@@ -4554,8 +4565,8 @@ function pfRenderHoldings2() {
   se('hld2-cnt',  entries.length + '종목');
   se('hld2-cost', pfFmtW(totalCost));
   se('hld2-eval', totalEval ? pfFmtW(totalEval) : '현재가 필요', totalEval ? 'var(--blue)' : 'var(--txt3)');
-  se('hld2-pnl',  totalPnl !== null ? (totalPnl >= 0 ? '+' : '') + pfFmtW(totalPnl) : '—',
-     totalPnl !== null ? (totalPnl >= 0 ? 'var(--green)' : 'var(--red)') : 'var(--txt3)');
+  se('hld2-pnl',  totalEval > 0 ? (totalPnl >= 0 ? '+' : '') + pfFmtW(totalPnl) : '—',
+     totalEval > 0 ? (totalPnl >= 0 ? 'var(--green)' : 'var(--red)') : 'var(--txt3)');
 
   // 계좌별 그룹 테이블
   const accColor = a => a.includes('ISA') ? '#4ade80' : a.includes('연금') ? 'var(--purple)' :
@@ -4840,8 +4851,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const dateInput = document.getElementById('f-date');
   if (dateInput) dateInput.value = new Date().toLocaleDateString('sv-SE');
 
-  // URL 있으면 자동 로드
-  if (savedUrl) loadPfData();
+  // loadPfData는 위 DOMContentLoaded에서만 호출 (중복 방지)
+
 });
 
 </script>
