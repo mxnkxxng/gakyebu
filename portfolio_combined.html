@@ -1368,16 +1368,24 @@ function renderHistAcctSummary() {
   const el = document.getElementById('hist-acct-summary');
   if(!el || !pfTx.length) return;
   const accMap = {};
+  // __balance__ 헤더 행 우선 처리 (CSV에 기재된 실제 예수금)
+  pfTx.forEach(r=>{
+    if(r.type==='__balance__') accMap[r.account||'기타'] = parseFloat(r.amount)||0;
+  });
   pfTx.forEach(r=>{
     const acc = r.account||'기타';
+    if(r.type==='__balance__') return;
+    if(accMap[acc]!==undefined) return; // __balance__ 있으면 계산 안함
     if(!accMap[acc]) accMap[acc] = 0;
     const amt = Math.abs(parseFloat(r.amount)||0);
     if(r.type==='입금')   accMap[acc] += amt;
     if(r.type==='출금')   accMap[acc] -= amt;
-    if(r.type==='매수'||r.type==='매수')  accMap[acc] -= amt;
-    if(r.type==='매도'||r.type==='매도')  accMap[acc] += amt;
+    if(r.type==='매수'||r.type==='매수.')  accMap[acc] -= amt;
+    if(r.type==='매도'||r.type==='매도.')  accMap[acc] += amt;
     if(r.type==='분배금') accMap[acc] += amt;
     if(r.type==='이용료') accMap[acc] -= amt;
+    if(r.type==='이자')   accMap[acc] += amt;
+    // mmf, 재투자 제외
   });
   const ACC_ORDER = ['미래ISA','미래연금저축','삼성연금저축','우리IRP','미래종합','미래금현물'];
   const ordered = [...ACC_ORDER.filter(a=>accMap[a]!==undefined), ...Object.keys(accMap).filter(a=>!ACC_ORDER.includes(a))];
@@ -1403,7 +1411,7 @@ function renderDashboard() {
     const fee=Math.abs(parseFloat(r.fee)||0);
     const yr=(r.date||'').slice(0,4);
     const acc=r.account||'';
-    if(!accMap[acc]) accMap[acc]={in:0,out:0,buy:0,sell:0,div:0,fee:0};
+    if(!accMap[acc]) accMap[acc]={in:0,out:0,buy:0,sell:0,div:0,fee:0,utilFee:0,interest:0};
     if(r.type==='입금'){  totalIn+=amt;  accMap[acc].in+=amt;
       if(yr==='2026'){ in26+=amt;
         if(PEN_ACCS.includes(acc)) pen26+=amt;
@@ -1415,6 +1423,8 @@ function renderDashboard() {
     if(r.type==='매도'||r.type==='매도'){ totalSell+=amt; accMap[acc].sell+=amt; }
     if(r.type==='분배금'){ totalDiv+=amt; accMap[acc].div+=amt; }
     accMap[acc].fee+=fee;
+    if(r.type==='이용료') accMap[acc].utilFee+=(Math.abs(parseFloat(r.amount)||0));
+    if(r.type==='이자')   accMap[acc].interest+=(Math.abs(parseFloat(r.amount)||0));
   });
 
   const pnlMap=calcRealizedPnL(pfTx);
@@ -1508,17 +1518,23 @@ function renderDashboard() {
     }
   });
 
+  // 예수금: __balance__ 헤더값 우선, 없으면 in-out-buy+sell+div 계산
+  const cashBal={};
+  pfTx.forEach(r=>{ if(r.type==='__balance__') cashBal[r.account||'']=parseFloat(r.amount)||0; });
+  function getAccCash(acc){
+    if(cashBal[acc]!==undefined) return cashBal[acc];
+    const v=accMap[acc]; if(!v) return 0;
+    return v.in-v.out-v.buy+v.sell+v.div-(v.utilFee||0)+(v.interest||0);
+  }
+
   const penEval=(acctEvalMap['미래연금저축']||0)+(acctEvalMap['삼성연금저축']||0)+(acctEvalMap['우리IRP']||0);
-  const penCash=(accMap['미래연금저축']?accMap['미래연금저축'].in-accMap['미래연금저축'].out-accMap['미래연금저축'].buy+accMap['미래연금저축'].sell+accMap['미래연금저축'].div:0)
-               +(accMap['삼성연금저축']?accMap['삼성연금저축'].in-accMap['삼성연금저축'].out-accMap['삼성연금저축'].buy+accMap['삼성연금저축'].sell+accMap['삼성연금저축'].div:0)
-               +(accMap['우리IRP']?accMap['우리IRP'].in-accMap['우리IRP'].out-accMap['우리IRP'].buy+accMap['우리IRP'].sell+accMap['우리IRP'].div:0);
+  const penCash=getAccCash('미래연금저축')+getAccCash('삼성연금저축')+getAccCash('우리IRP');
   const penTotal=penEval+Math.max(0,penCash);
   const stkEval=(acctEvalMap['미래ISA']||0)+(acctEvalMap['미래종합']||0);
-  const stkCash=(accMap['미래ISA']?accMap['미래ISA'].in-accMap['미래ISA'].out-accMap['미래ISA'].buy+accMap['미래ISA'].sell+accMap['미래ISA'].div:0)
-               +(accMap['미래종합']?accMap['미래종합'].in-accMap['미래종합'].out-accMap['미래종합'].buy+accMap['미래종합'].sell+accMap['미래종합'].div:0);
+  const stkCash=getAccCash('미래ISA')+getAccCash('미래종합');
   const stkTotal=stkEval+Math.max(0,stkCash);
   const goldEval=(acctEvalMap['미래금현물']||0);
-  const goldCash=accMap['미래금현물']?accMap['미래금현물'].in-accMap['미래금현물'].out-accMap['미래금현물'].buy+accMap['미래금현물'].sell+accMap['미래금현물'].div:0;
+  const goldCash=getAccCash('미래금현물');
   const goldTotal=goldEval+Math.max(0,goldCash);
   const grandTotal=penTotal+stkTotal+goldTotal||totalAsset||1;
 
