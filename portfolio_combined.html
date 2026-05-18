@@ -500,8 +500,9 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
       <div style="font-size:18px;font-weight:700" id="hld2-cnt">—</div>
     </div>
     <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:10px;padding:12px;text-align:center">
-      <div style="font-size:10px;color:var(--txt3);margin-bottom:4px">매수원가 합계</div>
-      <div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums" id="hld2-cost">—</div>
+      <div style="font-size:10px;color:var(--txt3);margin-bottom:4px">투자원금 (입금합계)</div>
+      <div style="font-size:13px;font-weight:700;font-variant-numeric:tabular-nums" id="hld2-netin">—</div>
+      <div style="font-size:10px;color:var(--txt3);margin-top:2px">매수원가: <span id="hld2-cost">—</span></div>
     </div>
     <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:10px;padding:12px;text-align:center">
       <div style="font-size:10px;color:var(--txt3);margin-bottom:4px">평가금액 합계</div>
@@ -4563,6 +4564,13 @@ function pfRenderHoldings2() {
     if (c) el.style.color = c;
   };
   se('hld2-cnt',  entries.length + '종목');
+  // 투자원금 (입금합계)
+  const 투자원금 = pfTx.reduce((s,r) => {
+    if(r.type==='입금') return s + Math.abs(parseFloat(r.amount)||0);
+    if(r.type==='출금') return s - Math.abs(parseFloat(r.amount)||0);
+    return s;
+  }, 0);
+  se('hld2-netin', pfFmtW(투자원금));
   se('hld2-cost', pfFmtW(totalCost));
   se('hld2-eval', totalEval ? pfFmtW(totalEval) : '현재가 필요', totalEval ? 'var(--blue)' : 'var(--txt3)');
   se('hld2-pnl',  totalEval > 0 ? (totalPnl >= 0 ? '+' : '') + pfFmtW(totalPnl) : '—',
