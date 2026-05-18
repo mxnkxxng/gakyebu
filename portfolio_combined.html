@@ -2362,32 +2362,50 @@ function renderTotalAsset() {
   // 실현손익 합계
   const totalRealized = Object.values(pnlMap).reduce((s,v)=>s+v, 0);
 
-  // 평가금액 (보유종목 현재가 기반 + 수동입력)
+  // 평가금액: holdingsData를 계좌별로 합산 (정확)
   let evalTotal = 0, evalAvail = 0;
+  const _evalByAcct = {};
+  Object.entries(holdingsData).forEach(([name,hd])=>{
+    const qty=parseFloat(hd.qty)||0, cp=parseFloat(hd.currentPrice)||0;
+    if(!qty||!cp) return;
+    const acc=hd.account||'';
+    _evalByAcct[acc]=(_evalByAcct[acc]||0)+Math.round(qty*cp);
+    evalAvail++;
+  });
+  evalTotal = Object.values(_evalByAcct).reduce((s,v)=>s+v,0);
+  // 수동입력 평가금액 보완 (현재가 없는 연금·금)
   const PEN_ACCS = ['삼성연금저축','미래연금저축','우리IRP'];
   const GOLD_ACCS = ['미래금현물','미래금'];
-  PEN_ACCS.forEach(acc=>{ evalTotal += parseFloat(manualEval[acc])||0; });
-  GOLD_ACCS.forEach(acc=>{ evalTotal += parseFloat(manualEval[acc])||0; });
-
-  // ISA·종합: holdingsData 기반 평가금액
-  let isaEval = 0;
-  Object.entries(fifo.holdByName).forEach(([name,h])=>{
-    const hd = holdingsData[name]||{};
-    const cp = parseFloat(hd.currentPrice)||0;
-    if(cp>0){
-      const ev = Math.round(h.qty * cp);
-      evalTotal += ev;
-      isaEval += ev;
-      evalAvail++;
-    }
+  [...PEN_ACCS,...GOLD_ACCS].forEach(acc=>{
+    const mv=parseFloat(manualEval[acc])||0;
+    if(mv>0&&!(_evalByAcct[acc]>0)){ evalTotal+=mv; evalAvail++; }
   });
+  let isaEval = _evalByAcct['미래ISA']||0;
 
-  // 예수금 (입금-출금-매수+매도 합)
-  // 예수금: pfRenderAcctBalance와 동일한 공식 (amount+fee+tax 부호 그대로)
-  let deposit = 0;
+  // 예수금: __balance__ 헤더값 우선, 없으면 거래내역 계산
+  const _cashBal2={};
+  pfTx.forEach(r=>{ if(r.type==='__balance__') _cashBal2[r.account||'']=parseFloat(r.amount)||0; });
+  const _txAccMap={};
   pfTx.forEach(r=>{
-    deposit += (parseFloat(r.amount)||0) + (parseFloat(r.fee)||0) + (parseFloat(r.tax)||0);
+    if(r.type==='__balance__') return;
+    const acc=r.account||''; if(!_txAccMap[acc]) _txAccMap[acc]={in:0,out:0,buy:0,sell:0,div:0,fee:0,interest:0};
+    const amt=Math.abs(parseFloat(r.amount)||0);
+    if(r.type==='입금') _txAccMap[acc].in+=amt;
+    else if(r.type==='출금') _txAccMap[acc].out+=amt;
+    else if(r.type==='매수'||r.type==='매수.') _txAccMap[acc].buy+=amt;
+    else if(r.type==='매도'||r.type==='매도.') _txAccMap[acc].sell+=amt;
+    else if(r.type==='분배금') _txAccMap[acc].div+=amt;
+    else if(r.type==='이용료') _txAccMap[acc].fee+=amt;
+    else if(r.type==='이자') _txAccMap[acc].interest+=amt;
   });
+  function _getCash2(acc){
+    if(_cashBal2[acc]!==undefined) return _cashBal2[acc];
+    const v=_txAccMap[acc]; if(!v) return 0;
+    return v.in-v.out-v.buy+v.sell+v.div-v.fee+v.interest;
+  }
+  const ALL_ACCS=['미래ISA','미래연금저축','삼성연금저축','우리IRP','미래종합','미래금현물'];
+  let deposit=0;
+  ALL_ACCS.forEach(acc=>{ deposit+=Math.max(0,_getCash2(acc)); });
 
   const unrealized = evalTotal > 0 ? evalTotal - fifo.totalCostBasis - deposit : null;
   const stockRate = netIn>0 && evalTotal>0 ? (evalTotal-netIn)/netIn*100 : null;
