@@ -1496,19 +1496,14 @@ function renderDashboard() {
     if(sec==='국내주식') krStkEval+=e;
     if(!sec.includes('주식')) etfEval+=e; else indivEval+=e;
   });
-  // 계좌별 평가금액은 savedAcctEval 우선 (정확한 계좌별 집계)
-  // savedAcctEval이 없으면 holdingsData name 기반으로 폴백
-  if(Object.keys(savedAcctEval).length > 0) {
-    Object.assign(acctEvalMap, savedAcctEval);
-    totalHoldEval = Object.values(savedAcctEval).reduce((s,v)=>s+v, 0);
-  } else {
-    holdItems.forEach(([name,hd])=>{
-      const qty=parseFloat(hd.qty)||0; const cp=parseFloat(hd.currentPrice)||0;
-      if(!qty||!cp) return;
-      const acct=hd.account||'';
-      acctEvalMap[acct]=(acctEvalMap[acct]||0)+qty*cp;
-    });
-  }
+  // 계좌별 평가금액: holdingsData에서 직접 계좌별 합산 (항상 최신값)
+  holdItems.forEach(([name,hd])=>{
+    const qty=parseFloat(hd.qty)||0; const cp=parseFloat(hd.currentPrice)||0;
+    if(!qty||!cp) return;
+    const acct=hd.account||'';
+    acctEvalMap[acct]=(acctEvalMap[acct]||0)+Math.round(qty*cp);
+  });
+  totalHoldEval = Object.values(acctEvalMap).reduce((s,v)=>s+v,0);
   // 수동 입력값 — savedAcctEval에 없는 계좌(연금·금)만 보완
   ['미래연금저축','삼성연금저축','우리IRP','미래금현물'].forEach(acc=>{
     const mv = manualEval[acc]||0;
