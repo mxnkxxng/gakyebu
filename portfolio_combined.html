@@ -1451,12 +1451,27 @@ function renderDashboard() {
   // 수동 평가금액 (연금·금 계좌) 반영
   const manualEval = getManualEval();
 
-  // 평가금액 계산 — holdingsData 기반 FIFO (기존 방식 유지)
+  // 평가금액: pf_acct_eval(계좌별 정확한 값) 우선 사용
+  let _pfAcctEval={};
+  try{_pfAcctEval=JSON.parse(localStorage.getItem('pf_acct_eval')||'{}');}catch(e){}
   let totalEvalAmt=0;
-  Object.entries(fifo.holdByName).forEach(([name,h])=>{
-    const hd=holdingsData[name]; const cp=hd?(parseFloat(hd.currentPrice)||0):0;
-    if(cp>0) totalEvalAmt+=h.qty*cp;
-  });
+  if(Object.keys(_pfAcctEval).length>0){
+    totalEvalAmt=Object.values(_pfAcctEval).reduce((s,v)=>s+(v||0),0);
+  } else {
+    // fallback: holdingsData 계좌별 합산
+    const _evalByAcct2={};
+    Object.entries(holdingsData).forEach(([name,hd])=>{
+      const qty=parseFloat(hd.qty)||0, cp=parseFloat(hd.currentPrice)||0;
+      if(!qty||!cp) return;
+      const acc=hd.account||'';
+      _evalByAcct2[acc]=(_evalByAcct2[acc]||0)+Math.round(qty*cp);
+    });
+    totalEvalAmt=Object.values(_evalByAcct2).reduce((s,v)=>s+v,0);
+    ['삼성연금저축','미래연금저축','우리IRP','미래금현물'].forEach(acc=>{
+      const mv=manualEval[acc]||0;
+      if(mv>0&&!(_evalByAcct2[acc]>0)) totalEvalAmt+=mv;
+    });
+  }
   const unrealized=totalEvalAmt>0?totalEvalAmt-totalCostBasis:null;
   const totalPnl=totalRealized+totalDiv+(unrealized!==null?unrealized:0);
   const totalAsset=totalEvalAmt>0?totalEvalAmt+deposit:0;
@@ -2362,24 +2377,29 @@ function renderTotalAsset() {
   // 실현손익 합계
   const totalRealized = Object.values(pnlMap).reduce((s,v)=>s+v, 0);
 
-  // 평가금액: holdingsData를 계좌별로 합산 (정확)
+  // 평가금액: pf_acct_eval 우선 사용
   let evalTotal = 0, evalAvail = 0;
   const _evalByAcct = {};
-  Object.entries(holdingsData).forEach(([name,hd])=>{
-    const qty=parseFloat(hd.qty)||0, cp=parseFloat(hd.currentPrice)||0;
-    if(!qty||!cp) return;
-    const acc=hd.account||'';
-    _evalByAcct[acc]=(_evalByAcct[acc]||0)+Math.round(qty*cp);
-    evalAvail++;
-  });
-  evalTotal = Object.values(_evalByAcct).reduce((s,v)=>s+v,0);
-  // 수동입력 평가금액 보완 (현재가 없는 연금·금)
-  const PEN_ACCS = ['삼성연금저축','미래연금저축','우리IRP'];
-  const GOLD_ACCS = ['미래금현물','미래금'];
-  [...PEN_ACCS,...GOLD_ACCS].forEach(acc=>{
-    const mv=parseFloat(manualEval[acc])||0;
-    if(mv>0&&!(_evalByAcct[acc]>0)){ evalTotal+=mv; evalAvail++; }
-  });
+  let _pfAcctEval2={};
+  try{_pfAcctEval2=JSON.parse(localStorage.getItem('pf_acct_eval')||'{}');}catch(e){}
+  if(Object.keys(_pfAcctEval2).length>0){
+    evalTotal = Object.values(_pfAcctEval2).reduce((s,v)=>s+(v||0),0);
+    Object.assign(_evalByAcct, _pfAcctEval2);
+    evalAvail = Object.keys(_pfAcctEval2).length;
+  } else {
+    Object.entries(holdingsData).forEach(([name,hd])=>{
+      const qty=parseFloat(hd.qty)||0, cp=parseFloat(hd.currentPrice)||0;
+      if(!qty||!cp) return;
+      const acc=hd.account||'';
+      _evalByAcct[acc]=(_evalByAcct[acc]||0)+Math.round(qty*cp);
+      evalAvail++;
+    });
+    evalTotal = Object.values(_evalByAcct).reduce((s,v)=>s+v,0);
+    ['삼성연금저축','미래연금저축','우리IRP','미래금현물'].forEach(acc=>{
+      const mv=parseFloat(manualEval[acc])||0;
+      if(mv>0&&!(_evalByAcct[acc]>0)){ evalTotal+=mv; evalAvail++; }
+    });
+  }
   let isaEval = _evalByAcct['미래ISA']||0;
 
   // 예수금: __balance__ 헤더값 우선, 없으면 거래내역 계산
@@ -4648,6 +4668,7 @@ function pfRenderHoldings2() {
         <span style="font-weight:700;color:${accColor(acc)}">${acc}</span>
         <span style="color:var(--txt2);font-variant-numeric:tabular-nums">
           원가 ${pfFmtW(accTotal)}
+          ${accEval ? ` / <span style="color:var(--blue)">평가 ${pfFmtW(accEval)}</span>` : ''}
           ${accPnl !== null ? ` / <span style="color:${accPnl >= 0 ? 'var(--green)' : 'var(--red)'}">
             ${accPnl >= 0 ? '+' : ''}${pfFmtW(accPnl)} (${accRate !== null ? accRate.toFixed(1) : 0}%)
           </span>` : ''}
