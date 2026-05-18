@@ -1451,30 +1451,12 @@ function renderDashboard() {
   // 수동 평가금액 (연금·금 계좌) 반영
   const manualEval = getManualEval();
 
-  // 평가금액 계산 — savedAcctEval(계좌별 정확한 값) 우선 사용
-  let savedAcctEvalEarly={};
-  try{savedAcctEvalEarly=JSON.parse(localStorage.getItem('pf_acct_eval')||'{}');}catch(e){}
+  // 평가금액 계산 — holdingsData 기반 FIFO (기존 방식 유지)
   let totalEvalAmt=0;
-  if(Object.keys(savedAcctEvalEarly).length>0){
-    // savedAcctEval이 있으면 그 합계 사용 (가장 정확)
-    totalEvalAmt = Object.values(savedAcctEvalEarly).reduce((s,v)=>s+v,0);
-    // 수동 평가금액 보완 (연금·금은 현재가 없어서 savedAcctEval에 없을 수 있음)
-    ['미래연금저축','삼성연금저축','우리IRP','미래금현물'].forEach(acc=>{
-      const mv=manualEval[acc]||0;
-      if(mv>0&&!(savedAcctEvalEarly[acc]>0)) totalEvalAmt+=mv;
-    });
-  } else {
-    // fallback: holdingsData 기반 FIFO 계산
-    Object.entries(fifo.holdByName).forEach(([name,h])=>{
-      const hd=holdingsData[name]; const cp=hd?(parseFloat(hd.currentPrice)||0):0;
-      if(cp>0) totalEvalAmt+=h.qty*cp;
-    });
-    // 수동 평가금액 보완
-    ['미래연금저축','삼성연금저축','우리IRP','미래금현물'].forEach(acc=>{
-      const mv=manualEval[acc]||0;
-      if(mv>0) totalEvalAmt+=mv;
-    });
-  }
+  Object.entries(fifo.holdByName).forEach(([name,h])=>{
+    const hd=holdingsData[name]; const cp=hd?(parseFloat(hd.currentPrice)||0):0;
+    if(cp>0) totalEvalAmt+=h.qty*cp;
+  });
   const unrealized=totalEvalAmt>0?totalEvalAmt-totalCostBasis:null;
   const totalPnl=totalRealized+totalDiv+(unrealized!==null?unrealized:0);
   const totalAsset=totalEvalAmt>0?totalEvalAmt+deposit:0;
