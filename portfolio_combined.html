@@ -4169,6 +4169,31 @@ function pfRenderAcctBalance() {
   Object.values(fifoHoldings).forEach(h => { 전체매수원가 += h.costBasis; });
   // 미실현손익
   const 전체미실현 = 전체평가 > 0 ? 전체평가 - 전체매수원가 : null;
+
+  // 계좌별 실현손익 (FIFO)
+  const realizedByAcc = {};
+  const sortedTx = [...pfTx].sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  const _queues = {};
+  sortedTx.forEach(r => {
+    const key = (r.name||'')+'|'+(r.account||'');
+    const acc = (r.account||'').replace(/\s/g,'');
+    const qty = Math.abs(parseFloat(r.qty)||0);
+    const amt = Math.abs(parseFloat(r.amount)||0);
+    const fee = parseFloat(r.fee)||0, tax = parseFloat(r.tax)||0;
+    if (r.type==='매수'||r.type==='매수.') {
+      if(!_queues[key]) _queues[key]=[];
+      _queues[key].push({qty, cost:amt});
+    } else if (r.type==='매도'||r.type==='매도.') {
+      if(!_queues[key]) _queues[key]=[];
+      let rem=qty, cb=0;
+      while(rem>0&&_queues[key].length){
+        const f=_queues[key][0];
+        if(f.qty<=rem){cb+=f.cost;rem-=f.qty;_queues[key].shift();}
+        else{const r2=rem/f.qty;cb+=f.cost*r2;f.cost-=f.cost*r2;f.qty-=rem;rem=0;}
+      }
+      realizedByAcc[acc] = (realizedByAcc[acc]||0) + (amt - cb + fee + tax);
+    }
+  });
   const 전체총자산 = 전체평가 + 전체예수;
   const 전체수익   = 전체총자산 + 전체분배 - 전체투자;
   const 전체수익률 = 전체투자 > 0 ? 전체수익/전체투자*100 : null;
@@ -4192,22 +4217,27 @@ function pfRenderAcctBalance() {
     const 색 = 수익 >= 0 ? 'var(--green)' : 'var(--red)';
     const 율문자 = 수익률!==null ? (수익률>=0?'+':'')+수익률.toFixed(1)+'%' : '—';
 
-    return `<div style="display:grid;grid-template-columns:80px 1fr 1fr 1fr 1fr 80px;gap:4px 8px;
-                align-items:center;padding:8px 0;border-bottom:1px solid var(--bd);font-size:12px">
-      <div style="display:flex;align-items:center;gap:5px">
-        <span style="width:6px;height:6px;border-radius:50%;background:${accDot(a)};flex-shrink:0;display:inline-block"></span>
-        <span style="font-weight:600;color:var(--txt2);font-size:11px">${a}</span>
+    const 실현 = realizedByAcc[a] || 0;
+    return `<div style="display:grid;grid-template-columns:90px 1fr 1fr 1fr 1fr 1fr 90px;gap:4px 10px;
+                align-items:center;padding:10px 0;border-bottom:1px solid var(--bd);font-size:12px">
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="width:8px;height:8px;border-radius:50%;background:${accDot(a)};flex-shrink:0;display:inline-block"></span>
+        <span style="font-weight:700;color:var(--txt2);font-size:12px">${a}</span>
       </div>
       <div style="text-align:right">
-        <div style="font-size:10px;color:var(--txt3);margin-bottom:1px">투자원금</div>
-        <div style="font-variant-numeric:tabular-nums;color:var(--txt2)">${fmt(투자)}</div>
+        <div style="font-size:10px;color:var(--txt3);margin-bottom:2px">투자원금</div>
+        <div style="font-variant-numeric:tabular-nums;color:var(--txt2);font-weight:500">${fmt(투자)}</div>
       </div>
       <div style="text-align:right">
-        <div style="font-size:10px;color:var(--txt3);margin-bottom:1px">${평가?'평가금액':'—'}</div>
-        <div style="font-variant-numeric:tabular-nums">${평가?fmt(평가):'—'}</div>
+        <div style="font-size:10px;color:var(--txt3);margin-bottom:2px">${평가?'총자산':'총자산'}</div>
+        <div style="font-variant-numeric:tabular-nums;font-weight:500">${fmt(총자산)}</div>
       </div>
       <div style="text-align:right">
-        <div style="font-size:10px;color:var(--txt3);margin-bottom:1px">예수금</div>
+        <div style="font-size:10px;color:var(--txt3);margin-bottom:2px">실현손익</div>
+        <div style="font-variant-numeric:tabular-nums;color:${실현>=0?'var(--green)':'var(--red)'};font-weight:500">${실현!==0?(실현>=0?'+':'')+fmt(실현):'—'}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:10px;color:var(--txt3);margin-bottom:2px">예수금</div>
         <div style="font-variant-numeric:tabular-nums;color:${예수>=0?'var(--green)':'var(--red)'}">${fmt(예수)}</div>
       </div>
       <div style="text-align:right">
@@ -4282,8 +4312,9 @@ function pfRenderAcctBalance() {
       <div style="font-size:10px;font-weight:700;color:var(--txt3);letter-spacing:.08em;padding:10px 0 6px;
                   display:grid;grid-template-columns:80px 1fr 1fr 1fr 1fr 80px;gap:4px 8px">
         <span>계좌</span><span style="text-align:right">투자원금</span>
-        <span style="text-align:right">총자산</span><span style="text-align:right">예수금</span>
-        <span style="text-align:right">분배금</span><span style="text-align:right">수익률</span>
+        <span style="text-align:right">총자산</span><span style="text-align:right">실현손익</span>
+        <span style="text-align:right">예수금</span><span style="text-align:right">분배금</span>
+        <span style="text-align:right">수익률</span>
       </div>
       ${acctRows}
     </div>`;
