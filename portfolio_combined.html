@@ -299,6 +299,7 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
 
   <div class="topnav-sep"></div>
   <div class="topnav-group-label">📊 투자/연금</div>
+  <div class="topnav-tab"   onclick="showTab(15)">홈</div>
   <div class="topnav-tab"   onclick="showTab(1)">거래 입력</div>
   <div class="topnav-tab"   onclick="showTab(2)">거래 내역</div>
   <div class="topnav-tab"   onclick="showTab(13)">보유종목</div>
@@ -414,6 +415,19 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
 <!-- ════════════════════════════════════════════
   탭 2 : 거래 내역
 ═════════════════════════════════════════════ -->
+<!-- ════════════════════════════════════════════
+  탭 15 : 주식·연금 홈
+═════════════════════════════════════════════ -->
+<div id="p15" class="panel" style="padding:16px 14px 40px">
+  <div id="acct-balance-wrap15" style="display:none">
+    <div id="acct-balance-cards15"></div>
+  </div>
+  <div id="p15-empty" style="text-align:center;padding:40px;color:var(--txt3);font-size:13px">
+    거래내역을 먼저 불러오세요
+  </div>
+</div>
+
+
 <div id="p2" class="panel">
   <!-- URL 입력 -->
   <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
@@ -558,7 +572,7 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
     <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:10px;padding:12px;text-align:center">
       <div style="font-size:10px;color:var(--txt3);margin-bottom:4px">평가금액 합계</div>
       <div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--blue)" id="hld2-eval">—</div>
-    </div>
+      <div style="font-size:10px;color:var(--txt3);margin-top:2px">매수원가: <span id="hld2-cost-compare" style="font-variant-numeric:tabular-nums">—</span></div>
     <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:10px;padding:12px;text-align:center">
       <div style="font-size:10px;color:var(--txt3);margin-bottom:4px">미실현 손익</div>
       <div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums" id="hld2-pnl">—</div>
@@ -577,59 +591,92 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
 <!-- ════════════════════════════════════════════
   탭 3 : 배당/분배금
 ═════════════════════════════════════════════ -->
-<div id="p5" class="panel gb-panel" style="max-width:480px;margin:0 auto;padding:16px 14px 40px">
-  <div class="month-nav">
-    <button class="mb" onclick="changeMonth(-1)">&#8249;</button>
-    <div class="ml" id="month-label"></div>
-    <button class="mb" onclick="changeMonth(1)">&#8250;</button>
+<div id="p5" class="panel gb-panel" style="padding:14px 14px 40px">
+
+  <!-- 상단: 월 헤더 -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <div style="display:flex;align-items:center;gap:8px">
+      <button onclick="changeHistMonth(-1)" style="padding:4px 10px;background:var(--bg2);border:1px solid var(--bd);border-radius:6px;cursor:pointer;font-size:13px">‹</button>
+      <div class="ml" id="month-label" style="font-size:15px;font-weight:700"></div>
+      <button onclick="changeHistMonth(1)" style="padding:4px 10px;background:var(--bg2);border:1px solid var(--bd);border-radius:6px;cursor:pointer;font-size:13px">›</button>
+    </div>
+    <div style="font-size:11px;color:var(--txt3)">
+      잔액 <span id="gb-h-bal" style="font-weight:700;color:var(--txt)">₩0</span>
+    </div>
   </div>
-  <div class="sgrid">
-    <div class="sc"><div class="sl">수입</div><div class="sv" style="color:var(--green)" id="h-in">&#8361;0</div></div>
-    <div class="sc"><div class="sl">지출</div><div class="sv" style="color:var(--red)" id="h-out">&#8361;0</div></div>
-    <div class="sc"><div class="sl">잔액</div><div class="sv" id="h-bal">&#8361;0</div></div>
-  </div>
-  <div class="memo-box">
-    <div class="memo-hd"><span class="memo-lbl">&#128221; 메모</span><span class="memo-saved" id="memo-saved"></span></div>
-    <textarea id="quick-memo" placeholder="이달 메모, 할 일 등 자유롭게..."></textarea>
-  </div>
-  <div class="card">
-    <div class="ct" style="display:flex;justify-content:space-between;align-items:center">
-      &#128202; 카테고리 예산
-      <div style="display:flex;gap:6px">
-        <button onclick="expandAll('budget')" style="font-size:10px;padding:3px 8px;border:.5px solid var(--border-md);border-radius:99px;background:transparent;color:var(--sub);cursor:pointer">전체 펴기</button>
-        <button onclick="collapseAll('budget')" style="font-size:10px;padding:3px 8px;border:.5px solid var(--border-md);border-radius:99px;background:transparent;color:var(--sub);cursor:pointer">전체 접기</button>
+
+  <!-- 히어로 카드 -->
+  <div style="background:#0f1f10;border-radius:14px;padding:18px 20px;margin-bottom:10px">
+    <div style="font-size:11px;color:rgba(255,255,255,.3);letter-spacing:.05em;margin-bottom:12px">이번 달 현황</div>
+    <div style="display:grid;grid-template-columns:1fr auto 1fr auto 1fr;align-items:center;gap:8px;margin-bottom:12px">
+      <div style="background:rgba(255,255,255,.05);border-radius:10px;padding:11px 13px">
+        <div style="font-size:10px;color:rgba(255,255,255,.28);margin-bottom:4px">수입</div>
+        <div style="font-size:15px;font-weight:500;color:#4ade80;font-variant-numeric:tabular-nums" id="gb-h-in">₩0</div>
+      </div>
+      <div style="color:rgba(255,255,255,.15);font-size:15px">−</div>
+      <div style="background:rgba(255,255,255,.05);border-radius:10px;padding:11px 13px">
+        <div style="font-size:10px;color:rgba(255,255,255,.28);margin-bottom:4px">지출</div>
+        <div style="font-size:15px;font-weight:500;color:#f87171;font-variant-numeric:tabular-nums" id="gb-h-out">₩0</div>
+      </div>
+      <div style="color:rgba(255,255,255,.15);font-size:15px">=</div>
+      <div style="background:rgba(255,255,255,.05);border-radius:10px;padding:11px 13px">
+        <div style="font-size:10px;color:rgba(255,255,255,.28);margin-bottom:4px">저축 가능</div>
+        <div style="font-size:15px;font-weight:500;color:#60a5fa;font-variant-numeric:tabular-nums" id="gb-h-save">₩0</div>
       </div>
     </div>
-    <div id="budget-list"></div>
-  </div>
-  <div class="card">
-    <div class="ct" style="display:flex;justify-content:space-between;align-items:center">
-      💰 이달 저축 현황
-      <span id="ta-hh-sav-sum" style="font-variant-numeric:tabular-nums;color:var(--blue);font-size:13px;font-weight:700"></span>
+    <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,.04);border-radius:10px;padding:11px 14px">
+      <div>
+        <div style="font-size:10px;color:rgba(255,255,255,.28);margin-bottom:3px">이달 저축</div>
+        <div style="font-size:13px;font-weight:500;color:#4ade80;font-variant-numeric:tabular-nums" id="ta-hh-sav-sum">—</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:10px;color:rgba(255,255,255,.28);margin-bottom:3px">저축률</div>
+        <div style="font-size:16px;font-weight:500;color:#60a5fa;font-variant-numeric:tabular-nums" id="ta-hh-sav-rate">—</div>
+      </div>
     </div>
+  </div>
+
+  <!-- 2열: 예산 + 카드 -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+    <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:14px;overflow:hidden">
+      <div style="padding:12px 14px 8px;font-size:11px;font-weight:600;color:var(--txt3);letter-spacing:.05em;display:flex;justify-content:space-between;align-items:center">
+        카테고리 예산
+        <div style="display:flex;gap:4px">
+          <button onclick="expandAll('budget')" style="font-size:10px;padding:2px 6px;border:.5px solid var(--bd);border-radius:4px;background:transparent;color:var(--txt3);cursor:pointer">전체 펴기</button>
+          <button onclick="collapseAll('budget')" style="font-size:10px;padding:2px 6px;border:.5px solid var(--bd);border-radius:4px;background:transparent;color:var(--txt3);cursor:pointer">접기</button>
+        </div>
+      </div>
+      <div id="budget-list"></div>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:14px;overflow:hidden">
+      <div style="padding:12px 14px 8px;font-size:11px;font-weight:600;color:var(--txt3);letter-spacing:.05em;display:flex;justify-content:space-between;align-items:center">
+        카드 현황
+        <div style="display:flex;gap:4px">
+          <button onclick="expandAll('card')" style="font-size:10px;padding:2px 6px;border:.5px solid var(--bd);border-radius:4px;background:transparent;color:var(--txt3);cursor:pointer">전체 펴기</button>
+          <button onclick="collapseAll('card')" style="font-size:10px;padding:2px 6px;border:.5px solid var(--bd);border-radius:4px;background:transparent;color:var(--txt3);cursor:pointer">접기</button>
+        </div>
+      </div>
+      <div id="card-list"></div>
+    </div>
+  </div>
+
+  <!-- 저축 현황 -->
+  <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:14px;padding:12px 14px;margin-bottom:10px">
+    <div style="font-size:11px;font-weight:600;color:var(--txt3);letter-spacing:.05em;margin-bottom:8px">저축 현황</div>
     <div id="ta-hh-saving-sec"><div id="ta-hh-saving"></div></div>
   </div>
-  <div class="card">
-    <div class="ct">📊 저축률 추이</div>
-    <div id="ta-hh-trend-sec">
-      <div style="display:flex;gap:16px;margin-bottom:10px">
-        <div style="font-size:11px;color:var(--txt2)">(수입-지출)/수입 <span id="ta-hh-sav-rate" style="font-weight:700"></span></div>
-        <div style="font-size:11px;color:var(--txt2)">저축액 <span id="ta-hh-sav-rate2" style="font-weight:700"></span></div>
-      </div>
-      <div id="ta-hh-trend"></div>
-    </div>
+
+  <!-- 메모 -->
+  <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:14px;padding:12px 14px">
+    <div style="font-size:11px;font-weight:600;color:var(--txt3);letter-spacing:.05em;margin-bottom:8px">📝 메모</div>
+    <textarea id="quick-memo" placeholder="이달 메모, 할 일 등 자유롭게..." style="width:100%;min-height:60px;background:transparent;border:none;outline:none;resize:vertical;font-size:13px;color:var(--txt);line-height:1.5"></textarea>
   </div>
-  <div class="card">
-    <div class="ct" style="display:flex;justify-content:space-between;align-items:center">
-      &#128179; 카드 현황
-      <div style="display:flex;gap:6px">
-        <button onclick="expandAll('card')" style="font-size:10px;padding:3px 8px;border:.5px solid var(--border-md);border-radius:99px;background:transparent;color:var(--sub);cursor:pointer">전체 펴기</button>
-        <button onclick="collapseAll('card')" style="font-size:10px;padding:3px 8px;border:.5px solid var(--border-md);border-radius:99px;background:transparent;color:var(--sub);cursor:pointer">전체 접기</button>
-      </div>
-    </div>
-    <div id="card-list"></div>
-  </div>
+
+  <span id="ta-hh-sav-rate2" style="display:none"></span>
+  <span id="ta-hh-trend-sec" style="display:none"><div id="ta-hh-trend"></div></span>
+  <span id="hist-month" style="display:none"></span>
 </div>
+
 
 <div id="p6" class="panel gb-panel" style="max-width:480px;margin:0 auto;padding:16px 14px 40px">
   <div style="display:flex;gap:8px;margin-bottom:6px">
@@ -1040,7 +1087,7 @@ function showTab(i) {
     if(match) t.classList.toggle('on', parseInt(match[1])===i);
   });
   // 패널 전환 — 패널 ID → 탭 번호 직접 매핑
-  var panelMap = {'p0':0,'p1':1,'p2':2,'p3':3,'p4':4,'p5':5,'p6':6,'p7':7,'p8':8,'p9':9,'p10':10,'p11':11,'p12':12,'p13':13,'p14':14};
+  var panelMap = {'p0':0,'p1':1,'p2':2,'p3':3,'p4':4,'p5':5,'p6':6,'p7':7,'p8':8,'p9':9,'p10':10,'p11':11,'p12':12,'p13':13,'p14':14,'p15':15};
   Object.entries(panelMap).forEach(function(kv){
     var el = document.getElementById(kv[0]);
     if(el) el.classList.toggle('on', i===kv[1]);
@@ -1062,6 +1109,7 @@ function showTab(i) {
   if(i===4) { if(!_pfRendered.holdings) { renderHoldingsTab(); _pfRendered.holdings=true; } }
   if(i===13) { pfRenderHoldings2(); }
   if(i===14) { pfRenderPnlDiv(); }
+  if(i===15) { pfRenderAcctBalance(); }
   // 가계부 탭(5~9) — scriptUrl 없으면 설정 탭(10)으로 리다이렉트
   if(i>=5 && i<=9) {
     var gbUrl = localStorage.getItem('scriptUrl')||'';
@@ -4327,10 +4375,54 @@ function pfRenderAcctBalance() {
 
   if(wrap && cards)  { cards.innerHTML = html;  wrap.style.display='block'; }
   if(wrap2 && cards2){ cards2.innerHTML = html; wrap2.style.display='block'; }
+  const wrap15 = document.getElementById('acct-balance-wrap15');
+  const cards15 = document.getElementById('acct-balance-cards15');
+  const empty15 = document.getElementById('p15-empty');
+  if(wrap15 && cards15){ cards15.innerHTML = html; wrap15.style.display='block'; if(empty15) empty15.style.display='none'; }
 }
 // ── 거래내역 렌더 ──
+
+// ── 거래내역 탭 예수금 요약 ──
+function pfRenderCashSummary() {
+  const wrap2  = document.getElementById('acct-balance-wrap2');
+  const cards2 = document.getElementById('acct-balance-cards2');
+  if (!pfTx.length || !wrap2 || !cards2) return;
+
+  const ACCS = ['미래ISA','미래연금저축','삼성연금저축','우리IRP','미래종합','미래금현물'];
+  const map = {};
+  pfTx.forEach(r => {
+    const a = (r.account||'').replace(/\s/g,'');
+    if (!map[a]) map[a] = { cash:0 };
+    map[a].cash += (parseFloat(r.amount)||0)+(parseFloat(r.fee)||0)+(parseFloat(r.tax)||0);
+  });
+
+  const W = n => Math.round(Math.abs(n)).toLocaleString()+'원';
+  const C = n => n>=0?'var(--green)':'var(--red)';
+  const dot = a => a.includes('ISA')?'#4ade80':a.includes('연금')?'#a78bfa':a.includes('IRP')?'#60a5fa':a.includes('금')?'#fbbf24':'#94a3b8';
+
+  const activeAccts = ACCS.filter(a => map[a]);
+  const total = activeAccts.reduce((s,a) => s+(map[a].cash||0), 0);
+
+  var rows = activeAccts.map(function(a) {
+    var v = map[a]||{cash:0};
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:.5px solid var(--bd)">'
+      +'<div style="display:flex;align-items:center;gap:7px">'
+      +'<span style="width:7px;height:7px;border-radius:50%;background:'+dot(a)+'"></span>'
+      +'<span style="font-size:12px;font-weight:500">'+a+'</span></div>'
+      +'<span style="font-size:12px;font-variant-numeric:tabular-nums;color:'+C(v.cash)+'">'+W(v.cash)+'</span>'
+      +'</div>';
+  }).join('');
+
+  cards2.innerHTML = '<div style="background:var(--bg2);border:1px solid var(--bd);border-radius:12px;padding:12px 16px;margin-bottom:4px">'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
+    +'<span style="font-size:11px;font-weight:600;color:var(--txt3);letter-spacing:.05em">계좌별 예수금</span>'
+    +'<span style="font-size:13px;font-weight:700;color:var(--green);font-variant-numeric:tabular-nums">'+W(total)+'</span>'
+    +'</div>'+rows+'</div>';
+  wrap2.style.display = 'block';
+}
+
 function pfRenderHistory() {
-  pfRenderAcctBalance();
+  pfRenderCashSummary();
   const acc  = (document.getElementById('fil-acc')  || {}).value || '';
   const type = (document.getElementById('fil-type') || {}).value || '';
   const name = ((document.getElementById('fil-name') || {}).value || '').toLowerCase();
@@ -4686,6 +4778,7 @@ function pfRenderHoldings2() {
   se('hld2-netin', pfFmtW(투자원금));
   se('hld2-cost', pfFmtW(totalCost));
   se('hld2-eval', totalEval ? pfFmtW(totalEval) : '현재가 필요', totalEval ? 'var(--blue)' : 'var(--txt3)');
+  se('hld2-cost-compare', pfFmtW(totalCost));
   se('hld2-pnl',  totalEval > 0 ? (totalPnl >= 0 ? '+' : '') + pfFmtW(totalPnl) : '—',
      totalEval > 0 ? (totalPnl >= 0 ? 'var(--green)' : 'var(--red)') : 'var(--txt3)');
 
@@ -5289,20 +5382,23 @@ function renderHome(){
     var nc='<div style="text-align:center;padding:20px;color:var(--hint);font-size:13px">\uC124\uC815 \uD0ED\uC5D0\uC11C \uD30C\uC77C\uC744 \uC62C\uB824\uC8FC\uC138\uC694</div>';
     document.getElementById('budget-list').innerHTML=nc;
     document.getElementById('card-list').innerHTML=nc;
-    document.getElementById('h-in').textContent='\u20A90';
-    document.getElementById('h-out').textContent='\u20A90';
-    document.getElementById('h-bal').textContent='\u20A90';
+    document.getElementById('gb-h-in').textContent='\u20A90';
+    document.getElementById('gb-h-out').textContent='\u20A90';
+    document.getElementById('gb-h-bal').textContent='\u20A90';
     return;
   }
   var es=me();
   var inc=es.filter(function(e){return e.type==='수입';}).reduce(function(s,e){return s+e.amount;},0);
   var exp=es.filter(function(e){return e.type==='지출';}).reduce(function(s,e){return s+e.amount;},0);
   var bal=inc-exp;
-  document.getElementById('h-in').textContent=fmt(inc);
-  document.getElementById('h-out').textContent=fmt(exp);
-  var bEl=document.getElementById('h-bal');
+  document.getElementById('gb-h-in').textContent=fmt(inc);
+  document.getElementById('gb-h-out').textContent=fmt(exp);
+  var bEl=document.getElementById('gb-h-bal');
   bEl.textContent=(bal<0?'-':'')+fmt(bal);
   bEl.style.color=bal>=0?'var(--green)':'var(--red)';
+  // 저축 가능액 (수입-지출)
+  var saveEl=document.getElementById('gb-h-save');
+  if(saveEl){saveEl.textContent=(bal<0?'-':'')+fmt(bal);saveEl.style.color=bal>=0?'var(--blue)':'var(--red)';}
 
   var majT={},subT={};
   es.filter(function(e){return e.type==='지출';}).forEach(function(e){
