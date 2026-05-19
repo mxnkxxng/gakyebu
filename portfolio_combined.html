@@ -4340,7 +4340,7 @@ function pfRenderAcctBalance() {
         const 수익 = 총 + v.div - 투자;
         const 율 = 투자>0 ? 수익/투자*100 : null;
         const grp = STOCK_ACCS.includes(a)?'📈':'🏦';
-        return \`<tr>
+        return `<tr>
           <td><div class="pf-acct-nm">
             <span style="width:8px;height:8px;border-radius:50%;background:\${dot(a)};flex-shrink:0"></span>
             <span>\${grp} \${a}</span>
@@ -4354,7 +4354,7 @@ function pfRenderAcctBalance() {
             <div class="pf-rate-big" style="color:\${C(수익)}">\${율!==null?(율>=0?'+':'')+율.toFixed(1)+'%':'—'}</div>
             <div class="pf-rate-sm" style="color:\${C(수익)}">\${S(수익)}</div>
           </td>
-        </tr>\`;
+        </tr>`;
       }).join('')}
       </tbody>
     </table>
