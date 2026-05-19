@@ -1123,7 +1123,10 @@ async function pfPost(body) {
   }
 }
 
+let _pfLoading = false;
 async function loadPfData() {
+  if (_pfLoading) { console.warn('loadPfData 이미 실행 중'); return; }
+  _pfLoading = true;
   pfTx = []; // 중복 방지 초기화
   const url = getPfUrl();
   if (!url) {
@@ -1182,6 +1185,8 @@ async function loadPfData() {
     pfToast('로드 실패 — Script URL 확인하세요','err');
     _ss('❌ 응답 없음 — GAS 권한/URL 확인','var(--red)');
   }
+
+  _pfLoading = false;
 }
 
 // ── 계좌 select 동적 생성 ──
@@ -3696,13 +3701,12 @@ function savePfConfig() {
   const pw  = document.getElementById('cfg-pw').value;
   if (url) {
     try {
-      localStorage.setItem(PF_URL_KEY, url);  // 'scriptUrl' — 가계부와 공유
+      localStorage.setItem(PF_URL_KEY, url);
     } catch(e) {}
-    syncUrlInputs();  // 거래내역 탭 URL 입력창도 동기화
+    syncUrlInputs();
   }
   if (pw) { try{ localStorage.setItem(PF_PW_KEY, btoa(encodeURIComponent(pw))); }catch(e){} }
-  (document.getElementById('cfg-msg')||{}).textContent = '저장 완료! 데이터를 불러옵니다...';
-  setTimeout(()=>loadPfData(), 300);
+  (document.getElementById('cfg-msg')||{}).textContent = '저장됐어요! 새로고침하면 적용돼요.';
 }
 
 // ── 투자 플랜 렌더링 ──
