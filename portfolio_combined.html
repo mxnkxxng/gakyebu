@@ -302,6 +302,7 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
   <div class="topnav-tab"   onclick="showTab(1)">거래 입력</div>
   <div class="topnav-tab"   onclick="showTab(2)">거래 내역</div>
   <div class="topnav-tab"   onclick="showTab(13)">보유종목</div>
+  <div class="topnav-tab"   onclick="showTab(14)">손익/분배금</div>
   <div class="topnav-sep"></div>
   <div class="topnav-tab"   onclick="showTab(10)">⚙️ 설정</div>
 </nav>
@@ -474,7 +475,57 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
 </div>
 
 <!-- ════════════════════════════════════════════
-  탭 13 : 보유종목
+  탭 14 : 손익/분배금
+═════════════════════════════════════════════ -->
+<div id="p14" class="panel">
+  <div style="font-size:16px;font-weight:700;margin-bottom:16px">📈 손익 / 분배금</div>
+
+  <!-- 요약 카드 -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px">
+    <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:10px;padding:14px;text-align:center">
+      <div style="font-size:10px;color:var(--txt3);margin-bottom:4px">투자원금</div>
+      <div style="font-size:16px;font-weight:700;font-variant-numeric:tabular-nums" id="pnl-netin">—</div>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:10px;padding:14px;text-align:center">
+      <div style="font-size:10px;color:var(--txt3);margin-bottom:4px">실현손익</div>
+      <div style="font-size:16px;font-weight:700;font-variant-numeric:tabular-nums" id="pnl-realized">—</div>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:10px;padding:14px;text-align:center">
+      <div style="font-size:10px;color:var(--txt3);margin-bottom:4px">미실현손익</div>
+      <div style="font-size:16px;font-weight:700;font-variant-numeric:tabular-nums" id="pnl-unrealized">—</div>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:10px;padding:14px;text-align:center">
+      <div style="font-size:10px;color:var(--txt3);margin-bottom:4px">분배금 누적</div>
+      <div style="font-size:16px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--purple)" id="pnl-div">—</div>
+    </div>
+  </div>
+
+  <!-- 계좌별 실현손익 + 분배금 -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+    <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:12px;padding:16px">
+      <div style="font-size:12px;font-weight:700;margin-bottom:12px">계좌별 실현손익</div>
+      <div id="pnl-by-acc"></div>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:12px;padding:16px">
+      <div style="font-size:12px;font-weight:700;margin-bottom:12px">계좌별 분배금</div>
+      <div id="div-by-acc"></div>
+    </div>
+  </div>
+
+  <!-- 종목별 실현손익 -->
+  <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:12px;padding:16px;margin-bottom:16px">
+    <div style="font-size:12px;font-weight:700;margin-bottom:12px">종목별 실현손익</div>
+    <div style="overflow-x:auto" id="pnl-by-name"></div>
+  </div>
+
+  <!-- 종목별 분배금 -->
+  <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:12px;padding:16px">
+    <div style="font-size:12px;font-weight:700;margin-bottom:12px">종목별 분배금</div>
+    <div style="overflow-x:auto" id="div-by-name"></div>
+  </div>
+</div>
+
+
 ═════════════════════════════════════════════ -->
 <div id="p13" class="panel">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
@@ -989,7 +1040,7 @@ function showTab(i) {
     if(match) t.classList.toggle('on', parseInt(match[1])===i);
   });
   // 패널 전환 — 패널 ID → 탭 번호 직접 매핑
-  var panelMap = {'p0':0,'p1':1,'p2':2,'p3':3,'p4':4,'p5':5,'p6':6,'p7':7,'p8':8,'p9':9,'p10':10,'p11':11,'p12':12,'p13':13};
+  var panelMap = {'p0':0,'p1':1,'p2':2,'p3':3,'p4':4,'p5':5,'p6':6,'p7':7,'p8':8,'p9':9,'p10':10,'p11':11,'p12':12,'p13':13,'p14':14};
   Object.entries(panelMap).forEach(function(kv){
     var el = document.getElementById(kv[0]);
     if(el) el.classList.toggle('on', i===kv[1]);
@@ -1010,6 +1061,7 @@ function showTab(i) {
              if(pfTx.length && !_pfRendered.div) { renderDividendTab(); _pfRendered.div=true; } }
   if(i===4) { if(!_pfRendered.holdings) { renderHoldingsTab(); _pfRendered.holdings=true; } }
   if(i===13) { pfRenderHoldings2(); }
+  if(i===14) { pfRenderPnlDiv(); }
   // 가계부 탭(5~9) — scriptUrl 없으면 설정 탭(10)으로 리다이렉트
   if(i>=5 && i<=9) {
     var gbUrl = localStorage.getItem('scriptUrl')||'';
@@ -3906,6 +3958,7 @@ window.addEventListener('DOMContentLoaded', ()=>{
   renderPlan();
   loadManualEvalInputs();
 
+  // 캐시 있으면 복원, URL 있으면 새로 로드
   try {
     const cached = localStorage.getItem('pf_tx_cache');
     if (cached) {
@@ -3922,11 +3975,13 @@ window.addEventListener('DOMContentLoaded', ()=>{
       try { renderTotalAsset(); } catch(e){}
       try { buildAcctSelects(); } catch(e){}
       try { renderPlan(); } catch(e){}
+      // 캐시 복원 후 백그라운드에서 최신 데이터로 갱신
+      if (getPfUrl()) setTimeout(() => loadPfData(), 1000);
+    } else if (getPfUrl()) {
+      // 캐시 없으면 바로 로드
+      loadPfData();
     }
   } catch(e) { console.warn('캐시 복원 실패:', e); }
-
-  // URL 있으면 백그라운드에서 최신 데이터로 갱신
-  try { if(getPfUrl()) loadPfData(); } catch(e) {}
 });
 
 
@@ -4645,6 +4700,106 @@ function pfRenderHoldings2() {
     ? `<div style="overflow-x:auto">${html}</div>`
     : '<div style="padding:40px;text-align:center;color:var(--txt3)">보유종목 없음</div>';
 }
+
+// ── 손익/분배금 탭 렌더 ──
+function pfRenderPnlDiv() {
+  if (!pfTx.length) return;
+
+  const fmt = v => (v >= 0 ? '+' : '') + Math.round(v).toLocaleString() + '원';
+  const fmtAbs = v => Math.abs(Math.round(v)).toLocaleString() + '원';
+  const color = v => v >= 0 ? 'var(--green)' : 'var(--red)';
+  const accColor = a => a.includes('ISA')?'#4ade80':a.includes('연금')?'var(--purple)':a.includes('IRP')?'var(--blue)':a.includes('금')?'var(--yellow)':'var(--txt2)';
+  const rowStyle = 'display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--bd);font-size:12px';
+
+  const sorted = [...pfTx].sort((a, b) => (a.date||'').localeCompare(b.date||''));
+  const queues = {};
+  const realizedByAcc = {}, realizedByName = {}, divByAcc = {}, divByName = {};
+  let totalRealized = 0, totalDiv = 0;
+
+  sorted.forEach(r => {
+    const key = (r.name||'') + '|' + (r.account||'');
+    const acc = (r.account||'').replace(/\s/g,'');
+    const qty = Math.abs(parseFloat(r.qty)||0);
+    const amt = Math.abs(parseFloat(r.amount)||0);
+    const fee = parseFloat(r.fee)||0, tax = parseFloat(r.tax)||0;
+
+    if (r.type==='매수'||r.type==='매수.') {
+      if (!queues[key]) queues[key] = [];
+      queues[key].push({ qty, cost: amt });
+    } else if (r.type==='매도'||r.type==='매도.') {
+      if (!queues[key]) queues[key] = [];
+      let rem = qty, costBasis = 0;
+      while (rem > 0 && queues[key].length) {
+        const f = queues[key][0];
+        if (f.qty <= rem) { costBasis += f.cost; rem -= f.qty; queues[key].shift(); }
+        else { const ratio = rem/f.qty; costBasis += f.cost*ratio; f.cost -= f.cost*ratio; f.qty -= rem; rem = 0; }
+      }
+      const pnl = amt - costBasis + fee + tax;
+      realizedByAcc[acc] = (realizedByAcc[acc]||0) + pnl;
+      realizedByName[key] = (realizedByName[key]||0) + pnl;
+      totalRealized += pnl;
+    } else if (r.type==='분배금') {
+      divByAcc[acc] = (divByAcc[acc]||0) + amt;
+      divByName[key] = (divByName[key]||0) + amt;
+      totalDiv += amt;
+    }
+  });
+
+  const netIn = pfTx.reduce((s,r) => {
+    if(r.type==='입금') return s+Math.abs(parseFloat(r.amount)||0);
+    if(r.type==='출금') return s-Math.abs(parseFloat(r.amount)||0);
+    return s;
+  }, 0);
+
+  let sheetPrices = {};
+  try { sheetPrices = JSON.parse(localStorage.getItem('pf_sheet_prices')||'{}'); } catch(e){}
+  const holdings = pfCalcFifo2();
+  let unrealized = 0, hasPrice = false;
+  Object.values(holdings).forEach(h => {
+    const cp = sheetPrices[h.name+'|'+(h.account||'').replace(/\s/g,'')] || sheetPrices[h.name] || 0;
+    if (cp > 0) { unrealized += h.qty * cp - h.costBasis; hasPrice = true; }
+  });
+
+  const se = (id, v, c) => { const el=document.getElementById(id); if(!el) return; el.textContent=v; if(c) el.style.color=c; };
+  se('pnl-netin', fmtAbs(netIn));
+  se('pnl-realized', fmt(totalRealized), color(totalRealized));
+  se('pnl-unrealized', hasPrice ? fmt(unrealized) : '현재가 필요', hasPrice ? color(unrealized) : 'var(--txt3)');
+  se('pnl-div', '+' + fmtAbs(totalDiv), 'var(--purple)');
+
+  const pnlAccEl = document.getElementById('pnl-by-acc');
+  if(pnlAccEl) pnlAccEl.innerHTML = Object.entries(realizedByAcc).sort((a,b)=>b[1]-a[1])
+    .map(([acc,pnl])=>`<div style="${rowStyle}"><span style="color:${accColor(acc)};font-weight:600">${acc}</span><span style="font-variant-numeric:tabular-nums;color:${color(pnl)}">${fmt(pnl)}</span></div>`).join('') || '<div style="color:var(--txt3);font-size:12px">실현손익 없음</div>';
+
+  const divAccEl = document.getElementById('div-by-acc');
+  if(divAccEl) divAccEl.innerHTML = Object.entries(divByAcc).sort((a,b)=>b[1]-a[1])
+    .map(([acc,div])=>`<div style="${rowStyle}"><span style="color:${accColor(acc)};font-weight:600">${acc}</span><span style="font-variant-numeric:tabular-nums;color:var(--purple)">+${fmtAbs(div)}</span></div>`).join('') || '<div style="color:var(--txt3);font-size:12px">분배금 없음</div>';
+
+  const mkTable = (data, isDiv) => {
+    const sorted2 = Object.entries(data).sort((a,b)=>b[1]-a[1]);
+    if (!sorted2.length) return '<div style="color:var(--txt3);font-size:12px">없음</div>';
+    return `<table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead><tr style="border-bottom:1px solid var(--bd)">
+        <th style="padding:7px;text-align:left;color:var(--txt3);font-weight:500">종목</th>
+        <th style="padding:7px;text-align:left;color:var(--txt3);font-weight:500">계좌</th>
+        <th style="padding:7px;text-align:right;color:var(--txt3);font-weight:500">${isDiv?'분배금':'실현손익'}</th>
+      </tr></thead><tbody>
+      ${sorted2.map(([key,val])=>{
+        const [name,acc]=key.split('|');
+        const a=(acc||'').replace(/\s/g,'');
+        return `<tr style="border-bottom:.5px solid var(--bd)">
+          <td style="padding:7px;font-weight:500">${name}</td>
+          <td style="padding:7px;color:${accColor(a)}">${a}</td>
+          <td style="padding:7px;text-align:right;font-variant-numeric:tabular-nums;color:${isDiv?'var(--purple)':color(val)};font-weight:600">${isDiv?'+'+fmtAbs(val):fmt(val)}</td>
+        </tr>`;
+      }).join('')}</tbody></table>`;
+  };
+
+  const pnlNameEl = document.getElementById('pnl-by-name');
+  if(pnlNameEl) pnlNameEl.innerHTML = mkTable(realizedByName, false);
+  const divNameEl = document.getElementById('div-by-name');
+  if(divNameEl) divNameEl.innerHTML = mkTable(divByName, true);
+}
+
 
 function pfCalcFifo2() {
   const sorted = [...pfTx].sort((a, b) => (a.date||'').localeCompare(b.date||''));
@@ -6408,10 +6563,14 @@ function saveSheetConfig(){
   if(typeof showToast==='function') showToast('저장 완료! 데이터를 불러옵니다...');
   setTimeout(function(){
     if(typeof loadFromSheet==='function') loadFromSheet();
-    if(typeof loadPfData==='function') loadPfData().then(function(){
-      if(typeof showTab==='function') showTab(12); // 전체자산 탭으로 이동
-    });
-  }, 300);
+    // pfTx 초기화 후 로드 (중복 방지)
+    if(typeof loadPfData==='function') {
+      window._pfLoading = false; // 강제 리셋
+      loadPfData().then(function(){
+        if(typeof showTab==='function') showTab(12);
+      });
+    }
+  }, 500);
 }
 </script>
 
