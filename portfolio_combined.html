@@ -4156,13 +4156,19 @@ function pfRenderAcctBalance() {
   if (!activeAccts.length) { if(wrap) wrap.style.display='none'; if(wrap2) wrap2.style.display='none'; return; }
 
   // 전체 합산
-  let 전체투자=0, 전체평가=0, 전체예수=0, 전체분배=0;
+  let 전체입금=0, 전체출금=0, 전체투자=0, 전체평가=0, 전체예수=0, 전체분배=0, 전체매수원가=0;
   activeAccts.forEach(a => {
+    전체입금 += map[a].in;
+    전체출금 += map[a].out;
     전체투자 += map[a].in - map[a].out;
     전체예수 += map[a].cash;
     전체분배 += map[a].div;
     전체평가 += acctEvalFromSheet[a] || 0;
   });
+  // 매수원가 (FIFO)
+  Object.values(fifoHoldings).forEach(h => { 전체매수원가 += h.costBasis; });
+  // 미실현손익
+  const 전체미실현 = 전체평가 > 0 ? 전체평가 - 전체매수원가 : null;
   const 전체총자산 = 전체평가 + 전체예수;
   const 전체수익   = 전체총자산 + 전체분배 - 전체투자;
   const 전체수익률 = 전체투자 > 0 ? 전체수익/전체투자*100 : null;
@@ -4222,31 +4228,51 @@ function pfRenderAcctBalance() {
       <div style="font-size:11px;font-weight:700;color:var(--txt3);letter-spacing:.1em;margin-bottom:16px">📊 투자 계좌 전체</div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px 20px">
         <div>
-          <div style="font-size:11px;color:var(--txt3);margin-bottom:4px">투자원금 (입금-출금)</div>
-          <div style="font-size:17px;font-weight:700;font-variant-numeric:tabular-nums">${fmt(전체투자)}</div>
+          <div style="font-size:11px;color:var(--txt3);margin-bottom:4px">입금 합계</div>
+          <div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums">${fmt(전체입금)}</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--txt3);margin-bottom:4px">출금 합계</div>
+          <div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--red)">${전체출금?'-'+fmt(전체출금):'—'}</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--txt3);margin-bottom:4px">순입금 (투자원금)</div>
+          <div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums">${fmt(전체투자)}</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--txt3);margin-bottom:4px">매수원가</div>
+          <div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums">${fmt(전체매수원가)}</div>
         </div>
         <div>
           <div style="font-size:11px;color:var(--txt3);margin-bottom:4px">평가금액</div>
-          <div style="font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--blue)">${전체평가?fmt(전체평가):'—'}</div>
+          <div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--blue)">${전체평가?fmt(전체평가):'—'}</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--txt3);margin-bottom:4px">미실현손익</div>
+          <div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:${전체미실현!==null?(전체미실현>=0?'var(--green)':'var(--red)'):'var(--txt3)'}">
+            ${전체미실현!==null?(전체미실현>=0?'+':'')+fmtS(전체미실현):'현재가 필요'}
+          </div>
         </div>
         <div>
           <div style="font-size:11px;color:var(--txt3);margin-bottom:4px">예수금</div>
-          <div style="font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--green)">${fmt(전체예수)}</div>
+          <div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--green)">${fmt(전체예수)}</div>
         </div>
         <div>
           <div style="font-size:11px;color:var(--txt3);margin-bottom:4px">분배금 누적</div>
-          <div style="font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--purple)">${전체분배?'+'+fmt(전체분배):'—'}</div>
+          <div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--purple)">${전체분배?'+'+fmt(전체분배):'—'}</div>
         </div>
         <div>
           <div style="font-size:11px;color:var(--txt3);margin-bottom:4px">총자산 (평가+예수)</div>
-          <div style="font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--blue)">${fmt(전체총자산)}</div>
+          <div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--blue)">${fmt(전체총자산)}</div>
         </div>
+      </div>
+      <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center">
+        <div style="font-size:12px;color:var(--txt3)">총 수익 (총자산 - 순입금)</div>
         <div>
-          <div style="font-size:11px;color:var(--txt3);margin-bottom:4px">수익률</div>
-          <div style="font-size:22px;font-weight:800;font-variant-numeric:tabular-nums;color:${전체색}">
+          <span style="font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;color:${전체색}">
             ${전체수익률!==null?(전체수익률>=0?'+':'')+전체수익률.toFixed(2)+'%':'—'}
-          </div>
-          <div style="font-size:11px;color:${전체색};margin-top:2px">${fmtS(전체수익,true)}</div>
+          </span>
+          <span style="font-size:14px;color:${전체색};margin-left:8px;font-variant-numeric:tabular-nums">${fmtS(전체수익,true)}</span>
         </div>
       </div>
     </div>
