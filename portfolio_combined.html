@@ -2462,8 +2462,8 @@ function renderTotalAsset() {
   const _setEl = (id, v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
   _setEl('ta-stock-isa', isaTotal > 0 ? Math.round(isaTotal).toLocaleString()+'원' : '데이터 필요');
   _setEl('ta-stock-pension', pensionTotal > 0 ? Math.round(pensionTotal).toLocaleString()+'원' : '데이터 필요');
-  _setEl('ta-stock-isa-sub', `평가 ${Math.round(ISA_ACCS.reduce((s,a)=>s+(acctEvalTA[a]||0),0)).toLocaleString()}원 + 예수 ${Math.round(ISA_ACCS.reduce((s,a)=>s+(_mapTA[a]?.cash||0),0)).toLocaleString()}원`);leString()}원`
-    : '평가금액 로드 필요';
+  _setEl('ta-stock-isa-sub', `평가 ${Math.round(ISA_ACCS.reduce((s,a)=>s+(acctEvalTA[a]||0),0)).toLocaleString()}원 + 예수 ${Math.round(ISA_ACCS.reduce((s,a)=>s+(_mapTA[a]?.cash||0),0)).toLocaleString()}원`);
+
   // ta-stock-rate 제거됨
 
 
