@@ -944,23 +944,23 @@ html,body{background:var(--bg);font-family:-apple-system,'Apple SD Gothic Neo','
   <div style="background:linear-gradient(135deg,#1a2744 0%,#1e3a5f 100%);border-radius:16px;padding:28px 32px;margin-bottom:20px">
     <div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:10px">총 순자산</div>
     <div style="font-variant-numeric:tabular-nums;font-size:36px;font-weight:700;color:#fff;letter-spacing:-.5px" id="ta-total">—</div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:20px">
-      <div style="background:rgba(255,255,255,.08);border-radius:10px;padding:14px 16px">
-        <div style="font-size:10px;color:rgba(255,255,255,.45);margin-bottom:6px;font-weight:600;letter-spacing:.06em">📈 주식·연금 총자산</div>
-        <div style="font-size:18px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums" id="ta-stock">—</div>
-        <div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:3px" id="ta-stock-sub">평가금액 + 예수금</div>
-      </div>
-      <div style="background:rgba(255,255,255,.08);border-radius:10px;padding:14px 16px">
-        <div style="font-size:10px;color:rgba(255,255,255,.45);margin-bottom:6px;font-weight:600;letter-spacing:.06em">💰 가계부 자산</div>
-        <div style="font-size:18px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums" id="ta-household">—</div>
-        <div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:3px">현금·부동산 (투자계좌 제외)</div>
-      </div>
-
-
-
-
-
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:20px">
+    <div style="background:rgba(255,255,255,.08);border-radius:10px;padding:14px 16px">
+      <div style="font-size:10px;color:rgba(255,255,255,.45);margin-bottom:6px;font-weight:600;letter-spacing:.06em">💰 가계부 자산</div>
+      <div style="font-size:18px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums" id="ta-household">—</div>
+      <div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:3px">현금·부동산 (투자계좌 제외)</div>
     </div>
+    <div style="background:rgba(255,255,255,.08);border-radius:10px;padding:14px 16px">
+      <div style="font-size:10px;color:rgba(255,255,255,.45);margin-bottom:6px;font-weight:600;letter-spacing:.06em">📈 주식 자산</div>
+      <div style="font-size:18px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums" id="ta-stock-isa">—</div>
+      <div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:3px" id="ta-stock-isa-sub">미래ISA · 미래종합 · 금현물</div>
+    </div>
+    <div style="background:rgba(255,255,255,.08);border-radius:10px;padding:14px 16px">
+      <div style="font-size:10px;color:rgba(255,255,255,.45);margin-bottom:6px;font-weight:600;letter-spacing:.06em">🏦 연금·IRP 자산</div>
+      <div style="font-size:18px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums" id="ta-stock-pension">—</div>
+      <div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:3px">미래연금 · 삼성연금 · 우리IRP</div>
+    </div>
+  </div>
   </div>
   <!-- 계좌별 잔고 카드 -->
 <div id="acct-balance-wrap" style="margin-bottom:20px;display:none">
@@ -2431,13 +2431,38 @@ function renderTotalAsset() {
   const unrealized = evalTotal > 0 ? evalTotal - fifo.totalCostBasis - deposit : null;
   const stockRate = netIn>0 && evalTotal>0 ? (evalTotal-netIn)/netIn*100 : null;
 
-  // 주식·연금 총자산 = 평가금액 + 예수금
-  const stockTotalAsset = evalTotal + deposit;
-  document.getElementById('ta-stock').textContent = stockTotalAsset > 0
-    ? Math.round(stockTotalAsset).toLocaleString()+'원'
-    : '데이터 로드 필요';
-  document.getElementById('ta-stock-sub').textContent = evalTotal > 0
-    ? `평가 ${Math.round(evalTotal).toLocaleString()}원 + 예수 ${Math.round(deposit).toLocaleString()}원`
+  // 주식/연금 계좌 분류
+  const ISA_ACCS    = ['미래ISA','미래종합','미래금현물'];
+  const PENSION_ACCS = ['미래연금저축','삼성연금저축','우리IRP'];
+
+  // pfRenderAcctBalance의 map 재계산
+  const _mapTA = {};
+  pfTx.forEach(r => {
+    const a = (r.account||'').replace(/\s/g,'');
+    if (!_mapTA[a]) _mapTA[a] = { cash:0 };
+    _mapTA[a].cash += (parseFloat(r.amount)||0)+(parseFloat(r.fee)||0)+(parseFloat(r.tax)||0);
+  });
+  let sheetPricesTA2 = {};
+  try { sheetPricesTA2 = JSON.parse(localStorage.getItem('pf_sheet_prices')||'{}'); } catch(e){}
+  const fifoTA = pfCalcFifo2();
+  const acctEvalTA = {};
+  Object.values(fifoTA).forEach(h => {
+    const acc = (h.account||'').replace(/\s/g,'');
+    const cp = sheetPricesTA2[h.name+'|'+acc] || sheetPricesTA2[h.name] || 0;
+    if (cp > 0) acctEvalTA[acc] = (acctEvalTA[acc]||0) + h.qty * cp;
+  });
+
+  // 주식 총자산
+  let isaTotal = 0;
+  ISA_ACCS.forEach(a => { isaTotal += (acctEvalTA[a]||0) + (_mapTA[a]?.cash||0); });
+  // 연금 총자산
+  let pensionTotal = 0;
+  PENSION_ACCS.forEach(a => { pensionTotal += (acctEvalTA[a]||0) + (_mapTA[a]?.cash||0); });
+
+  const _setEl = (id, v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
+  _setEl('ta-stock-isa', isaTotal > 0 ? Math.round(isaTotal).toLocaleString()+'원' : '데이터 필요');
+  _setEl('ta-stock-pension', pensionTotal > 0 ? Math.round(pensionTotal).toLocaleString()+'원' : '데이터 필요');
+  _setEl('ta-stock-isa-sub', `평가 ${Math.round(ISA_ACCS.reduce((s,a)=>s+(acctEvalTA[a]||0),0)).toLocaleString()}원 + 예수 ${Math.round(ISA_ACCS.reduce((s,a)=>s+(_mapTA[a]?.cash||0),0)).toLocaleString()}원`);leString()}원`
     : '평가금액 로드 필요';
   // ta-stock-rate 제거됨
 
@@ -4127,6 +4152,7 @@ function pfRenderAcctBalance() {
 
   const accts = ['미래ISA','미래연금저축','삼성연금저축','우리IRP','미래종합','미래금현물'];
 
+  // 거래 집계
   const map = {};
   pfTx.forEach(r => {
     const a = (r.account||'').replace(/\s/g,'');
@@ -4138,186 +4164,191 @@ function pfRenderAcctBalance() {
     if (r.type==='분배금') map[a].div += Math.abs(amt);
   });
 
-  // sheetPrices로 계좌별 평가금액 계산 (보유종목 탭과 동일한 소스)
+  // 평가금액 (sheetPrices 기반)
   let sheetPrices = {};
   try { sheetPrices = JSON.parse(localStorage.getItem('pf_sheet_prices')||'{}'); } catch(e){}
-
-  // FIFO로 보유수량 계산
   const fifoHoldings = pfCalcFifo2();
-  // 계좌별 평가금액 합산
   const acctEvalFromSheet = {};
   Object.values(fifoHoldings).forEach(h => {
     const acc = (h.account||'').replace(/\s/g,'');
-    const cp = sheetPrices[h.name + '|' + (h.account||'').replace(/\s/g,'')] || sheetPrices[h.name] || 0;
+    const cp = sheetPrices[h.name+'|'+(h.account||'').replace(/\s/g,'')] || sheetPrices[h.name] || 0;
     if (cp > 0) acctEvalFromSheet[acc] = (acctEvalFromSheet[acc]||0) + h.qty * cp;
   });
 
-  const activeAccts = accts.filter(a => map[a]);
-  if (!activeAccts.length) { if(wrap) wrap.style.display='none'; if(wrap2) wrap2.style.display='none'; return; }
+  // 계좌별 실현손익
+  const realizedByAcc = {};
+  const _q = {};
+  [...pfTx].sort((a,b)=>(a.date||'').localeCompare(b.date||'')).forEach(r => {
+    const key=(r.name||'')+'|'+(r.account||'');
+    const acc=(r.account||'').replace(/\s/g,'');
+    const qty=Math.abs(parseFloat(r.qty)||0);
+    const amt=Math.abs(parseFloat(r.amount)||0);
+    const fee=parseFloat(r.fee)||0, tax=parseFloat(r.tax)||0;
+    if(r.type==='매수'||r.type==='매수.'){if(!_q[key])_q[key]=[];_q[key].push({qty,cost:amt});}
+    else if(r.type==='매도'||r.type==='매도.'){
+      if(!_q[key])_q[key]=[];
+      let rem=qty,cb=0;
+      while(rem>0&&_q[key].length){const f=_q[key][0];if(f.qty<=rem){cb+=f.cost;rem-=f.qty;_q[key].shift();}else{const r2=rem/f.qty;cb+=f.cost*r2;f.cost-=f.cost*r2;f.qty-=rem;rem=0;}}
+      realizedByAcc[acc]=(realizedByAcc[acc]||0)+(amt-cb+fee+tax);
+    }
+  });
 
   // 전체 합산
   let 전체입금=0, 전체출금=0, 전체투자=0, 전체평가=0, 전체예수=0, 전체분배=0, 전체매수원가=0;
+  const activeAccts = accts.filter(a => map[a]);
+  if (!activeAccts.length) { if(wrap) wrap.style.display='none'; if(wrap2) wrap2.style.display='none'; return; }
+
   activeAccts.forEach(a => {
-    전체입금 += map[a].in;
-    전체출금 += map[a].out;
+    전체입금 += map[a].in; 전체출금 += map[a].out;
     전체투자 += map[a].in - map[a].out;
-    전체예수 += map[a].cash;
-    전체분배 += map[a].div;
+    전체예수 += map[a].cash; 전체분배 += map[a].div;
     전체평가 += acctEvalFromSheet[a] || 0;
   });
-  // 매수원가 (FIFO)
   Object.values(fifoHoldings).forEach(h => { 전체매수원가 += h.costBasis; });
-  // 미실현손익
   const 전체미실현 = 전체평가 > 0 ? 전체평가 - 전체매수원가 : null;
-
-  // 계좌별 실현손익 (FIFO)
-  const realizedByAcc = {};
-  const sortedTx = [...pfTx].sort((a,b)=>(a.date||'').localeCompare(b.date||''));
-  const _queues = {};
-  sortedTx.forEach(r => {
-    const key = (r.name||'')+'|'+(r.account||'');
-    const acc = (r.account||'').replace(/\s/g,'');
-    const qty = Math.abs(parseFloat(r.qty)||0);
-    const amt = Math.abs(parseFloat(r.amount)||0);
-    const fee = parseFloat(r.fee)||0, tax = parseFloat(r.tax)||0;
-    if (r.type==='매수'||r.type==='매수.') {
-      if(!_queues[key]) _queues[key]=[];
-      _queues[key].push({qty, cost:amt});
-    } else if (r.type==='매도'||r.type==='매도.') {
-      if(!_queues[key]) _queues[key]=[];
-      let rem=qty, cb=0;
-      while(rem>0&&_queues[key].length){
-        const f=_queues[key][0];
-        if(f.qty<=rem){cb+=f.cost;rem-=f.qty;_queues[key].shift();}
-        else{const r2=rem/f.qty;cb+=f.cost*r2;f.cost-=f.cost*r2;f.qty-=rem;rem=0;}
-      }
-      realizedByAcc[acc] = (realizedByAcc[acc]||0) + (amt - cb + fee + tax);
-    }
-  });
+  const 전체실현 = Object.values(realizedByAcc).reduce((s,v)=>s+v, 0);
   const 전체총자산 = 전체평가 + 전체예수;
-  const 전체수익   = 전체총자산 + 전체분배 - 전체투자;
+  const 전체수익 = 전체총자산 - 전체투자;
   const 전체수익률 = 전체투자 > 0 ? 전체수익/전체투자*100 : null;
-  const 전체색     = 전체수익 >= 0 ? 'var(--green)' : 'var(--red)';
-  const fmt = v => Math.abs(v).toLocaleString()+'원';
-  const fmtS = (v, plus=false) => (plus&&v>0?'+':'') + v.toLocaleString()+'원';
+  const 전체색 = 전체수익 >= 0 ? 'var(--green)' : 'var(--red)';
 
-  const accDot = a =>
-    a.includes('ISA') ? '#4ade80' : a.includes('연금') ? 'var(--purple)' :
-    a.includes('IRP') ? 'var(--blue)' : a.includes('금') ? 'var(--yellow)' : 'var(--txt3)';
+  const fmt = v => Math.abs(Math.round(v)).toLocaleString()+'원';
+  const fmtS = (v, plus=false) => (plus&&v>0?'+':'') + Math.round(v).toLocaleString()+'원';
+  const clr = v => v >= 0 ? 'var(--green)' : 'var(--red)';
+  const accDot = a => a.includes('ISA')?'#4ade80':a.includes('연금')?'var(--purple)':a.includes('IRP')?'var(--blue)':a.includes('금')?'var(--yellow)':'var(--txt3)';
 
-  // 계좌별 행
-  const acctRows = activeAccts.map(a => {
-    const v = map[a];
-    const 투자 = v.in - v.out;
-    const 예수 = v.cash;
-    const 평가 = acctEvalFromSheet[a] || 0;
-    const 총자산 = 평가 + 예수;
-    const 수익 = 총자산 + v.div - 투자;
-    const 수익률 = 투자 > 0 ? 수익/투자*100 : null;
-    const 색 = 수익 >= 0 ? 'var(--green)' : 'var(--red)';
-    const 율문자 = 수익률!==null ? (수익률>=0?'+':'')+수익률.toFixed(1)+'%' : '—';
-
-    const 실현 = realizedByAcc[a] || 0;
-    return `<div style="display:grid;grid-template-columns:90px 1fr 1fr 1fr 1fr 1fr 90px;gap:4px 10px;
-                align-items:center;padding:10px 0;border-bottom:1px solid var(--bd);font-size:12px">
-      <div style="display:flex;align-items:center;gap:6px">
-        <span style="width:8px;height:8px;border-radius:50%;background:${accDot(a)};flex-shrink:0;display:inline-block"></span>
-        <span style="font-weight:700;color:var(--txt2);font-size:12px">${a}</span>
-      </div>
-      <div style="text-align:right">
-        <div style="font-size:10px;color:var(--txt3);margin-bottom:2px">투자원금</div>
-        <div style="font-variant-numeric:tabular-nums;color:var(--txt2);font-weight:500">${fmt(투자)}</div>
-      </div>
-      <div style="text-align:right">
-        <div style="font-size:10px;color:var(--txt3);margin-bottom:2px">${평가?'총자산':'총자산'}</div>
-        <div style="font-variant-numeric:tabular-nums;font-weight:500">${fmt(총자산)}</div>
-      </div>
-      <div style="text-align:right">
-        <div style="font-size:10px;color:var(--txt3);margin-bottom:2px">실현손익</div>
-        <div style="font-variant-numeric:tabular-nums;color:${실현>=0?'var(--green)':'var(--red)'};font-weight:500">${실현!==0?(실현>=0?'+':'')+fmt(실현):'—'}</div>
-      </div>
-      <div style="text-align:right">
-        <div style="font-size:10px;color:var(--txt3);margin-bottom:2px">예수금</div>
-        <div style="font-variant-numeric:tabular-nums;color:${예수>=0?'var(--green)':'var(--red)'}">${fmt(예수)}</div>
-      </div>
-      <div style="text-align:right">
-        <div style="font-size:10px;color:var(--txt3);margin-bottom:1px">분배금</div>
-        <div style="font-variant-numeric:tabular-nums;color:var(--purple)">${v.div?'+'+fmt(v.div):'—'}</div>
-      </div>
-      <div style="text-align:right">
-        <div style="font-size:13px;font-weight:700;color:${색};font-variant-numeric:tabular-nums">${율문자}</div>
-        <div style="font-size:10px;color:${색};font-variant-numeric:tabular-nums">${fmtS(수익,true)}</div>
-      </div>
-    </div>`;
-  }).join('');
-
+  // ─── 대시보드 HTML ───
   const html = `
-    <!-- 큰 요약 카드 -->
-    <div style="background:linear-gradient(135deg,var(--bg2) 0%,var(--bg3) 100%);
-                border:1px solid var(--bd);border-radius:16px;padding:20px 24px;margin-bottom:12px">
-      <div style="font-size:11px;font-weight:700;color:var(--txt3);letter-spacing:.1em;margin-bottom:16px">📊 투자 계좌 전체</div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px 20px">
-        <div>
-          <div style="font-size:11px;color:var(--txt3);margin-bottom:4px">입금 합계</div>
-          <div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums">${fmt(전체입금)}</div>
-        </div>
-        <div>
-          <div style="font-size:11px;color:var(--txt3);margin-bottom:4px">출금 합계</div>
-          <div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--red)">${전체출금?'-'+fmt(전체출금):'—'}</div>
-        </div>
-        <div>
-          <div style="font-size:11px;color:var(--txt3);margin-bottom:4px">순입금 (투자원금)</div>
-          <div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums">${fmt(전체투자)}</div>
-        </div>
-        <div>
-          <div style="font-size:11px;color:var(--txt3);margin-bottom:4px">매수원가</div>
-          <div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums">${fmt(전체매수원가)}</div>
-        </div>
-        <div>
-          <div style="font-size:11px;color:var(--txt3);margin-bottom:4px">평가금액</div>
-          <div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--blue)">${전체평가?fmt(전체평가):'—'}</div>
-        </div>
-        <div>
-          <div style="font-size:11px;color:var(--txt3);margin-bottom:4px">미실현손익</div>
-          <div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:${전체미실현!==null?(전체미실현>=0?'var(--green)':'var(--red)'):'var(--txt3)'}">
-            ${전체미실현!==null?(전체미실현>=0?'+':'')+fmtS(전체미실현):'현재가 필요'}
-          </div>
-        </div>
-        <div>
-          <div style="font-size:11px;color:var(--txt3);margin-bottom:4px">예수금</div>
-          <div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--green)">${fmt(전체예수)}</div>
-        </div>
-        <div>
-          <div style="font-size:11px;color:var(--txt3);margin-bottom:4px">분배금 누적</div>
-          <div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--purple)">${전체분배?'+'+fmt(전체분배):'—'}</div>
-        </div>
-        <div>
-          <div style="font-size:11px;color:var(--txt3);margin-bottom:4px">총자산 (평가+예수)</div>
-          <div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--blue)">${fmt(전체총자산)}</div>
-        </div>
+  <style>
+    .pf-dash { font-family:'IBM Plex Sans KR',sans-serif; }
+    .pf-flow { display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--bd); border-radius:14px; overflow:hidden; margin-bottom:16px; }
+    .pf-flow-cell { background:var(--bg2); padding:16px 20px; position:relative; }
+    .pf-flow-cell .lbl { font-size:10px; color:var(--txt3); font-weight:600; letter-spacing:.06em; text-transform:uppercase; margin-bottom:6px; }
+    .pf-flow-cell .val { font-size:18px; font-weight:700; font-variant-numeric:tabular-nums; line-height:1.2; }
+    .pf-flow-cell .sub { font-size:11px; color:var(--txt3); margin-top:4px; font-variant-numeric:tabular-nums; }
+    .pf-flow-cell.accent { background:var(--bg3); }
+    .pf-flow-cell.highlight { background:linear-gradient(135deg,#1a2535 0%,#1e3a5f 100%); }
+    .pf-flow-cell.highlight .lbl { color:rgba(255,255,255,.5); }
+    .pf-flow-cell.highlight .val { color:#fff; }
+    .pf-flow-cell.highlight .sub { color:rgba(255,255,255,.4); }
+    .pf-arrow { position:absolute; right:-1px; top:50%; transform:translateY(-50%); width:20px; height:20px; background:var(--bd); clip-path:polygon(0 0,100% 50%,0 100%); z-index:1; display:none; }
+    .pf-section-title { font-size:10px; font-weight:700; color:var(--txt3); letter-spacing:.08em; text-transform:uppercase; margin-bottom:8px; padding:0 4px; }
+    .pf-total-bar { background:linear-gradient(135deg,#0f1923 0%,#1a3a5c 100%); border-radius:12px; padding:18px 24px; display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+    .pf-total-bar .main-num { font-size:28px; font-weight:800; color:#fff; font-variant-numeric:tabular-nums; }
+    .pf-total-bar .rate { text-align:right; }
+    .pf-total-bar .rate-pct { font-size:22px; font-weight:800; font-variant-numeric:tabular-nums; }
+    .pf-total-bar .rate-amt { font-size:12px; font-variant-numeric:tabular-nums; margin-top:2px; opacity:.8; }
+    .pf-acc-table { background:var(--bg2); border:1px solid var(--bd); border-radius:12px; overflow:hidden; }
+    .pf-acc-header { display:grid; grid-template-columns:110px 1fr 1fr 1fr 1fr 1fr 90px; gap:0; padding:10px 16px; background:var(--bg3); border-bottom:1px solid var(--bd); font-size:10px; font-weight:700; color:var(--txt3); letter-spacing:.06em; }
+    .pf-acc-header span { text-align:right; }
+    .pf-acc-header span:first-child { text-align:left; }
+    .pf-acc-row { display:grid; grid-template-columns:110px 1fr 1fr 1fr 1fr 1fr 90px; gap:0; padding:14px 16px; border-bottom:.5px solid var(--bd); align-items:center; transition:background .15s; }
+    .pf-acc-row:last-child { border-bottom:none; }
+    .pf-acc-row:hover { background:var(--bg3); }
+    .pf-acc-row .cell { text-align:right; }
+    .pf-acc-row .cell .v { font-size:13px; font-weight:600; font-variant-numeric:tabular-nums; }
+    .pf-acc-row .cell .s { font-size:10px; color:var(--txt3); margin-bottom:2px; }
+  </style>
+
+  <div class="pf-dash">
+    <!-- 총자산 바 -->
+    <div class="pf-total-bar">
+      <div>
+        <div style="font-size:11px;color:rgba(255,255,255,.45);margin-bottom:6px;font-weight:600;letter-spacing:.08em">총 자산</div>
+        <div class="main-num">${Math.round(전체총자산).toLocaleString()}원</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:4px">평가 ${Math.round(전체평가).toLocaleString()}원 + 예수 ${Math.round(전체예수).toLocaleString()}원</div>
       </div>
-      <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center">
-        <div style="font-size:12px;color:var(--txt3)">총 수익 (총자산 - 순입금)</div>
-        <div>
-          <span style="font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;color:${전체색}">
-            ${전체수익률!==null?(전체수익률>=0?'+':'')+전체수익률.toFixed(2)+'%':'—'}
-          </span>
-          <span style="font-size:14px;color:${전체색};margin-left:8px;font-variant-numeric:tabular-nums">${fmtS(전체수익,true)}</span>
-        </div>
+      <div class="rate">
+        <div class="rate-pct" style="color:${전체색}">${전체수익률!==null?(전체수익률>=0?'+':'')+전체수익률.toFixed(2)+'%':'—'}</div>
+        <div class="rate-amt" style="color:${전체색}">${fmtS(전체수익,true)}</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:4px">총자산 - 순입금 기준</div>
       </div>
     </div>
 
-        <!-- 계좌별 -->
-    <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:12px;padding:4px 16px 8px">
-      <div style="font-size:10px;font-weight:700;color:var(--txt3);letter-spacing:.08em;padding:10px 0 6px;
-                  display:grid;grid-template-columns:80px 1fr 1fr 1fr 1fr 80px;gap:4px 8px">
-        <span>계좌</span><span style="text-align:right">투자원금</span>
-        <span style="text-align:right">총자산</span><span style="text-align:right">실현손익</span>
-        <span style="text-align:right">예수금</span><span style="text-align:right">분배금</span>
-        <span style="text-align:right">수익률</span>
+    <!-- 자금 흐름 그리드 -->
+    <div class="pf-section-title">💰 자금 흐름</div>
+    <div class="pf-flow">
+      <div class="pf-flow-cell">
+        <div class="lbl">입금 합계</div>
+        <div class="val">${Math.round(전체입금).toLocaleString()}원</div>
       </div>
-      ${acctRows}
-    </div>`;
+      <div class="pf-flow-cell accent">
+        <div class="lbl">출금 합계</div>
+        <div class="val" style="color:var(--red)">-${Math.round(전체출금).toLocaleString()}원</div>
+      </div>
+      <div class="pf-flow-cell">
+        <div class="lbl">순입금 (투자원금)</div>
+        <div class="val">${Math.round(전체투자).toLocaleString()}원</div>
+      </div>
+      <div class="pf-flow-cell accent">
+        <div class="lbl">매수원가</div>
+        <div class="val">${Math.round(전체매수원가).toLocaleString()}원</div>
+        <div class="sub">현재 보유 종목</div>
+      </div>
+      <div class="pf-flow-cell">
+        <div class="lbl">평가금액</div>
+        <div class="val" style="color:var(--blue)">${전체평가?Math.round(전체평가).toLocaleString()+'원':'현재가 필요'}</div>
+      </div>
+      <div class="pf-flow-cell accent">
+        <div class="lbl">미실현손익</div>
+        <div class="val" style="color:${전체미실현!==null?clr(전체미실현):'var(--txt3)'}">${전체미실현!==null?(전체미실현>=0?'+':'')+Math.round(전체미실현).toLocaleString()+'원':'현재가 필요'}</div>
+      </div>
+      <div class="pf-flow-cell">
+        <div class="lbl">실현손익</div>
+        <div class="val" style="color:${clr(전체실현)}">${(전체실현>=0?'+':'')+Math.round(전체실현).toLocaleString()}원</div>
+        <div class="sub">매도 확정 수익</div>
+      </div>
+      <div class="pf-flow-cell accent">
+        <div class="lbl">분배금 누적</div>
+        <div class="val" style="color:var(--purple)">+${Math.round(전체분배).toLocaleString()}원</div>
+      </div>
+      <div class="pf-flow-cell">
+        <div class="lbl">예수금</div>
+        <div class="val" style="color:var(--green)">${Math.round(전체예수).toLocaleString()}원</div>
+        <div class="sub">현금 잔고</div>
+      </div>
+    </div>
+
+    <!-- 계좌별 테이블 -->
+    <div class="pf-section-title" style="margin-top:8px">📋 계좌별 현황</div>
+    <div class="pf-acc-table">
+      <div class="pf-acc-header">
+        <span>계좌</span>
+        <span>투자원금</span>
+        <span>총자산</span>
+        <span>실현손익</span>
+        <span>예수금</span>
+        <span>분배금</span>
+        <span>수익률</span>
+      </div>
+      ${activeAccts.map(a => {
+        const v = map[a];
+        const 투자 = v.in - v.out;
+        const 예수 = v.cash;
+        const 평가 = acctEvalFromSheet[a] || 0;
+        const 총 = 평가 + 예수;
+        const 실현 = realizedByAcc[a] || 0;
+        const 수익 = 총 + v.div - 투자;
+        const 수익률 = 투자 > 0 ? 수익/투자*100 : null;
+        const 색 = 수익 >= 0 ? 'var(--green)' : 'var(--red)';
+        return `<div class="pf-acc-row">
+          <div style="display:flex;align-items:center;gap:7px">
+            <span style="width:8px;height:8px;border-radius:50%;background:${accDot(a)};flex-shrink:0"></span>
+            <span style="font-weight:700;font-size:12px">${a}</span>
+          </div>
+          <div class="cell"><div class="s">투자원금</div><div class="v">${Math.round(투자).toLocaleString()}원</div></div>
+          <div class="cell"><div class="s">총자산</div><div class="v" style="color:var(--blue)">${총>0?Math.round(총).toLocaleString()+'원':'—'}</div></div>
+          <div class="cell"><div class="s">실현손익</div><div class="v" style="color:${clr(실현)}">${실현!==0?(실현>=0?'+':'')+Math.round(실현).toLocaleString()+'원':'—'}</div></div>
+          <div class="cell"><div class="s">예수금</div><div class="v" style="color:var(--green)">${Math.round(예수).toLocaleString()}원</div></div>
+          <div class="cell"><div class="s">분배금</div><div class="v" style="color:var(--purple)">${v.div?'+'+Math.round(v.div).toLocaleString()+'원':'—'}</div></div>
+          <div class="cell" style="text-align:right">
+            <div class="v" style="color:${색};font-size:14px;font-weight:800">${수익률!==null?(수익률>=0?'+':'')+수익률.toFixed(1)+'%':'—'}</div>
+            <div style="font-size:10px;color:${색};font-variant-numeric:tabular-nums">${fmtS(수익,true)}</div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>`;
 
   if(wrap && cards)  { cards.innerHTML = html;  wrap.style.display='block'; }
   if(wrap2 && cards2){ cards2.innerHTML = html; wrap2.style.display='block'; }
